@@ -1,0 +1,57 @@
+{
+  "name": "@pwsnapshot/lib",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "AI-focused accessibility snapshot functionality extracted from Playwright",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "pnpm run clean && pnpm run typecheck && vite build && tsc -p tsconfig.declarations.json",
+    "typecheck": "npx tsc --noEmit",
+    "test": "pnpm run build && playwright test",
+    "test:headed": "pnpm run build && playwright test --headed",
+    "test:server": "node test-server.js",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "clean": "rm -rf dist",
+    "prepare": "pnpm run build"
+  },
+  "keywords": [
+    "accessibility",
+    "aria",
+    "snapshot",
+    "ai",
+    "browser",
+    "playwright"
+  ],
+  "author": "Microsoft Corporation",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "yaml": "2.6.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.0",
+    "@playwright/test": "^1.48.0",
+    "@types/react": "^19.1.9",
+    "@types/react-dom": "^19.1.7",
+    "@vitejs/plugin-react": "^5.0.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0"
+  },
+  "files": [
+    "dist/",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/microsoft/playwright.git",
+    "directory": "snapshot"
+  },
+  "browserslist": [
+    "defaults",
+    "not IE 11"
+  ]
+}

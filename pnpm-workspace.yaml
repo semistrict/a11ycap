@@ -1,0 +1,5 @@
+packages:
+  - 'libpwsnapshot'
+  - 'testpage'
+  - 'testpagecra'
+  - 'babel-plugin-jsx-debug-source'
