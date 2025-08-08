@@ -112,6 +112,44 @@ function App() {
         </ul>
         <button>Test Button</button>
       </div>
+
+      {/* Network request test section */}
+      <div id="network-test-container" style={{ margin: '10px 0', padding: '10px', border: '1px solid #ddd' }}>
+        <h3>Network Test Section</h3>
+        <button 
+          id="fetch-button"
+          onClick={async () => {
+            try {
+              // Make a simple fetch request to a public API
+              await fetch('https://httpbin.org/json');
+              console.log('Network request completed');
+            } catch (error) {
+              console.error('Network request failed:', error);
+            }
+          }}
+        >
+          Make Network Request
+        </button>
+        <button 
+          id="multiple-fetch-button"
+          onClick={async () => {
+            try {
+              // Make multiple requests of different types
+              const promises = [
+                fetch('https://httpbin.org/json'),
+                fetch('https://httpbin.org/user-agent'),
+                fetch('https://httpbin.org/headers')
+              ];
+              await Promise.all(promises);
+              console.log('Multiple network requests completed');
+            } catch (error) {
+              console.error('Network requests failed:', error);
+            }
+          }}
+        >
+          Make Multiple Requests
+        </button>
+      </div>
       
       {showForm && (
         <form id="test-form">

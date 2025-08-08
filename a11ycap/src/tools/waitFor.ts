@@ -1,42 +1,37 @@
 import { z } from "zod";
 import type { ToolHandler } from "./base.js";
 
+// Core tool schema without browserId (which is added by MCP server for routing)
+const waitForSchema = z.object({
+  text: z
+    .string()
+    .optional()
+    .describe("The text to wait for"),
+  textGone: z
+    .string()
+    .optional()
+    .describe("The text to wait for to disappear"),
+  time: z
+    .number()
+    .optional()
+    .describe("The time to wait in seconds"),
+  captureSnapshot: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe("Capture accessibility snapshot after action")
+});
+
 export const waitForDefinition = {
   name: "wait_for",
   description: "Wait for text to appear or disappear or a specified time to pass",
-  inputSchema: {
-    browserId: z
-      .string()
-      .optional()
-      .describe("Browser connection ID (uses first available if not specified)"),
-    text: z
-      .string()
-      .optional()
-      .describe("The text to wait for"),
-    textGone: z
-      .string()
-      .optional()
-      .describe("The text to wait for to disappear"),
-    time: z
-      .number()
-      .optional()
-      .describe("The time to wait in seconds"),
-    captureSnapshot: z
-      .boolean()
-      .optional()
-      .default(true)
-      .describe("Capture accessibility snapshot after action")
-  }
+  inputSchema: waitForSchema.shape  // Will have browserId added by MCP server
 };
 
 const WaitForMessageSchema = z.object({
   id: z.string(),
   type: z.literal('wait_for'),
-  payload: z.object({
-    text: z.string().optional(),
-    textGone: z.string().optional(),
-    time: z.number().optional(),
-  })
+  payload: waitForSchema  // Same schema as the core tool
 });
 
 type WaitForMessage = z.infer<typeof WaitForMessageSchema>;

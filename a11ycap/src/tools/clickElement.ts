@@ -1,34 +1,31 @@
 import { z } from "zod";
 import type { ToolHandler } from "./base.js";
 
+// Core tool schema without browserId (which is added by MCP server for routing)
+const clickElementSchema = z.object({
+  element: z
+    .string()
+    .describe("Human-readable element description used to obtain permission to interact with the element"),
+  ref: z
+    .string()
+    .describe('Element reference from snapshot (e.g., "e5")'),
+  captureSnapshot: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe("Capture accessibility snapshot after action")
+});
+
 export const clickElementDefinition = {
   name: "click_element",
   description: "Click an element using its accessibility snapshot reference",
-  inputSchema: {
-    browserId: z
-      .string()
-      .optional()
-      .describe("Browser connection ID (uses first available if not specified)"),
-    element: z
-      .string()
-      .describe("Human-readable element description used to obtain permission to interact with the element"),
-    ref: z
-      .string()
-      .describe('Element reference from snapshot (e.g., "e5")'),
-    captureSnapshot: z
-      .boolean()
-      .optional()
-      .default(true)
-      .describe("Capture accessibility snapshot after action")
-  }
+  inputSchema: clickElementSchema.shape  // Will have browserId added by MCP server
 };
 
 const ClickElementMessageSchema = z.object({
   id: z.string(),
   type: z.literal('click_element'),
-  payload: z.object({
-    ref: z.string(),
-  })
+  payload: clickElementSchema  // Same schema as the core tool
 });
 
 type ClickElementMessage = z.infer<typeof ClickElementMessageSchema>;

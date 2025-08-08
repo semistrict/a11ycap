@@ -1,40 +1,35 @@
 import { z } from "zod";
 import type { ToolHandler } from "./base.js";
 
+// Core tool schema without browserId (which is added by MCP server for routing)
+const getNetworkRequestsSchema = z.object({
+  limit: z
+    .number()
+    .optional()
+    .default(50)
+    .describe("Maximum number of requests to return (default: 50)"),
+  includeDataUrls: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe("Whether to include data: URLs in the results"),
+  resourceType: z
+    .enum(["all", "fetch", "xmlhttprequest", "navigate", "script", "stylesheet", "image", "font", "other"])
+    .optional()
+    .default("all")
+    .describe("Filter by resource type")
+});
+
 export const getNetworkRequestsDefinition = {
   name: "get_network_requests",
   description: "Retrieve recent network requests using the Web Performance API",
-  inputSchema: {
-    browserId: z
-      .string()
-      .optional()
-      .describe("Browser connection ID (uses first available if not specified)"),
-    limit: z
-      .number()
-      .optional()
-      .default(50)
-      .describe("Maximum number of requests to return (default: 50)"),
-    includeDataUrls: z
-      .boolean()
-      .optional()
-      .default(false)
-      .describe("Whether to include data: URLs in the results"),
-    resourceType: z
-      .enum(["all", "fetch", "xmlhttprequest", "navigate", "script", "stylesheet", "image", "font", "other"])
-      .optional()
-      .default("all")
-      .describe("Filter by resource type")
-  }
+  inputSchema: getNetworkRequestsSchema.shape  // Will have browserId added by MCP server
 };
 
 const GetNetworkRequestsMessageSchema = z.object({
   id: z.string(),
   type: z.literal('get_network_requests'),
-  payload: z.object({
-    limit: z.number().optional().default(50),
-    includeDataUrls: z.boolean().optional().default(false),
-    resourceType: z.enum(["all", "fetch", "xmlhttprequest", "navigate", "script", "stylesheet", "image", "font", "other"]).optional().default("all"),
-  })
+  payload: getNetworkRequestsSchema  // Same schema as the core tool
 });
 
 type GetNetworkRequestsMessage = z.infer<typeof GetNetworkRequestsMessageSchema>;

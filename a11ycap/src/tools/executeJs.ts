@@ -1,36 +1,31 @@
 import { z } from "zod";
 import type { ToolHandler } from "./base.js";
 
+// Core tool schema without browserId (which is added by MCP server for routing)
+const executeJsSchema = z.object({
+  description: z
+    .string()
+    .describe("Human-readable description of what this code does"),
+  code: z
+    .string()
+    .describe("JavaScript code to execute"),
+  returnValue: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe("Whether to return the execution result")
+});
+
 export const executeJsDefinition = {
   name: "execute_js",
   description: "Execute JavaScript code in a connected browser",
-  inputSchema: {
-    browserId: z
-      .string()
-      .optional()
-      .describe("Browser connection ID (uses first available if not specified)"),
-    description: z
-      .string()
-      .describe("Human-readable description of what this code does"),
-    code: z
-      .string()
-      .describe("JavaScript code to execute"),
-    returnValue: z
-      .boolean()
-      .optional()
-      .default(true)
-      .describe("Whether to return the execution result")
-  }
+  inputSchema: executeJsSchema.shape  // Will have browserId added by MCP server
 };
 
 const ExecuteJsMessageSchema = z.object({
   id: z.string(),
   type: z.literal('execute_js'),
-  payload: z.object({
-    description: z.string(),
-    code: z.string(),
-    returnValue: z.boolean().optional().default(true),
-  })
+  payload: executeJsSchema  // Same schema as the core tool
 });
 
 type ExecuteJsMessage = z.infer<typeof ExecuteJsMessageSchema>;

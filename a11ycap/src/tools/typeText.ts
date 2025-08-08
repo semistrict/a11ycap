@@ -1,50 +1,44 @@
 import { z } from "zod";
 import type { ToolHandler } from "./base.js";
 
+// Core tool schema without browserId (which is added by MCP server for routing)
+const typeTextSchema = z.object({
+  element: z
+    .string()
+    .describe("Human-readable element description used to obtain permission to interact with the element"),
+  ref: z
+    .string()
+    .describe('Element reference from snapshot (e.g., "e5")'),
+  text: z
+    .string()
+    .describe("Text to type into the element"),
+  slowly: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe("Whether to type one character at a time. Useful for triggering key handlers in the page. By default entire text is filled in at once."),
+  submit: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe("Whether to submit entered text (press Enter after)"),
+  captureSnapshot: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe("Capture accessibility snapshot after action")
+});
+
 export const typeTextDefinition = {
   name: "type_text",
   description: "Type text into an editable element",
-  inputSchema: {
-    browserId: z
-      .string()
-      .optional()
-      .describe("Browser connection ID (uses first available if not specified)"),
-    element: z
-      .string()
-      .describe("Human-readable element description used to obtain permission to interact with the element"),
-    ref: z
-      .string()
-      .describe('Element reference from snapshot (e.g., "e5")'),
-    text: z
-      .string()
-      .describe("Text to type into the element"),
-    slowly: z
-      .boolean()
-      .optional()
-      .default(false)
-      .describe("Whether to type one character at a time. Useful for triggering key handlers in the page. By default entire text is filled in at once."),
-    submit: z
-      .boolean()
-      .optional()
-      .default(false)
-      .describe("Whether to submit entered text (press Enter after)"),
-    captureSnapshot: z
-      .boolean()
-      .optional()
-      .default(true)
-      .describe("Capture accessibility snapshot after action")
-  }
+  inputSchema: typeTextSchema.shape  // Will have browserId added by MCP server
 };
 
 const TypeTextMessageSchema = z.object({
   id: z.string(),
   type: z.literal('type_text'),
-  payload: z.object({
-    ref: z.string(),
-    text: z.string(),
-    slowly: z.boolean().optional().default(false),
-    submit: z.boolean().optional().default(false),
-  })
+  payload: typeTextSchema  // Same schema as the core tool
 });
 
 type TypeTextMessage = z.infer<typeof TypeTextMessageSchema>;

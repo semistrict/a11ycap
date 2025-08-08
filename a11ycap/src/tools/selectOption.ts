@@ -1,38 +1,34 @@
 import { z } from "zod";
 import type { ToolHandler } from "./base.js";
 
+// Core tool schema without browserId (which is added by MCP server for routing)
+const selectOptionSchema = z.object({
+  element: z
+    .string()
+    .describe("Human-readable element description used to obtain permission to interact with the element"),
+  ref: z
+    .string()
+    .describe('Element reference from snapshot (e.g., "e5")'),
+  values: z
+    .array(z.string())
+    .describe("Array of values to select in the dropdown. This can be a single value or multiple values."),
+  captureSnapshot: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe("Capture accessibility snapshot after action")
+});
+
 export const selectOptionDefinition = {
   name: "select_option",
   description: "Select an option in a dropdown",
-  inputSchema: {
-    browserId: z
-      .string()
-      .optional()
-      .describe("Browser connection ID (uses first available if not specified)"),
-    element: z
-      .string()
-      .describe("Human-readable element description used to obtain permission to interact with the element"),
-    ref: z
-      .string()
-      .describe('Element reference from snapshot (e.g., "e5")'),
-    values: z
-      .array(z.string())
-      .describe("Array of values to select in the dropdown. This can be a single value or multiple values."),
-    captureSnapshot: z
-      .boolean()
-      .optional()
-      .default(true)
-      .describe("Capture accessibility snapshot after action")
-  }
+  inputSchema: selectOptionSchema.shape  // Will have browserId added by MCP server
 };
 
 const SelectOptionMessageSchema = z.object({
   id: z.string(),
   type: z.literal('select_option'),
-  payload: z.object({
-    ref: z.string(),
-    values: z.array(z.string()),
-  })
+  payload: selectOptionSchema  // Same schema as the core tool
 });
 
 type SelectOptionMessage = z.infer<typeof SelectOptionMessageSchema>;

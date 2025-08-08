@@ -1,44 +1,38 @@
 import { z } from "zod";
 import type { ToolHandler } from "./base.js";
 
+// Core tool schema without browserId (which is added by MCP server for routing)
+const takeSnapshotSchema = z.object({
+  mode: z
+    .enum(["ai", "expect", "codegen", "autoexpect"])
+    .optional()
+    .default("ai")
+    .describe("Snapshot mode"),
+  enableReact: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe("Enable React component information"),
+  ref: z
+    .string()
+    .optional()
+    .describe('Element reference from snapshot (e.g., "e5") for specific element (default: document.body)'),
+  max_bytes: z
+    .number()
+    .default(4096)
+    .describe("Maximum size in bytes for the snapshot (uses breadth-first expansion)")
+});
+
 export const takeSnapshotDefinition = {
   name: "take_snapshot",
   description: "Take an accessibility snapshot from a connected browser",
-  inputSchema: {
-    browserId: z
-      .string()
-      .optional()
-      .describe("Browser connection ID (uses first available if not specified)"),
-    mode: z
-      .enum(["ai", "expect", "codegen", "autoexpect"])
-      .optional()
-      .default("ai")
-      .describe("Snapshot mode"),
-    enableReact: z
-      .boolean()
-      .optional()
-      .default(true)
-      .describe("Enable React component information"),
-    ref: z
-      .string()
-      .optional()
-      .describe('Element reference from snapshot (e.g., "e5") for specific element (default: document.body)'),
-    max_bytes: z
-      .number()
-      .optional()
-      .describe("Maximum size in bytes for the snapshot (uses breadth-first expansion)")
-  }
+  inputSchema: takeSnapshotSchema.shape  // Will have browserId added by MCP server
 };
 
 const TakeSnapshotMessageSchema = z.object({
   id: z.string(),
   type: z.literal('take_snapshot'),
-  payload: z.object({
-    ref: z.string().optional(),
-    mode: z.enum(["ai", "expect", "codegen", "autoexpected"]).optional(),
-    enableReact: z.boolean().optional(),
-    max_bytes: z.number().optional(),
-  })
+  payload: takeSnapshotSchema  // Same schema as the core tool
 });
 
 type TakeSnapshotMessage = z.infer<typeof TakeSnapshotMessageSchema>;

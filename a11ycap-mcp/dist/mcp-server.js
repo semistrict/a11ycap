@@ -1,6 +1,19 @@
 import { toolDefinitions } from "a11ycap";
 import { browserConnectionManager } from "./browser-connections.js";
 import { CONSOLE_INJECTION_SCRIPT } from "./constants.js";
+import { z } from "zod";
+/**
+ * Helper function to add browserId parameter to tool schemas for MCP registration.
+ * The browserId is used for server-side routing but is not part of the logical tool schema.
+ */
+function addBrowserId(schema) {
+    return schema.extend({
+        browserId: z
+            .string()
+            .optional()
+            .describe("Browser connection ID (uses first available if not specified)")
+    });
+}
 /**
  * Set up MCP tools that command connected browsers using tool definitions from a11ycap library
  */
@@ -44,7 +57,9 @@ export function setupA11yCapTools(server) {
         }
         else {
             // Generic tool handler for all other tools
-            server.tool(toolDef.name, toolDef.description, toolDef.inputSchema, async (params) => {
+            // Add browserId to the schema for MCP registration
+            const schemaWithBrowserId = addBrowserId(z.object(toolDef.inputSchema));
+            server.tool(toolDef.name, toolDef.description, schemaWithBrowserId.shape, async (params) => {
                 return await handleGenericTool(toolDef.name, params);
             });
         }
