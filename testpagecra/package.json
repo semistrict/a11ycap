@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@pwsnapshot/lib": "workspace:*",
+    "a11ycap": "workspace:*",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.6.4",
     "@testing-library/react": "^16.3.0",
@@ -45,6 +45,6 @@
   },
   "devDependencies": {
     "@craco/craco": "^7.1.0",
-    "@pwsnapshot/babel-plugin-jsx-debug-source": "workspace:*"
+    "babel-plugin-a11ycap": "workspace:*"
   }
 }

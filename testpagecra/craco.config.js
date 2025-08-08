@@ -1,6 +1,6 @@
 module.exports = {
   babel: {
-    plugins: ['@pwsnapshot/babel-plugin-jsx-debug-source']
+    plugins: ['babel-plugin-a11ycap']
   },
   webpack: {
     configure: (webpackConfig) => {

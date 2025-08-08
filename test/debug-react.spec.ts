@@ -3,7 +3,7 @@ import { test } from '@playwright/test';
 
 test('debug react component names', async ({ page }) => {
   await page.goto('http://localhost:14652/');
-  await page.waitForFunction(() => window.testReady, { timeout: 5000 });
+  await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
   await page.waitForFunction(() => (window as any).reactDevToolsReady, { timeout: 5000 });
 
   // Enable debug logging
@@ -82,7 +82,7 @@ test('debug react component names', async ({ page }) => {
   // Test snapshot with debug logging
   const snapshot = await page.evaluate(async () => {
     (window as any).DEBUG_REACT_SNAPSHOT = true;
-    return await (window as any).snapshot(document.body, { mode: 'ai', enableReact: true });
+    return await window.A11yCap.snapshot(document.body, { mode: 'ai', enableReact: true });
   });
 
   console.log('Final snapshot:', snapshot);

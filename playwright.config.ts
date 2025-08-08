@@ -23,9 +23,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: process.env.USE_CRA === 'false'
-      ? '(cd testpage && node test-server.js)'
-      : '(cd testpagecra && PORT=14652 BROWSER=none pnpm start)',
+    command: '(cd testpagecra && PORT=14652 BROWSER=none pnpm start)',
     port: 14652,
     reuseExistingServer: !process.env.CI,
   },

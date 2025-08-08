@@ -1,5 +1,5 @@
 packages:
-  - 'libpwsnapshot'
-  - 'testpage'
+  - 'a11ycap'
+  - 'a11ycap-mcp'
   - 'testpagecra'
-  - 'babel-plugin-jsx-debug-source'
+  - 'babel-plugin-a11ycap'

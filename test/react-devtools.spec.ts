@@ -6,7 +6,7 @@ test.describe('React DevTools Integration', () => {
     await page.goto('http://localhost:14652/');
 
     // Wait for the library and React DevTools to load
-    await page.waitForFunction(() => window.testReady, { timeout: 5000 });
+    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
     await page.waitForFunction(() => window.__REACT_DEVTOOLS_GLOBAL_HOOK__, { timeout: 5000 });
 
     const result = await page.evaluate(() => {
@@ -82,7 +82,7 @@ test.describe('React DevTools Integration', () => {
       if (overlay) overlay.remove();
     });
     
-    await page.waitForFunction(() => window.testReady, { timeout: 5000 });
+    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
     await page.waitForFunction(() => window.__REACT_DEVTOOLS_GLOBAL_HOOK__, { timeout: 5000 });
 
     // Click the "Show Form" button to render form elements
@@ -136,7 +136,7 @@ test.describe('React DevTools Integration', () => {
       if (overlay) overlay.remove();
     });
     
-    await page.waitForFunction(() => window.testReady, { timeout: 5000 });
+    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
     await page.waitForFunction(() => window.__REACT_DEVTOOLS_GLOBAL_HOOK__, { timeout: 5000 });
 
     const initialState = await page.evaluate(() => {
@@ -198,7 +198,7 @@ test.describe('React DevTools Integration', () => {
 test.describe('React-Aware Snapshot Integration', () => {
   test('should include React component info when enableReact is true', async ({ page }) => {
     await page.goto('http://localhost:14652/');
-    await page.waitForFunction(() => window.testReady, { timeout: 5000 });
+    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
     await page.waitForFunction(() => window.__REACT_DEVTOOLS_GLOBAL_HOOK__, { timeout: 5000 });
 
     const debugInfo = await page.evaluate(() => {
@@ -261,7 +261,7 @@ test.describe('React-Aware Snapshot Integration', () => {
     console.log('Debug info:', debugInfo);
 
     const snapshot = await page.evaluate(() => {
-      return window.snapshot(document.body, { mode: 'ai', enableReact: true });
+      return window.A11yCap.snapshot(document.body, { mode: 'ai', enableReact: true });
     });
 
     console.log('React-aware snapshot:', snapshot);
@@ -275,10 +275,10 @@ test.describe('React-Aware Snapshot Integration', () => {
 
   test('should not include React info when enableReact is false', async ({ page }) => {
     await page.goto('http://localhost:14652/');
-    await page.waitForFunction(() => window.testReady, { timeout: 5000 });
+    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
 
     const snapshot = await page.evaluate(() => {
-      return window.snapshot(document.body, { mode: 'ai', enableReact: false });
+      return window.A11yCap.snapshot(document.body, { mode: 'ai', enableReact: false });
     });
 
     console.log('Non-React snapshot:', snapshot);
@@ -298,7 +298,7 @@ test.describe('React-Aware Snapshot Integration', () => {
       if (overlay) overlay.remove();
     });
     
-    await page.waitForFunction(() => window.testReady, { timeout: 5000 });
+    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
     await page.waitForFunction(() => window.__REACT_DEVTOOLS_GLOBAL_HOOK__, { timeout: 5000 });
 
     // Click the button to change state
@@ -308,7 +308,7 @@ test.describe('React-Aware Snapshot Integration', () => {
     await page.click('button:has-text("Show Form")');
 
     const snapshot = await page.evaluate(() => {
-      return window.snapshot(document.body, { mode: 'ai', enableReact: true });
+      return window.A11yCap.snapshot(document.body, { mode: 'ai', enableReact: true });
     });
 
     console.log('React snapshot with state and interactions:', snapshot);
@@ -322,11 +322,11 @@ test.describe('React-Aware Snapshot Integration', () => {
 
   test('should work with snapshotForAI function', async ({ page }) => {
     await page.goto('http://localhost:14652/');
-    await page.waitForFunction(() => window.testReady, { timeout: 5000 });
+    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
     await page.waitForFunction(() => window.__REACT_DEVTOOLS_GLOBAL_HOOK__, { timeout: 5000 });
 
     const snapshot = await page.evaluate(() => {
-      return window.snapshotForAI(document.body, { enableReact: true });
+      return window.A11yCap.snapshotForAI(document.body, { enableReact: true });
     });
 
     console.log('snapshotForAI with React:', snapshot);

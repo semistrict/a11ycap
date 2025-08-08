@@ -32,26 +32,14 @@ declare global {
  * Find the React fiber node associated with a DOM element
  */
 function findFiberForDom(dom: Element): { componentFiber: any; domFiber: any } | null {
-  // [DEBUG] Debug fiber search
-  if (typeof window !== 'undefined' && (window as any).DEBUG_REACT_SNAPSHOT) {
-    console.log('[DEBUG] Searching for fiber on element:', dom);
-    console.log('[DEBUG] Element keys:', Object.keys(dom));
-  }
   
   let node: any = dom;
   while (node) {
     // Look for React fiber properties on the DOM node
     const fiberKey = Object.keys(node).find((k: string) => k.startsWith("__reactFiber"));
-    if (typeof window !== 'undefined' && (window as any).DEBUG_REACT_SNAPSHOT && fiberKey) {
-      console.log('[DEBUG] Found fiber key:', fiberKey, 'on node:', node);
-    }
     if (fiberKey) {
       const domFiber = node[fiberKey];
       if (domFiber) {
-        // [DEBUG] Found fiber, now walk up to find component fiber
-        if (typeof window !== 'undefined' && (window as any).DEBUG_REACT_SNAPSHOT) {
-          console.log('[DEBUG] Found fiber, walking up to find component:', domFiber);
-        }
         // Return both the component fiber and original DOM fiber
         const componentFiber = findComponentFiber(domFiber);
         return { componentFiber: componentFiber || domFiber, domFiber };
@@ -68,18 +56,11 @@ function findFiberForDom(dom: Element): { componentFiber: any; domFiber: any } |
 function findComponentFiber(fiber: any): any {
   let current = fiber;
   while (current) {
-    // [DEBUG]
-    if (typeof window !== 'undefined' && (window as any).DEBUG_REACT_SNAPSHOT) {
-      console.log('[DEBUG] Checking fiber:', current, 'type:', current.type, 'typeof type:', typeof current.type);
-    }
     
     // Look for component fibers (function components or class components)
     // Host components like 'button', 'div' have string types
     // Component fibers have function types
     if (current.type && typeof current.type === 'function') {
-      if (typeof window !== 'undefined' && (window as any).DEBUG_REACT_SNAPSHOT) {
-        console.log('[DEBUG] Found component fiber:', current);
-      }
       return current;
     }
     current = current.return;
@@ -280,12 +261,12 @@ function isReactDevToolsAvailable(): boolean {
 export function extractReactInfo(element: Element): ReactInfo | null {
   // Early return if React DevTools is not available
   if (!isReactDevToolsAvailable()) {
-    return { componentName: 'DEBUG: No DevTools' } as any;
+    return null;
   }
   
   const fiberResult = findFiberForDom(element);
   if (!fiberResult) {
-    return { componentName: 'DEBUG: No Fiber' } as any;
+    return null;
   }
   
   const { componentFiber, domFiber } = fiberResult;
@@ -293,24 +274,12 @@ export function extractReactInfo(element: Element): ReactInfo | null {
   // Continue with normal extraction
   try {
 
-    // [DEBUG] Debug logging
-    if (typeof window !== 'undefined' && (window as any).DEBUG_REACT_SNAPSHOT) {
-      console.log('[DEBUG] Found fiber for element:', element, componentFiber);
-      console.log('[DEBUG] Fiber type:', componentFiber.type);
-      console.log('[DEBUG] Fiber elementType:', componentFiber.elementType);
-    }
     
     // Extract information from the fiber 
     const componentName = getComponentName(componentFiber);
     const componentState = getComponentState(componentFiber);
     const debugSource = getDebugSourceInfo(componentFiber, element);
     
-    // [DEBUG] Debug component extraction
-    if (typeof window !== 'undefined' && (window as any).DEBUG_REACT_SNAPSHOT) {
-      console.log('[DEBUG] Extracted componentName:', componentName);
-      console.log('[DEBUG] Extracted componentState:', componentState);
-      console.log('[DEBUG] Extracted debugSource:', debugSource);
-    }
     const interactionHints = getInteractionHints(componentFiber, domFiber);
     const relevantProps = getRelevantProps(componentFiber);
     
@@ -323,11 +292,9 @@ export function extractReactInfo(element: Element): ReactInfo | null {
         relevantProps: Object.keys(relevantProps).length > 0 ? relevantProps : undefined,
         debugSource,
       };
-      console.log('[DEBUG] Returning React info:', result);
       return result;
     }
     
-    console.log('[DEBUG] No meaningful React info found');
   } catch (error) {
     // Ignore errors and return null - we don't want React extraction to break the snapshot
     console.debug('Error extracting React info:', error);

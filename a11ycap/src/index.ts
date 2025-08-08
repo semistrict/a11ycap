@@ -7,6 +7,12 @@ import { extractReactInfo } from './reactUtils';
 export { generateAriaTree, renderAriaTree, extractReactInfo };
 export type { AriaSnapshot, AriaTreeOptions, AriaNode } from './ariaSnapshot';
 
+// Re-export MCP connection functionality
+export { MCPWebSocketClient, initializeMCPConnection } from './mcpConnection.js';
+
+// Re-export MCP tool definitions
+export { toolDefinitions, type McpToolDefinition } from './mcpTools.js';
+
 /**
  * Hide CRA dev overlay that can interfere with interactions during testing
  */
@@ -37,6 +43,7 @@ export async function snapshot(
     mode?: 'ai' | 'expect' | 'codegen' | 'autoexpect';
     enableReact?: boolean;
     refPrefix?: string;
+    max_bytes?: number;
   } = {}
 ): Promise<string> {
   if (!element || element.nodeType !== Node.ELEMENT_NODE) {
@@ -58,6 +65,17 @@ export async function snapshot(
       enableReact: options.enableReact,
       refPrefix: options.refPrefix,
     });
+    
+    // If max_bytes is specified, use breadth-first rendering with size limit
+    if (options.max_bytes) {
+      return renderAriaTreeWithSizeLimit(tree, {
+        mode,
+        enableReact: options.enableReact,
+        refPrefix: options.refPrefix,
+        max_bytes: options.max_bytes,
+      });
+    }
+    
     return renderAriaTree(tree, {
       mode,
       enableReact: options.enableReact,
@@ -69,10 +87,77 @@ export async function snapshot(
   }
 }
 
+/**
+ * Render aria tree with size limit using breadth-first expansion
+ */
+function renderAriaTreeWithSizeLimit(
+  tree: any,
+  options: {
+    mode: 'ai' | 'expect' | 'codegen' | 'autoexpect';
+    enableReact?: boolean;
+    refPrefix?: string;
+    max_bytes: number;
+  }
+): string {
+  // Start with just the root node
+  let currentTree = { ...tree, children: [] };
+  let lastValidResult = renderAriaTree(currentTree, options);
+  
+  if (lastValidResult.length > options.max_bytes) {
+    // Even root node exceeds limit, return truncated version
+    return lastValidResult.slice(0, options.max_bytes);
+  }
+  
+  // Breadth-first expansion
+  const queue = tree.children ? [...tree.children.map((child: any, index: number) => ({ child, path: [index] }))] : [];
+  
+  while (queue.length > 0) {
+    const { child, path } = queue.shift()!;
+    
+    // Try adding this child to the tree
+    const testTree = JSON.parse(JSON.stringify(currentTree));
+    addChildAtPath(testTree, path, child);
+    
+    const testResult = renderAriaTree(testTree, options);
+    
+    if (testResult.length <= options.max_bytes) {
+      // This child fits, keep it and add its children to queue
+      currentTree = testTree;
+      lastValidResult = testResult;
+      
+      if (child.children) {
+        child.children.forEach((grandchild: any, index: number) => {
+          queue.push({ child: grandchild, path: [...path, index] });
+        });
+      }
+    }
+    // If it doesn't fit, skip this child but continue with others
+  }
+  
+  return lastValidResult;
+}
+
+/**
+ * Add a child node at the specified path in the tree
+ */
+function addChildAtPath(tree: any, path: number[], child: any): void {
+  let current = tree;
+  for (let i = 0; i < path.length - 1; i++) {
+    if (!current.children) current.children = [];
+    if (!current.children[path[i]]) {
+      current.children[path[i]] = { children: [] };
+    }
+    current = current.children[path[i]];
+  }
+  if (!current.children) current.children = [];
+  current.children[path[path.length - 1]] = { ...child, children: [] };
+}
+
+
 // Simple browser-compatible wrapper for snapshotForAI (AI mode)
 export async function snapshotForAI(
   element: Element,
-  options: { enableReact?: boolean; refPrefix?: string } = {}
+  options: { enableReact?: boolean; refPrefix?: string; max_bytes?: number } = {}
 ): Promise<string> {
   // The snapshot function already handles overlay hiding/restoring
   return snapshot(element, { mode: 'ai', ...options });
@@ -138,36 +223,23 @@ export function findElementByRef(ref: string, element: Element = document.body):
   return null;
 }
 
-/**
- * Get an element by its snapshot ref (alias for findElementByRef)
- * @param ref - The ref to search for (e.g., 'e2', 'e5')
- * @param element - Root element to search within
- */
-export function getElementByRef(ref: string, element: Element = document.body): Element | null {
-  return findElementByRef(ref, element);
-}
 
 /**
  * Wait for React DevTools to be fully ready for component extraction
  * Returns a promise that resolves when React DevTools is initialized
  */
-export function waitForReactDevTools(timeout = 5000): Promise<boolean> {
+export function waitForReactDevTools(timeout = 1000): Promise<boolean> {
   return new Promise((resolve) => {
+    // If React DevTools aren't available at all, just proceed immediately
+    if (typeof window === 'undefined' || !window.__REACT_DEVTOOLS_GLOBAL_HOOK__) {
+      resolve(false);
+      return;
+    }
+    
     const startTime = Date.now();
+    const hook = window.__REACT_DEVTOOLS_GLOBAL_HOOK__;
     
     function check() {
-      // Check if React DevTools hook exists
-      if (typeof window === 'undefined' || !window.__REACT_DEVTOOLS_GLOBAL_HOOK__) {
-        if (Date.now() - startTime > timeout) {
-          resolve(false);
-          return;
-        }
-        setTimeout(check, 10);
-        return;
-      }
-      
-      const hook = window.__REACT_DEVTOOLS_GLOBAL_HOOK__;
-      
       // Check if hook has renderers (indicates it's fully initialized)
       if (hook.renderers && hook.renderers.size > 0) {
         resolve(true);
@@ -180,6 +252,7 @@ export function waitForReactDevTools(timeout = 5000): Promise<boolean> {
         return;
       }
       
+      // Only wait briefly since React info is optional
       if (Date.now() - startTime > timeout) {
         resolve(false);
         return;
@@ -194,29 +267,23 @@ export function waitForReactDevTools(timeout = 5000): Promise<boolean> {
 
 
 /**
- * Optionally expose functions globally for browser console debugging
- * Call this if you want to use the functions directly from browser console
+ * Global A11yCap interface for test environment
  */
-export function exposeGlobally(): void {
-  if (typeof window !== 'undefined') {
-    (window as any).pwsnapshot = {
-      snapshot,
-      snapshotForAI,
-      waitForReactDevTools,
-      clickRef,
-      findElementByRef,
-      getElementByRef,
-      generateAriaTree,
-      renderAriaTree,
-      extractReactInfo
-    };
-    
-    // Also expose commonly used functions directly
-    (window as any).snapshot = snapshot;
-    (window as any).snapshotForAI = snapshotForAI;
-    (window as any).clickRef = clickRef;
-    (window as any).getElementByRef = getElementByRef;
-    
-    console.log('pwsnapshot functions exposed globally. Access via window.pwsnapshot or directly (snapshot, snapshotForAI, etc.)');
+interface A11yCapGlobal {
+  snapshotForAI: typeof snapshotForAI;
+  snapshot: typeof snapshot;
+  extractReactInfo: typeof extractReactInfo;
+  clickRef: typeof clickRef;
+  findElementByRef: typeof findElementByRef;
+  generateAriaTree: typeof generateAriaTree;
+  renderAriaTree: typeof renderAriaTree;
+  initializeMCPConnection: (wsUrl: string) => any;
+}
+
+declare global {
+  interface Window {
+    A11yCap: A11yCapGlobal;
   }
 }
+
+

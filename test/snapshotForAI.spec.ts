@@ -6,10 +6,10 @@ test.describe('snapshotForAI', () => {
     await page.goto('http://localhost:14652/');
 
     // Wait for the library to load
-    await page.waitForFunction(() => window.testReady, { timeout: 5000 });
+    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
 
     const snapshot = await page.evaluate(() => {
-      return window.snapshotForAI(document.body);
+      return window.A11yCap.snapshotForAI(document.body);
     });
 
     console.log('Snapshot result:', snapshot);
@@ -26,7 +26,7 @@ test.describe('snapshotForAI', () => {
   }) => {
     // Navigate to HTTP server first to load the library
     await page.goto('http://localhost:14652');
-    await page.waitForFunction(() => window.testReady, { timeout: 5000 });
+    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
 
     // Now inject complex HTML structure
     await page.evaluate(() => {
@@ -64,7 +64,7 @@ test.describe('snapshotForAI', () => {
     });
 
     const snapshot = await page.evaluate(() => {
-      return window.snapshotForAI(document.body);
+      return window.A11yCap.snapshotForAI(document.body);
     });
 
     console.log('Complex form snapshot:', snapshot);
@@ -86,7 +86,7 @@ test.describe('snapshotForAI', () => {
   test('should handle iframes in snapshot', async ({ page }) => {
     // Navigate to HTTP server first to load the library
     await page.goto('http://localhost:14652');
-    await page.waitForFunction(() => window.testReady, { timeout: 5000 });
+    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
 
     // Create content with iframe
     await page.evaluate(() => {
@@ -102,7 +102,7 @@ test.describe('snapshotForAI', () => {
     await page.waitForTimeout(100);
 
     const snapshot = await page.evaluate(() => {
-      return window.snapshotForAI(document.body);
+      return window.A11yCap.snapshotForAI(document.body);
     });
 
     console.log('Iframe snapshot:', snapshot);
@@ -116,7 +116,7 @@ test.describe('snapshotForAI', () => {
   test('should handle nested elements with active states', async ({ page }) => {
     // Navigate to HTTP server first to load the library
     await page.goto('http://localhost:14652');
-    await page.waitForFunction(() => window.testReady, { timeout: 5000 });
+    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
 
     // Create content with focusable elements
     await page.evaluate(() => {
@@ -136,7 +136,7 @@ test.describe('snapshotForAI', () => {
     });
 
     const snapshot = await page.evaluate(() => {
-      return window.snapshotForAI(document.body);
+      return window.A11yCap.snapshotForAI(document.body);
     });
 
     console.log('Active elements snapshot:', snapshot);
@@ -155,10 +155,10 @@ test.describe('snapshot (non-AI modes)', () => {
     await page.goto('http://localhost:14652/');
 
     // Wait for the library to load
-    await page.waitForFunction(() => window.testReady, { timeout: 5000 });
+    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
 
     const snapshot = await page.evaluate(() => {
-      return window.snapshot(document.body, { mode: 'expect' });
+      return window.A11yCap.snapshot(document.body, { mode: 'expect' });
     });
 
     console.log('Expect mode snapshot:', snapshot);
@@ -171,7 +171,7 @@ test.describe('snapshot (non-AI modes)', () => {
 
     // Compare with AI mode to verify different output formats
     const aiSnapshot = await page.evaluate(() => {
-      return window.snapshotForAI(document.body);
+      return window.A11yCap.snapshotForAI(document.body);
     });
 
     console.log('AI mode snapshot for comparison:', aiSnapshot);
@@ -183,10 +183,10 @@ test.describe('snapshot (non-AI modes)', () => {
 
   test('should generate codegen mode snapshot', async ({ page }) => {
     await page.goto('http://localhost:14652');
-    await page.waitForFunction(() => window.testReady, { timeout: 5000 });
+    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
 
     const snapshot = await page.evaluate(() => {
-      return window.snapshot(document.body, { mode: 'codegen' });
+      return window.A11yCap.snapshot(document.body, { mode: 'codegen' });
     });
 
     console.log('Codegen mode snapshot:', snapshot);
@@ -200,10 +200,10 @@ test.describe('snapshot (non-AI modes)', () => {
 
   test('should generate autoexpect mode snapshot', async ({ page }) => {
     await page.goto('http://localhost:14652');
-    await page.waitForFunction(() => window.testReady, { timeout: 5000 });
+    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
 
     const snapshot = await page.evaluate(() => {
-      return window.snapshot(document.body, { mode: 'autoexpect' });
+      return window.A11yCap.snapshot(document.body, { mode: 'autoexpect' });
     });
 
     console.log('Autoexpect mode snapshot:', snapshot);
@@ -219,14 +219,14 @@ test.describe('snapshot (non-AI modes)', () => {
     page,
   }) => {
     await page.goto('http://localhost:14652');
-    await page.waitForFunction(() => window.testReady, { timeout: 5000 });
+    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
 
     const snapshotDefault = await page.evaluate(() => {
-      return window.snapshot(document.body);
+      return window.A11yCap.snapshot(document.body);
     });
 
     const snapshotExpect = await page.evaluate(() => {
-      return window.snapshot(document.body, { mode: 'expect' });
+      return window.A11yCap.snapshot(document.body, { mode: 'expect' });
     });
 
     console.log('Default mode snapshot:', snapshotDefault);
@@ -237,7 +237,7 @@ test.describe('snapshot (non-AI modes)', () => {
 
   test('should handle form elements in expect mode', async ({ page }) => {
     await page.goto('http://localhost:14652');
-    await page.waitForFunction(() => window.testReady, { timeout: 5000 });
+    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
 
     // Create a more complex form for testing
     await page.evaluate(() => {
@@ -266,7 +266,7 @@ test.describe('snapshot (non-AI modes)', () => {
 
     const snapshot = await page.evaluate(() => {
       const form = document.querySelector('form') as HTMLFormElement;
-      return window.snapshot(form, { mode: 'expect' });
+      return window.A11yCap.snapshot(form, { mode: 'expect' });
     });
 
     console.log('Form snapshot (expect mode):', snapshot);
@@ -283,7 +283,7 @@ test.describe('snapshot (non-AI modes)', () => {
     // Compare with AI mode
     const aiSnapshot = await page.evaluate(() => {
       const form = document.querySelector('form') as HTMLFormElement;
-      return window.snapshotForAI(form);
+      return window.A11yCap.snapshotForAI(form);
     });
 
     console.log('Form snapshot (AI mode):', aiSnapshot);

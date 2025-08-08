@@ -3,11 +3,11 @@ import { expect, test } from '@playwright/test';
 test.describe('Click Ref Functionality', () => {
   test('should click element by ref from snapshot', async ({ page }) => {
     await page.goto('http://localhost:14652/');
-    await page.waitForFunction(() => window.testReady, { timeout: 5000 });
+    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
 
     // Take a snapshot to generate refs
     const snapshot = await page.evaluate(() => {
-      return window.snapshot(document.body, { mode: 'ai', enableReact: true });
+      return window.A11yCap.snapshot(document.body, { mode: 'ai', enableReact: true });
     });
 
     console.log('Initial snapshot:', snapshot);
@@ -28,7 +28,7 @@ test.describe('Click Ref Functionality', () => {
 
     // Use clickRef function to click the button
     const clickResult = await page.evaluate((ref) => {
-      return window.clickRef(ref);
+      return window.A11yCap.clickRef(ref);
     }, buttonRef);
 
     expect(clickResult).toBe(true);
@@ -47,11 +47,11 @@ test.describe('Click Ref Functionality', () => {
 
   test('should find element by ref', async ({ page }) => {
     await page.goto('http://localhost:14652/');
-    await page.waitForFunction(() => window.testReady, { timeout: 5000 });
+    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
 
     // Take a snapshot to generate refs
     await page.evaluate(() => {
-      return window.snapshot(document.body, { mode: 'ai' });
+      return window.A11yCap.snapshot(document.body, { mode: 'ai' });
     });
 
     // Test findElementByRef
@@ -70,7 +70,7 @@ test.describe('Click Ref Functionality', () => {
       if (!buttonRef) return null;
       
       // Use findElementByRef to locate it
-      const found = window.findElementByRef(buttonRef);
+      const found = window.A11yCap.findElementByRef(buttonRef);
       return {
         found: !!found,
         isButton: found?.tagName === 'BUTTON',
@@ -89,18 +89,18 @@ test.describe('Click Ref Functionality', () => {
 
   test('should handle non-existent refs gracefully', async ({ page }) => {
     await page.goto('http://localhost:14652/');
-    await page.waitForFunction(() => window.testReady, { timeout: 5000 });
+    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
 
     // Try to click a non-existent ref
     const clickResult = await page.evaluate(() => {
-      return window.clickRef('e999');
+      return window.A11yCap.clickRef('e999');
     });
 
     expect(clickResult).toBe(false);
 
     // Try to find a non-existent ref
     const foundElement = await page.evaluate(() => {
-      return window.findElementByRef('e999');
+      return window.A11yCap.findElementByRef('e999');
     });
 
     expect(foundElement).toBe(null);

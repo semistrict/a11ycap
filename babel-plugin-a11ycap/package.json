@@ -1,5 +1,5 @@
 {
-  "name": "@pwsnapshot/babel-plugin-jsx-debug-source",
+  "name": "babel-plugin-a11ycap",
   "version": "1.0.0",
   "description": "Babel plugin that adds debug source info to JSX elements as data attributes",
   "main": "index.js",

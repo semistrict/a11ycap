@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 test.describe('Debug Source Information', () => {
   test('should extract debug source info from data attributes', async ({ page }) => {
     await page.goto('http://localhost:14652/');
-    await page.waitForFunction(() => window.testReady, { timeout: 5000 });
+    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
 
     const debugSourceInfo = await page.evaluate(() => {
       const button = document.getElementById('test-button');
@@ -14,7 +14,7 @@ test.describe('Debug Source Information', () => {
       const dataDebugSource = button.getAttribute('data-debug-source');
       
       // Test extractReactInfo to see if it picks up debug source
-      const { extractReactInfo } = window as any;
+      const extractReactInfo = window.A11yCap.extractReactInfo;
       let reactInfo = null;
       try {
         reactInfo = extractReactInfo ? extractReactInfo(button) : 'extractReactInfo not found';

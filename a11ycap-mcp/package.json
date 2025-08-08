@@ -1,0 +1,45 @@
+{
+  "name": "a11ycap-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for a11ycap accessibility snapshots with web console integration",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "a11ycap-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "pnpm -r build && node dist/index.js",
+    "start": "node dist/index.js",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "lint": "pnpm exec biome check ."
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.17.2",
+    "a11ycap": "workspace:*",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "ws": "^8.18.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.0.0",
+    "@types/ws": "^8.5.12",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  },
+  "keywords": [
+    "mcp",
+    "accessibility",
+    "a11y",
+    "snapshot",
+    "claude",
+    "coding-agent"
+  ],
+  "author": "",
+  "license": "MIT"
+}

@@ -1,5 +1,5 @@
 {
-  "name": "@pwsnapshot/lib",
+  "name": "a11ycap",
   "version": "1.0.0",
   "type": "module",
   "description": "AI-focused accessibility snapshot functionality extracted from Playwright",
@@ -8,7 +8,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "pnpm run clean && pnpm run typecheck && vite build && tsc -p tsconfig.declarations.json",
-    "typecheck": "npx tsc --noEmit",
+    "typecheck": "tsc --noEmit",
     "test": "pnpm run build && playwright test",
     "test:headed": "pnpm run build && playwright test --headed",
     "test:server": "node test-server.js",
@@ -28,7 +28,8 @@
   "author": "Microsoft Corporation",
   "license": "Apache-2.0",
   "dependencies": {
-    "yaml": "2.6.0"
+    "yaml": "2.6.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.0",

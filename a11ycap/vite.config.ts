@@ -6,9 +6,13 @@ export default defineConfig({
   build: {
     lib: {
       entry: path.resolve(__dirname, 'src/index.ts'),
-      name: 'SnapshotForAI',
-      fileName: 'index',
-      formats: ['umd', 'es']
+      name: 'A11yCap',
+      fileName: (format) => {
+        if (format === 'es') return 'index.js';
+        if (format === 'iife') return 'browser.js';
+        return `index.${format}.js`;
+      },
+      formats: ['es', 'iife']
     },
     outDir: 'dist',
     rollupOptions: {
@@ -16,8 +20,7 @@ export default defineConfig({
       output: {
         globals: {
           'react-devtools-inline': 'ReactDevToolsInline'
-        },
-        entryFileNames: 'index.js'
+        }
       }
     }
   },

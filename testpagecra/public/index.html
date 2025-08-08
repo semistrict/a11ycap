@@ -25,6 +25,19 @@
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
     <title>React App</title>
+    <script>
+      // Remove CRA dev overlay for reliable testing
+      function removeDevOverlay() {
+        const overlay = document.getElementById('webpack-dev-server-client-overlay');
+        if (overlay) {
+          overlay.remove();
+        }
+      }
+      
+      // Remove overlay when DOM loads and periodically
+      document.addEventListener('DOMContentLoaded', removeDevOverlay);
+      setInterval(removeDevOverlay, 100);
+    </script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
