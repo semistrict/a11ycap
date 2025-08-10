@@ -13,7 +13,8 @@
     "start": "node dist/index.js",
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit",
-    "lint": "pnpm exec biome check ."
+    "lint": "pnpm exec biome check .",
+    "test": "vitest"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.2",
@@ -30,7 +31,8 @@
     "@types/node": "^20.0.0",
     "@types/ws": "^8.5.12",
     "tsx": "^4.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vitest": "^3.2.4"
   },
   "keywords": [
     "mcp",

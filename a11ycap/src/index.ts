@@ -104,12 +104,15 @@ function renderAriaTreeWithSizeLimit(
   let lastValidResult = renderAriaTree(currentTree, options);
   
   if (lastValidResult.length > options.max_bytes) {
-    // Even root node exceeds limit, return truncated version
-    return lastValidResult.slice(0, options.max_bytes);
+    // Even root node exceeds limit, return truncated version with warning
+    const truncated = lastValidResult.slice(0, options.max_bytes - 100);
+    return truncated + '\n\n[WARNING: Snapshot was truncated due to size limit. Even the root element exceeded the limit.]';
   }
   
   // Breadth-first expansion
   const queue = tree.children ? [...tree.children.map((child: any, index: number) => ({ child, path: [index] }))] : [];
+  
+  let wasTruncated = false;
   
   while (queue.length > 0) {
     const { child, path } = queue.shift()!;
@@ -130,8 +133,15 @@ function renderAriaTreeWithSizeLimit(
           queue.push({ child: grandchild, path: [...path, index] });
         });
       }
+    } else {
+      // This child doesn't fit, mark as truncated
+      wasTruncated = true;
     }
-    // If it doesn't fit, skip this child but continue with others
+  }
+  
+  // Add truncation warning if the snapshot was limited
+  if (wasTruncated) {
+    lastValidResult += '\n\n[WARNING: Snapshot was truncated due to size limit. Some elements may be missing.]';
   }
   
   return lastValidResult;

@@ -1,22 +1,12 @@
 import { z } from "zod";
 import type { ToolHandler } from "./base.js";
+import { baseToolSchema, ensureInstanceOf, getElementByRefOrThrow } from "./common.js";
 
 // Core tool schema without browserId (which is added by MCP server for routing)
-const selectOptionSchema = z.object({
-  element: z
-    .string()
-    .describe("Human-readable element description used to obtain permission to interact with the element"),
-  ref: z
-    .string()
-    .describe('Element reference from snapshot (e.g., "e5")'),
+const selectOptionSchema = baseToolSchema.extend({
   values: z
     .array(z.string())
     .describe("Array of values to select in the dropdown. This can be a single value or multiple values."),
-  captureSnapshot: z
-    .boolean()
-    .optional()
-    .default(true)
-    .describe("Capture accessibility snapshot after action")
 });
 
 export const selectOptionDefinition = {
@@ -34,18 +24,12 @@ const SelectOptionMessageSchema = z.object({
 type SelectOptionMessage = z.infer<typeof SelectOptionMessageSchema>;
 
 async function executeSelectOption(message: SelectOptionMessage): Promise<any> {
-  if (typeof window === 'undefined' || !window.A11yCap) {
-    throw new Error('A11yCap not available');
-  }
-
-  const element = window.A11yCap.findElementByRef(message.payload.ref);
-  if (!element) {
-    throw new Error(`Element with ref "${message.payload.ref}" not found`);
-  }
-
-  if (!(element instanceof HTMLSelectElement)) {
-    throw new Error(`Element with ref "${message.payload.ref}" is not a select element`);
-  }
+  const rawElement = getElementByRefOrThrow(message.payload.ref);
+  const element = ensureInstanceOf<HTMLSelectElement>(
+    rawElement,
+    [HTMLSelectElement],
+    `Element with ref "${message.payload.ref}" is not a select element`
+  );
 
   const valuesToSelect = message.payload.values;
   const selectedValues: string[] = [];

@@ -1,14 +1,9 @@
 import { z } from "zod";
 import type { ToolHandler } from "./base.js";
+import { baseToolSchema, ensureInstanceOf, getElementByRefOrThrow } from "./common.js";
 
 // Core tool schema without browserId (which is added by MCP server for routing)
-const typeTextSchema = z.object({
-  element: z
-    .string()
-    .describe("Human-readable element description used to obtain permission to interact with the element"),
-  ref: z
-    .string()
-    .describe('Element reference from snapshot (e.g., "e5")'),
+const typeTextSchema = baseToolSchema.extend({
   text: z
     .string()
     .describe("Text to type into the element"),
@@ -22,11 +17,6 @@ const typeTextSchema = z.object({
     .optional()
     .default(false)
     .describe("Whether to submit entered text (press Enter after)"),
-  captureSnapshot: z
-    .boolean()
-    .optional()
-    .default(true)
-    .describe("Capture accessibility snapshot after action")
 });
 
 export const typeTextDefinition = {
@@ -44,18 +34,12 @@ const TypeTextMessageSchema = z.object({
 type TypeTextMessage = z.infer<typeof TypeTextMessageSchema>;
 
 async function executeTypeText(message: TypeTextMessage): Promise<any> {
-  if (typeof window === 'undefined' || !window.A11yCap) {
-    throw new Error('A11yCap not available');
-  }
-
-  const element = window.A11yCap.findElementByRef(message.payload.ref);
-  if (!element) {
-    throw new Error(`Element with ref "${message.payload.ref}" not found`);
-  }
-
-  if (!(element instanceof HTMLInputElement) && !(element instanceof HTMLTextAreaElement)) {
-    throw new Error(`Element with ref "${message.payload.ref}" is not a text input element`);
-  }
+  const rawElement = getElementByRefOrThrow(message.payload.ref);
+  const element = ensureInstanceOf<HTMLInputElement | HTMLTextAreaElement>(
+    rawElement,
+    [HTMLInputElement, HTMLTextAreaElement],
+    `Element with ref "${message.payload.ref}" is not a text input element`
+  );
 
   const text = message.payload.text;
   const slowly = message.payload.slowly;

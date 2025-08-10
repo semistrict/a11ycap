@@ -3,3 +3,4 @@ node_modules
 test-results
 test-results.json
 .never-stop-count
+reports/

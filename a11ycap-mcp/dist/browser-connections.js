@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { log } from "./logging.js";
 class BrowserConnectionManager {
     connections = new Map();
     pendingCommands = new Map();
@@ -19,17 +20,17 @@ class BrowserConnectionManager {
                 this.handleBrowserMessage(id, message);
             }
             catch (error) {
-                console.error("Error parsing browser message:", error);
+                log.error("Error parsing browser message:", error);
             }
         });
         ws.on("close", () => {
             this.removeConnection(id);
         });
         ws.on("error", (error) => {
-            console.error(`Browser connection ${id} error:`, error);
+            log.error(`Browser connection ${id} error:`, error);
             this.removeConnection(id);
         });
-        console.log(`Browser connected: ${id} from ${connection.url || "unknown"}`);
+        log.debug(`Browser connected: ${id} from ${connection.url || "unknown"}`);
         return id;
     }
     removeConnection(id) {
@@ -37,7 +38,7 @@ class BrowserConnectionManager {
         if (connection) {
             connection.connected = false;
             this.connections.delete(id);
-            console.log(`Browser disconnected: ${id}`);
+            log.debug(`Browser disconnected: ${id}`);
         }
     }
     updateConnectionInfo(id, info) {
@@ -107,7 +108,7 @@ class BrowserConnectionManager {
         const staleThreshold = 5 * 60 * 1000; // 5 minutes
         for (const [id, connection] of this.connections.entries()) {
             if (now.getTime() - connection.lastSeen.getTime() > staleThreshold) {
-                console.log(`Cleaning up stale connection: ${id}`);
+                log.debug(`Cleaning up stale connection: ${id}`);
                 this.removeConnection(id);
             }
         }

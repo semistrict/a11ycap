@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Express, Request, Response } from "express";
+import { log } from "../logging.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -40,19 +41,27 @@ ${browserBundle}
 
 // Initialize MCP WebSocket connection using the library's built-in functionality
 if (typeof window !== 'undefined' && window.A11yCap) {
-  console.log('🐱 A11yCap loaded with enhanced MCP support');
-  
-  // Initialize WebSocket connection to MCP server
-  const mcpClient = window.A11yCap.initializeMCPConnection('${wsUrl}');
-  
-  console.log('🐱 a11ycap initialized! Try: window.A11yCap.snapshotForAI(document.body)');
+  // Check if already connected to prevent duplicate connections
+  if (window.__a11ycap_mcp_connected) {
+    console.log('🐱 A11yCap already connected to MCP server, skipping duplicate connection');
+  } else {
+    console.log('🐱 A11yCap loaded with enhanced MCP support');
+    
+    // Initialize WebSocket connection to MCP server
+    const mcpClient = window.A11yCap.initializeMCPConnection('${wsUrl}');
+    
+    // Mark as connected to prevent duplicate connections
+    window.__a11ycap_mcp_connected = true;
+    
+    console.log('🐱 a11ycap initialized! Try: window.A11yCap.snapshotForAI(document.body)');
+  }
 }`;
 
       res.setHeader("Content-Type", "application/javascript");
       res.setHeader("Cache-Control", "public, max-age=3600"); // Cache for 1 hour
       res.send(enhancedBundle);
     } catch (error) {
-      console.error("Error serving a11ycap library:", error);
+      log.error("Error serving a11ycap library:", error);
       res.status(500).send("// Error loading a11ycap library");
     }
   });

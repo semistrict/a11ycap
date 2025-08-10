@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type WebSocket from "ws";
+import { log } from "./logging.js";
 
 export interface BrowserConnection {
   id: string;
@@ -63,7 +64,7 @@ class BrowserConnectionManager {
         const message = JSON.parse(data.toString());
         this.handleBrowserMessage(id, message);
       } catch (error) {
-        console.error("Error parsing browser message:", error);
+        log.error("Error parsing browser message:", error);
       }
     });
 
@@ -72,11 +73,11 @@ class BrowserConnectionManager {
     });
 
     ws.on("error", (error) => {
-      console.error(`Browser connection ${id} error:`, error);
+      log.error(`Browser connection ${id} error:`, error);
       this.removeConnection(id);
     });
 
-    console.log(`Browser connected: ${id} from ${connection.url || "unknown"}`);
+    log.debug(`Browser connected: ${id} from ${connection.url || "unknown"}`);
     return id;
   }
 
@@ -85,7 +86,7 @@ class BrowserConnectionManager {
     if (connection) {
       connection.connected = false;
       this.connections.delete(id);
-      console.log(`Browser disconnected: ${id}`);
+      log.debug(`Browser disconnected: ${id}`);
     }
   }
 
@@ -176,7 +177,7 @@ class BrowserConnectionManager {
 
     for (const [id, connection] of this.connections.entries()) {
       if (now.getTime() - connection.lastSeen.getTime() > staleThreshold) {
-        console.log(`Cleaning up stale connection: ${id}`);
+        log.debug(`Cleaning up stale connection: ${id}`);
         this.removeConnection(id);
       }
     }

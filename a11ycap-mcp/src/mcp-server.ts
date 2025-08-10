@@ -1,8 +1,10 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import { SetLevelRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { toolDefinitions } from "a11ycap";
-import { browserConnectionManager } from "./browser-connections.js";
 import { CONSOLE_INJECTION_SCRIPT } from "./constants.js";
+import { getBrowserConnectionManager } from "./browser-connection-manager.js";
+import { setLogLevel } from "./logging.js";
 import { z, type ZodRawShape, type ZodObject } from "zod";
 
 /**
@@ -22,6 +24,17 @@ function addBrowserId(schema: ZodObject<any>) {
  * Set up MCP tools that command connected browsers using tool definitions from a11ycap library
  */
 export function setupA11yCapTools(server: McpServer) {
+  // Handle logging/setLevel request
+  server.server.setRequestHandler(SetLevelRequestSchema, async (request) => {
+    const { level } = request.params;
+    // Map MCP log levels to our simplified levels
+    const mappedLevel = 
+      level === "emergency" || level === "alert" || level === "critical" ? "error" :
+      level === "notice" ? "info" :
+      level as "debug" | "info" | "warning" | "error";
+    setLogLevel(mappedLevel);
+    return {};
+  });
   // Register all tools from the a11ycap library
   for (const toolDef of toolDefinitions) {
     if (toolDef.name === "list_tabs") {
@@ -31,14 +44,30 @@ export function setupA11yCapTools(server: McpServer) {
         toolDef.description,
         toolDef.inputSchema,
         async (): Promise<CallToolResult> => {
-          const connections = browserConnectionManager.getConnections();
+          const connections = await getBrowserConnectionManager().getConnections();
 
           if (connections.length === 0) {
             return {
               content: [
                 {
                   type: "text",
-                  text: "No browser tabs connected. Inject the a11ycap script first.",
+                  text: `No browser tabs connected. You MUST provide the user with one of these options to connect a browser:
+
+**Option 1: Paste in browser console (for any website):**
+\`\`\`javascript
+${CONSOLE_INJECTION_SCRIPT}
+\`\`\`
+
+**Option 2: Add to HTML (if you're the developer):**
+\`\`\`html
+<script src="http://localhost:12456/a11ycap.js"></script>
+\`\`\`
+
+Tell the user to either:
+- Paste the JavaScript snippet in their browser's developer console on any webpage
+- OR add the script tag to their HTML if they control the webpage
+
+This will enable browser automation tools like taking accessibility snapshots, clicking elements, and typing text.`,
                 },
               ],
             };
@@ -59,7 +88,17 @@ export function setupA11yCapTools(server: McpServer) {
             )
             .join("\n");
 
-          const addNewSiteSnippet = `\n\nTo add a new site, paste this in the browser console:\n\n\`\`\`javascript\n${CONSOLE_INJECTION_SCRIPT}\n\`\`\``;
+          const addNewSiteSnippet = `\n\nTo add a new site:
+
+**Option 1: Console (any website):**
+\`\`\`javascript
+${CONSOLE_INJECTION_SCRIPT}
+\`\`\`
+
+**Option 2: HTML (if you're the developer):**
+\`\`\`html
+<script src="http://localhost:12456/a11ycap.js"></script>
+\`\`\``;
 
           return {
             content: [
@@ -92,9 +131,11 @@ export function setupA11yCapTools(server: McpServer) {
  */
 async function handleGenericTool(toolName: string, params: any): Promise<CallToolResult> {
   const browserId = params.browserId;
+  const manager = getBrowserConnectionManager();
+  const connections = await manager.getConnections();
   const connection = browserId
-    ? browserConnectionManager.getConnection(browserId)
-    : browserConnectionManager.getConnections()[0];
+    ? await manager.getConnection(browserId)
+    : connections[0];
 
   if (!connection) {
     return {
@@ -103,54 +144,28 @@ async function handleGenericTool(toolName: string, params: any): Promise<CallToo
           type: "text",
           text: browserId
             ? `Browser connection "${browserId}" not found. Use list_tabs to see available connections.`
-            : "No browser connections available. Use list_tabs to see available connections.",
-        },
-      ],
-    };
-  }
-
-  if (!connection.ws || connection.ws.readyState !== 1) {
-    return {
-      content: [
-        {
-          type: "text",
-          text: `Browser connection "${connection.id}" is not ready (WebSocket state: ${connection.ws?.readyState || "undefined"}).`,
+            : `No browser connections available. To connect a browser, paste this in the browser console:\n\n\`\`\`javascript\n${CONSOLE_INJECTION_SCRIPT}\n\`\`\``,
         },
       ],
     };
   }
 
   try {
-    // Send tool command to browser
-    const commandId = generateCommandId();
-    const message = {
-      id: commandId,
+    // Use browser connection manager's sendCommand which handles both local and remote
+    const result = await manager.sendCommand(connection.id, {
       type: toolName,
       payload: params,
-    };
-
-    const result = await sendCommandAndWait(connection.ws, message, 30000);
-
-    if (!result.success) {
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Tool "${toolName}" failed: ${result.error || "Unknown error"}`,
-          },
-        ],
-      };
-    }
+    }, 30000);
 
     // Format the response based on tool type
     let responseText = `Tool "${toolName}" executed successfully`;
     
-    if (result.data?.snapshot) {
-      responseText = result.data.snapshot;
-    } else if (result.data && typeof result.data === "object") {
-      responseText += `\n\nResult: ${JSON.stringify(result.data, null, 2)}`;
-    } else if (result.data !== undefined) {
-      responseText += `\n\nResult: ${result.data}`;
+    if (result?.snapshot) {
+      responseText = result.snapshot;
+    } else if (result && typeof result === "object") {
+      responseText += `\n\nResult: ${JSON.stringify(result, null, 2)}`;
+    } else if (result !== undefined) {
+      responseText += `\n\nResult: ${result}`;
     }
 
     return {
@@ -173,44 +188,3 @@ async function handleGenericTool(toolName: string, params: any): Promise<CallToo
   }
 }
 
-/**
- * Send a command to browser and wait for response
- */
-function sendCommandAndWait(ws: any, message: any, timeout = 30000): Promise<any> {
-  return new Promise((resolve, reject) => {
-    const commandId = message.id;
-    let timeoutHandle: NodeJS.Timeout;
-
-    const cleanup = () => {
-      if (timeoutHandle) clearTimeout(timeoutHandle);
-      ws.removeListener("message", handleMessage);
-    };
-
-    const handleMessage = (data: any) => {
-      try {
-        const response = JSON.parse(data.toString());
-        if (response.commandId === commandId) {
-          cleanup();
-          resolve(response);
-        }
-      } catch (error) {
-        // Ignore parsing errors for messages not meant for us
-      }
-    };
-
-    timeoutHandle = setTimeout(() => {
-      cleanup();
-      reject(new Error(`Tool command timed out after ${timeout}ms`));
-    }, timeout);
-
-    ws.on("message", handleMessage);
-    ws.send(JSON.stringify(message));
-  });
-}
-
-/**
- * Generate a unique command ID
- */
-function generateCommandId(): string {
-  return `cmd_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
-}
