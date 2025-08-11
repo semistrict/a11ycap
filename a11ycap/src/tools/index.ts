@@ -19,11 +19,17 @@ export {
   showElementPickerTool,
   showElementPickerDefinition,
 } from './showElementPicker.js';
+export { getReadabilityTool, getReadabilityDefinition } from './getReadability.js';
+export { getConsoleLogsTool, getConsoleLogsDefinition } from './getConsoleLogs.js';
+export { getUserInteractionsTool, getUserInteractionsDefinition } from './getUserInteractions.js';
 export type { ToolDefinition, ToolHandler, BaseToolMessage } from './base.js';
 
 import { clickElementTool } from './clickElement.js';
 import { executeJsTool } from './executeJs.js';
 import { getNetworkRequestsTool } from './getNetworkRequests.js';
+import { getReadabilityTool } from './getReadability.js';
+import { getConsoleLogsTool } from './getConsoleLogs.js';
+import { getUserInteractionsTool } from './getUserInteractions.js';
 import { hoverElementTool } from './hoverElement.js';
 import { listTabsTool } from './listTabs.js';
 import { pressKeyTool } from './pressKey.js';
@@ -38,6 +44,9 @@ export const allTools = [
   takeSnapshotTool,
   clickElementTool,
   getNetworkRequestsTool,
+  getReadabilityTool,
+  getConsoleLogsTool,
+  getUserInteractionsTool,
   listTabsTool,
   executeJsTool,
   typeTextTool,

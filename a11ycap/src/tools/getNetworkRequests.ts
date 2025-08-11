@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { ToolHandler } from './base.js';
 
-// Core tool schema without browserId (which is added by MCP server for routing)
+// Core tool schema without sessionId (which is added by MCP server for routing)
 const getNetworkRequestsSchema = z.object({
   limit: z
     .number()
@@ -33,7 +33,7 @@ const getNetworkRequestsSchema = z.object({
 export const getNetworkRequestsDefinition = {
   name: 'get_network_requests',
   description: 'Retrieve recent network requests using the Web Performance API',
-  inputSchema: getNetworkRequestsSchema.shape, // Will have browserId added by MCP server
+  inputSchema: getNetworkRequestsSchema.shape, // Will have sessionId added by MCP server
 };
 
 const GetNetworkRequestsMessageSchema = z.object({
@@ -110,11 +110,18 @@ async function executeGetNetworkRequests(
       .sort((a, b) => b.startTime - a.startTime)
       .slice(0, message.payload.limit);
 
-    return {
-      requests: networkRequests,
-      totalCount: networkRequests.length,
-      timestamp: Date.now(),
-    };
+    if (networkRequests.length === 0) {
+      return 'No network requests found';
+    }
+
+    const formattedRequests = networkRequests.map(req => {
+      const method = req.initiatorType ? req.initiatorType.toUpperCase() : 'GET';
+      const duration = req.duration ? ` (${Math.round(req.duration)}ms)` : '';
+      const size = req.transferSize ? ` [${Math.round(req.transferSize / 1024)}KB]` : '';
+      return `${method} ${req.name}${duration}${size}`;
+    });
+
+    return `Network requests (${networkRequests.length} entries):\n\n${formattedRequests.join('\n')}`;
   } catch (error) {
     throw new Error(
       `Failed to retrieve network requests: ${error instanceof Error ? error.message : 'Unknown error'}`

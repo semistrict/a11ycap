@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { ToolHandler } from './base.js';
 
-// Core tool schema without browserId (which is added by MCP server for routing)
+// Core tool schema without sessionId (which is added by MCP server for routing)
 const pressKeySchema = z.object({
   key: z
     .string()
@@ -18,7 +18,7 @@ const pressKeySchema = z.object({
 export const pressKeyDefinition = {
   name: 'press_key',
   description: 'Press a key on the keyboard',
-  inputSchema: pressKeySchema.shape, // Will have browserId added by MCP server
+  inputSchema: pressKeySchema.shape, // Will have sessionId added by MCP server
 };
 
 const PressKeyMessageSchema = z.object({
@@ -42,7 +42,7 @@ async function executePressKey(message: PressKeyMessage): Promise<any> {
   target.dispatchEvent(new KeyboardEvent('keypress', { key, bubbles: true }));
   target.dispatchEvent(new KeyboardEvent('keyup', { key, bubbles: true }));
 
-  return { pressed: true, key: key };
+  return `Successfully pressed key "${key}"`;
 }
 
 export const pressKeyTool: ToolHandler<PressKeyMessage> = {

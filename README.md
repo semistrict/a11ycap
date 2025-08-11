@@ -120,8 +120,9 @@ Once connected, AI agents can use these tools:
 - `hover_element` - Hover over elements
 - `select_option` - Select dropdown options
 - `wait_for` - Wait for conditions
-- `execute_js` - Execute JavaScript code
+- `execute_js` - Execute JavaScript code (must be IIFE)
 - `get_network_requests` - Get network activity
+- `get_readability` - Extract readable article content using Mozilla Readability
 - `list_tabs` - List connected browser tabs
 - `show_element_picker` - Show visual element picker
 

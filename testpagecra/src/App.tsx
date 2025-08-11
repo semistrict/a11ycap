@@ -20,7 +20,11 @@ function App() {
   React.useEffect(() => {
     // Expose A11yCap globally for tests
     (window as any).A11yCap = A11yCap;
-    console.log('🐱 Test page ready - A11yCap exposed globally');
+    
+    // Install console forwarders manually for testing
+    A11yCap.installConsoleForwarders();
+    
+    console.log('🐱 Test page ready - A11yCap exposed globally with console forwarders');
   }, []);
 
   return (

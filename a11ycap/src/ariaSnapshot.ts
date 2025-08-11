@@ -50,6 +50,7 @@ export type AriaTreeOptions = {
   mode: 'ai' | 'expect' | 'codegen' | 'autoexpect';
   enableReact?: boolean;
   refPrefix?: string;
+  includePosition?: boolean;
 };
 
 type InternalOptions = {
@@ -61,6 +62,7 @@ type InternalOptions = {
   renderCursorPointer?: boolean;
   renderActive?: boolean;
   renderStringsAsRegex?: boolean;
+  includePosition?: boolean;
 };
 
 function toInternalOptions(options: AriaTreeOptions): InternalOptions {
@@ -74,6 +76,7 @@ function toInternalOptions(options: AriaTreeOptions): InternalOptions {
       includeGenericRole: true,
       renderActive: true,
       renderCursorPointer: true,
+      includePosition: options.includePosition ?? true, // Default to true for AI mode
     };
   }
   if (options.mode === 'autoexpect') {
@@ -83,6 +86,7 @@ function toInternalOptions(options: AriaTreeOptions): InternalOptions {
       refs: 'none',
       enableReact: options.enableReact,
       refPrefix: options.refPrefix,
+      includePosition: options.includePosition ?? false,
     };
   }
   if (options.mode === 'codegen') {
@@ -93,6 +97,7 @@ function toInternalOptions(options: AriaTreeOptions): InternalOptions {
       enableReact: options.enableReact,
       refPrefix: options.refPrefix,
       renderStringsAsRegex: true,
+      includePosition: options.includePosition ?? false,
     };
   }
   // To match aria snapshot.
@@ -101,6 +106,7 @@ function toInternalOptions(options: AriaTreeOptions): InternalOptions {
     refs: 'none',
     enableReact: options.enableReact,
     refPrefix: options.refPrefix,
+    includePosition: options.includePosition ?? false,
   };
 }
 
@@ -626,6 +632,17 @@ export function renderAriaTree(
       key += ` [ref=${ariaNode.ref}]`;
       if (options.renderCursorPointer && hasPointerCursor(ariaNode))
         key += ' [cursor=pointer]';
+    }
+
+    // Add position information if enabled and available
+    if (options.includePosition && ariaNode.box?.rect) {
+      const rect = ariaNode.box.rect;
+      // Format: [x,y,wxh] for compact representation
+      const x = Math.round(rect.x);
+      const y = Math.round(rect.y);
+      const w = Math.round(rect.width);
+      const h = Math.round(rect.height);
+      key += ` [${x},${y},${w}x${h}]`;
     }
 
     const escapedKey = `${indent}- ${yamlEscapeKeyIfNeeded(key)}`;

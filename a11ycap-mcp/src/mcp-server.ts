@@ -8,16 +8,16 @@ import { CONSOLE_INJECTION_SCRIPT } from "./constants.js";
 import { setLogLevel } from "./logging.js";
 
 /**
- * Helper function to add browserId parameter to tool schemas for MCP registration.
- * The browserId is used for server-side routing but is not part of the logical tool schema.
+ * Helper function to add sessionId parameter to tool schemas for MCP registration.
+ * The sessionId is used for server-side routing but is not part of the logical tool schema.
  */
-function addBrowserId(schema: ZodObject<any>) {
+function addSessionId(schema: ZodObject<any>) {
   return schema.extend({
-    browserId: z
+    sessionId: z
       .string()
       .optional()
       .describe(
-        "Browser connection ID (uses first available if not specified)",
+        "Browser session ID (uses first available if not specified)",
       ),
   });
 }
@@ -117,12 +117,12 @@ ${CONSOLE_INJECTION_SCRIPT}
       );
     } else {
       // Generic tool handler for all other tools
-      // Add browserId to the schema for MCP registration
-      const schemaWithBrowserId = addBrowserId(z.object(toolDef.inputSchema));
+      // Add sessionId to the schema for MCP registration
+      const schemaWithSessionId = addSessionId(z.object(toolDef.inputSchema));
       server.tool(
         toolDef.name,
         toolDef.description,
-        schemaWithBrowserId.shape,
+        schemaWithSessionId.shape,
         async (params: any): Promise<CallToolResult> => {
           return await handleGenericTool(toolDef.name, params);
         },
@@ -138,11 +138,11 @@ async function handleGenericTool(
   toolName: string,
   params: any,
 ): Promise<CallToolResult> {
-  const browserId = params.browserId;
+  const sessionId = params.sessionId;
   const manager = getBrowserConnectionManager();
   const connections = await manager.getConnections();
-  const connection = browserId
-    ? await manager.getConnection(browserId)
+  const connection = sessionId
+    ? await manager.getConnection(sessionId)
     : connections[0];
 
   if (!connection) {
@@ -150,8 +150,8 @@ async function handleGenericTool(
       content: [
         {
           type: "text",
-          text: browserId
-            ? `Browser connection "${browserId}" not found. Use list_tabs to see available connections.`
+          text: sessionId
+            ? `Browser session "${sessionId}" not found. Use list_tabs to see available connections.`
             : `No browser connections available. To connect a browser, paste this in the browser console:\n\n\`\`\`javascript\n${CONSOLE_INJECTION_SCRIPT}\n\`\`\``,
         },
       ],

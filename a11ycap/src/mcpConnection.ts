@@ -7,6 +7,33 @@ import { toolHandlers } from './tools/index.js';
 // All tools are now handled by the modular tool system
 
 /**
+ * Generate a UUID v4
+ */
+function generateUUID(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+/**
+ * Get or create a persistent session ID for this tab
+ */
+function getTabSessionId(): string {
+  const SESSION_KEY = 'a11ycap_session_id';
+  let sessionId = sessionStorage.getItem(SESSION_KEY);
+  
+  if (!sessionId) {
+    sessionId = generateUUID();
+    sessionStorage.setItem(SESSION_KEY, sessionId);
+    sessionStorage.setItem('a11ycap_session_created', Date.now().toString());
+  }
+  
+  return sessionId;
+}
+
+/**
  * WebSocket connection for MCP server communication
  */
 export class MCPWebSocketClient {
@@ -15,9 +42,11 @@ export class MCPWebSocketClient {
   private readonly maxReconnectAttempts = Number.POSITIVE_INFINITY;
   private readonly reconnectInterval = 2000; // 2 seconds
   private readonly wsUrl: string;
+  readonly sessionId: string;
 
   constructor(wsUrl: string) {
     this.wsUrl = wsUrl;
+    this.sessionId = getTabSessionId();
   }
 
   connect(): void {
@@ -26,39 +55,39 @@ export class MCPWebSocketClient {
     this.ws = new WebSocket(this.wsUrl);
 
     this.ws.onopen = () => {
-      console.log('🐱 Connected to a11ycap MCP server');
       this.reconnectAttempts = 0;
 
-      // Send page info to server
+      // Send page info to server with session ID
       this.send({
         type: 'page_info',
         payload: {
+          sessionId: this.sessionId,
           url: window.location.href,
           title: document.title,
           userAgent: navigator.userAgent,
+          isReconnect: sessionStorage.getItem('a11ycap_has_connected') === 'true',
         },
       });
+      
+      // Mark that we've connected at least once
+      sessionStorage.setItem('a11ycap_has_connected', 'true');
     };
 
     this.ws.onclose = () => {
-      console.log('🐱 Disconnected from MCP server');
       if (this.reconnectAttempts < this.maxReconnectAttempts) {
         this.reconnectAttempts++;
-        console.log(
-          `🐱 Attempting to reconnect... (attempt ${this.reconnectAttempts})`
-        );
         setTimeout(() => this.connect(), this.reconnectInterval);
       }
     };
 
     this.ws.onerror = () => {
-      console.warn('🐱 WebSocket error - will retry connection');
+      // Silently handle errors - onclose will handle reconnection
     };
 
     this.ws.onmessage = this.handleMessage.bind(this);
   }
 
-  private send(message: Record<string, unknown>): void {
+  send(message: Record<string, unknown>): void {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message));
     }
@@ -113,6 +142,7 @@ export class MCPWebSocketClient {
         this.send({
           type: 'heartbeat',
           payload: {
+            sessionId: this.sessionId,
             url: window.location.href,
             title: document.title,
             timestamp: Date.now(),
@@ -131,12 +161,19 @@ export function initializeMCPConnection(
 ): MCPWebSocketClient | null {
   if (typeof window === 'undefined') return null;
 
-  console.log('🐱 A11yCap loaded');
   const client = new MCPWebSocketClient(wsUrl);
   client.connect();
   client.startHeartbeat();
+  
+  // Log a single consolidated message
+  const sessionId = client.sessionId;
+  const isReconnect = sessionStorage.getItem('a11ycap_has_connected') === 'true';
+  const sessionAge = sessionStorage.getItem('a11ycap_session_created');
+  const age = sessionAge ? Math.round((Date.now() - parseInt(sessionAge, 10)) / 1000) : 0;
+  
   console.log(
-    '🐱 a11ycap initialized! Try: window.A11yCap.snapshotForAI(document.body)'
+    `🐱 a11ycap ${isReconnect ? `reconnected (session: ${sessionId.slice(0, 8)}..., age: ${age}s)` : 'loaded'} - Try: window.A11yCap.snapshotForAI(document.body)`
   );
+  
   return client;
 }

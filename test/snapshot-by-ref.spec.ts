@@ -88,7 +88,7 @@ test.describe('Snapshot by Ref', () => {
     const containerRefMatch = fullSnapshot.match(/generic.*?\[ref=(e\d+)\].*form/i);
     if (!containerRefMatch) {
       // Look for any container element with nested content
-      const anyContainerMatch = fullSnapshot.match(/generic.*?\[ref=(e\d+)\]:/);
+      const anyContainerMatch = fullSnapshot.match(/generic.*?\[ref=(e\d+)\](?:\s*\[[^\]]+\])?:/);
       expect(anyContainerMatch).toBeTruthy();
       
       const containerRef = anyContainerMatch![1];

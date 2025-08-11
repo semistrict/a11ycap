@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { ToolHandler } from './base.js';
 
-// Core tool schema without browserId (which is added by MCP server for routing)
+// Core tool schema without sessionId (which is added by MCP server for routing)
 const waitForSchema = z.object({
   text: z.string().optional().describe('The text to wait for'),
   textGone: z.string().optional().describe('The text to wait for to disappear'),
@@ -17,7 +17,7 @@ export const waitForDefinition = {
   name: 'wait_for',
   description:
     'Wait for text to appear or disappear or a specified time to pass',
-  inputSchema: waitForSchema.shape, // Will have browserId added by MCP server
+  inputSchema: waitForSchema.shape, // Will have sessionId added by MCP server
 };
 
 const WaitForMessageSchema = z.object({
@@ -38,7 +38,7 @@ async function executeWaitFor(message: WaitForMessage): Promise<any> {
   if (time) {
     // Wait for specified time
     await new Promise((resolve) => setTimeout(resolve, time * 1000));
-    return { waited: true, type: 'time', duration: time };
+    return `Successfully waited ${time} seconds`;
   }
 
   if (text) {
@@ -48,7 +48,7 @@ async function executeWaitFor(message: WaitForMessage): Promise<any> {
 
     while (Date.now() - startTime < timeout) {
       if (document.body.textContent?.includes(text)) {
-        return { waited: true, type: 'text_appeared', text: text };
+        return `Text "${text}" appeared on page`;
       }
       await new Promise((resolve) => setTimeout(resolve, 100)); // Check every 100ms
     }
@@ -63,7 +63,7 @@ async function executeWaitFor(message: WaitForMessage): Promise<any> {
 
     while (Date.now() - startTime < timeout) {
       if (!document.body.textContent?.includes(textGone)) {
-        return { waited: true, type: 'text_disappeared', text: textGone };
+        return `Text "${textGone}" disappeared from page`;
       }
       await new Promise((resolve) => setTimeout(resolve, 100)); // Check every 100ms
     }

@@ -2,13 +2,13 @@ import { z } from 'zod';
 import type { ToolHandler } from './base.js';
 import { baseToolSchema, ensureA11yCap } from './common.js';
 
-// Core tool schema without browserId (which is added by MCP server for routing)
+// Core tool schema without sessionId (which is added by MCP server for routing)
 const clickElementSchema = baseToolSchema;
 
 export const clickElementDefinition = {
   name: 'click_element',
   description: 'Click an element using its accessibility snapshot reference',
-  inputSchema: clickElementSchema.shape, // Will have browserId added by MCP server
+  inputSchema: clickElementSchema.shape, // Will have sessionId added by MCP server
 };
 
 const ClickElementMessageSchema = z.object({
@@ -28,7 +28,7 @@ async function executeClickElement(message: ClickElementMessage): Promise<any> {
     );
   }
 
-  return { clicked: true };
+  return `Successfully clicked element with ref "${message.payload.ref}"`;
 }
 
 export const clickElementTool: ToolHandler<ClickElementMessage> = {

@@ -15,6 +15,14 @@ import type WebSocket from "ws";
 import { log } from "./logging.js";
 import { setupLibraryRoutes } from "./routes/library.js";
 
+export interface ConsoleLogEntry {
+  timestamp: number;
+  level: 'log' | 'warn' | 'error' | 'info' | 'debug';
+  args: any[];
+  url: string;
+  stack?: string;
+}
+
 export interface BrowserConnection {
   id: string;
   ws?: WebSocket;
@@ -23,6 +31,7 @@ export interface BrowserConnection {
   userAgent?: string;
   connected: boolean;
   lastSeen: Date;
+  consoleBuffer?: ConsoleLogEntry[];
 }
 
 export interface BrowserCommand {
@@ -55,6 +64,15 @@ export interface IBrowserConnectionManager {
   ): Promise<any>;
   getConnections(): Promise<BrowserConnection[]>;
   getConnection(id: string): Promise<BrowserConnection | undefined>;
+  getFirstBrowserId(): string | undefined;
+  getConsoleLogs(
+    connectionId: string,
+    options?: {
+      limit?: number;
+      level?: 'log' | 'warn' | 'error' | 'info' | 'debug';
+      since?: number;
+    }
+  ): ConsoleLogEntry[];
   cleanup(): void;
 }
 
@@ -116,15 +134,15 @@ export class PrimaryBrowserConnectionManager
     // API endpoint to send commands to browsers
     app.post("/api/browser-command", async (req, res) => {
       try {
-        const { command, browserId } = req.body;
+        const { command, sessionId } = req.body;
 
-        if (!command || !browserId) {
+        if (!command || !sessionId) {
           return res
             .status(400)
-            .json({ error: "Missing command or browserId" });
+            .json({ error: "Missing command or sessionId" });
         }
 
-        const result = await this.sendCommand(browserId, command);
+        const result = await this.sendCommand(sessionId, command);
         res.json({ success: true, data: result });
       } catch (error) {
         res.status(500).json({
@@ -359,6 +377,23 @@ export class PrimaryBrowserConnectionManager
     return this.connections.get(id);
   }
 
+  getFirstBrowserId(): string | undefined {
+    const connections = Array.from(this.connections.values()).filter((c) => c.connected);
+    return connections.length > 0 ? connections[0].id : undefined;
+  }
+
+  getConsoleLogs(
+    connectionId: string,
+    options?: {
+      limit?: number;
+      level?: 'log' | 'warn' | 'error' | 'info' | 'debug';
+      since?: number;
+    }
+  ): ConsoleLogEntry[] {
+    // Delegate to browserConnectionManager which is the actual store
+    return browserConnectionManager?.getConsoleLogs(connectionId, options) || [];
+  }
+
   cleanup() {
     const now = new Date();
     const staleThreshold = 5 * 60 * 1000; // 5 minutes
@@ -472,7 +507,7 @@ export class RemoteBrowserConnectionManager
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             command: fullCommand,
-            browserId: connectionId,
+            sessionId: connectionId,
           }),
           signal: AbortSignal.timeout(timeoutMs),
         },
@@ -534,6 +569,26 @@ export class RemoteBrowserConnectionManager
   async getConnection(id: string): Promise<BrowserConnection | undefined> {
     const connections = await this.getConnections();
     return connections.find((conn) => conn.id === id);
+  }
+
+  getFirstBrowserId(): string | undefined {
+    // For remote, we need to check cached connections synchronously
+    const connections = this.cachedConnections.filter((c) => c.connected);
+    return connections.length > 0 ? connections[0].id : undefined;
+  }
+
+  getConsoleLogs(
+    connectionId: string,
+    options?: {
+      limit?: number;
+      level?: 'log' | 'warn' | 'error' | 'info' | 'debug';
+      since?: number;
+    }
+  ): ConsoleLogEntry[] {
+    // Remote connections don't have direct access to console logs
+    // This would need an HTTP API endpoint to fetch from primary
+    log.warn("Console logs not available for remote connections");
+    return [];
   }
 }
 

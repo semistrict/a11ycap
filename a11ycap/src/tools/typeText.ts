@@ -6,7 +6,7 @@ import {
   getElementByRefOrThrow,
 } from './common.js';
 
-// Core tool schema without browserId (which is added by MCP server for routing)
+// Core tool schema without sessionId (which is added by MCP server for routing)
 const typeTextSchema = baseToolSchema.extend({
   text: z.string().describe('Text to type into the element'),
   slowly: z
@@ -26,7 +26,7 @@ const typeTextSchema = baseToolSchema.extend({
 export const typeTextDefinition = {
   name: 'type_text',
   description: 'Type text into an editable element',
-  inputSchema: typeTextSchema.shape, // Will have browserId added by MCP server
+  inputSchema: typeTextSchema.shape, // Will have sessionId added by MCP server
 };
 
 const TypeTextMessageSchema = z.object({
@@ -97,7 +97,7 @@ async function executeTypeText(message: TypeTextMessage): Promise<any> {
     }
   }
 
-  return { typed: true, text: text };
+  return `Successfully typed "${text}" into element with ref "${message.payload.ref}"`;
 }
 
 export const typeTextTool: ToolHandler<TypeTextMessage> = {

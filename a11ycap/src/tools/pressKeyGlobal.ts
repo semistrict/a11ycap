@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { ToolHandler } from './base.js';
 
-// Core tool schema without browserId (which is added by MCP server for routing)
+// Core tool schema without sessionId (which is added by MCP server for routing)
 const pressKeyGlobalSchema = z.object({
   key: z
     .string()
@@ -19,7 +19,7 @@ export const pressKeyGlobalDefinition = {
   name: 'press_key_global',
   description:
     'Press a key globally on the document (not targeting a specific element)',
-  inputSchema: pressKeyGlobalSchema.shape, // Will have browserId added by MCP server
+  inputSchema: pressKeyGlobalSchema.shape, // Will have sessionId added by MCP server
 };
 
 const PressKeyGlobalMessageSchema = z.object({
@@ -42,7 +42,7 @@ async function executePressKeyGlobal(
   document.dispatchEvent(new KeyboardEvent('keypress', { key, bubbles: true }));
   document.dispatchEvent(new KeyboardEvent('keyup', { key, bubbles: true }));
 
-  return { pressed: true };
+  return `Successfully pressed key "${key}" globally`;
 }
 
 export const pressKeyGlobalTool: ToolHandler<PressKeyGlobalMessage> = {

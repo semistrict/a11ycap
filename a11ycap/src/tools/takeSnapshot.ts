@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { ToolHandler } from './base.js';
 
-// Core tool schema without browserId (which is added by MCP server for routing)
+// Core tool schema without sessionId (which is added by MCP server for routing)
 const takeSnapshotSchema = z.object({
   mode: z
     .enum(['ai', 'expect', 'codegen', 'autoexpect'])
@@ -30,7 +30,7 @@ const takeSnapshotSchema = z.object({
 export const takeSnapshotDefinition = {
   name: 'take_snapshot',
   description: 'Take an accessibility snapshot from a connected browser',
-  inputSchema: takeSnapshotSchema.shape, // Will have browserId added by MCP server
+  inputSchema: takeSnapshotSchema.shape, // Will have sessionId added by MCP server
 };
 
 const TakeSnapshotMessageSchema = z.object({
@@ -57,7 +57,7 @@ async function executeTakeSnapshot(message: TakeSnapshotMessage): Promise<any> {
   }
 
   const result = await window.A11yCap.snapshotForAI(element, message.payload);
-  return { snapshot: result };
+  return result;
 }
 
 export const takeSnapshotTool: ToolHandler<TakeSnapshotMessage> = {

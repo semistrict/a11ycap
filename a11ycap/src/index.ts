@@ -21,6 +21,26 @@ export {
 // Re-export MCP tool definitions
 export { toolDefinitions, type McpToolDefinition } from './mcpTools.js';
 
+// Export tool handlers for browser use
+export { toolHandlers } from './tools/index.js';
+
+// Re-export eventBuffer functionality
+export { addEvent, getEvents, clearEvents, getBufferStats } from './eventBuffer.js';
+
+// Re-export console forwarder functionality
+export { installConsoleForwarders, restoreConsole } from './consoleForwarder.js';
+import { installConsoleForwarders } from './consoleForwarder.js';
+
+// Re-export interaction forwarder functionality  
+export { installInteractionForwarders, restoreInteractionForwarders } from './interactionForwarder.js';
+import { installInteractionForwarders } from './interactionForwarder.js';
+
+// Install forwarders automatically in browser environment
+if (typeof window !== 'undefined') {
+  installConsoleForwarders();
+  installInteractionForwarders();
+}
+
 /**
  * Hide CRA dev overlay that can interfere with interactions during testing
  */
@@ -113,8 +133,19 @@ function renderAriaTreeWithSizeLimit(
 
   if (lastValidResult.length > options.max_bytes) {
     // Even root node exceeds limit, return truncated version with warning
-    const truncated = lastValidResult.slice(0, options.max_bytes);
-    return `${truncated}\n\n[WARNING: Snapshot was truncated due to size limit. Even the root element exceeded the limit.]`;
+    let truncated = lastValidResult.slice(0, options.max_bytes);
+    
+    // Ensure we don't cut off in the middle of a bracket expression
+    // Find the last complete bracket pair or cut before any incomplete one
+    let lastOpenBracket = truncated.lastIndexOf('[');
+    let lastCloseBracket = truncated.lastIndexOf(']');
+    
+    if (lastOpenBracket > lastCloseBracket) {
+      // We have an unclosed bracket, truncate before it
+      truncated = truncated.slice(0, lastOpenBracket).trimEnd();
+    }
+    
+    return `${truncated}\n\n[WARNING: Snapshot was truncated due to size limit. Even the root element exceeded the limit. To get a focused snapshot of a specific element, use take_snapshot with the 'ref' parameter, e.g., take_snapshot(ref="e5") to snapshot just that element and its children.]`;
   }
 
   // Breadth-first expansion
@@ -157,7 +188,7 @@ function renderAriaTreeWithSizeLimit(
   // Add truncation warning if the snapshot was limited
   if (wasTruncated) {
     lastValidResult +=
-      '\n\n[WARNING: Snapshot was truncated due to size limit. Some elements may be missing.]';
+      '\n\n[WARNING: Snapshot was truncated due to size limit. Some elements may be missing. To get a focused snapshot of a specific element, use take_snapshot with the \'ref\' parameter, e.g., take_snapshot(ref="e5") to snapshot just that element and its children.]';
   }
 
   return lastValidResult;
@@ -315,6 +346,15 @@ interface A11yCapGlobal {
   renderAriaTree: typeof renderAriaTree;
   initializeMCPConnection: (wsUrl: string) => any;
   getElementPicker: typeof getElementPicker;
+  toolHandlers: any;
+  addEvent: any;
+  getEvents: any;
+  clearEvents: any;
+  getBufferStats: any;
+  installConsoleForwarders: any;
+  restoreConsole: any;
+  installInteractionForwarders: any;
+  restoreInteractionForwarders: any;
 }
 
 declare global {

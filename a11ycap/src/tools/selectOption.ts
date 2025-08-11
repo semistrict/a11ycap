@@ -6,7 +6,7 @@ import {
   getElementByRefOrThrow,
 } from './common.js';
 
-// Core tool schema without browserId (which is added by MCP server for routing)
+// Core tool schema without sessionId (which is added by MCP server for routing)
 const selectOptionSchema = baseToolSchema.extend({
   values: z
     .array(z.string())
@@ -18,7 +18,7 @@ const selectOptionSchema = baseToolSchema.extend({
 export const selectOptionDefinition = {
   name: 'select_option',
   description: 'Select an option in a dropdown',
-  inputSchema: selectOptionSchema.shape, // Will have browserId added by MCP server
+  inputSchema: selectOptionSchema.shape, // Will have sessionId added by MCP server
 };
 
 const SelectOptionMessageSchema = z.object({
@@ -67,7 +67,7 @@ async function executeSelectOption(message: SelectOptionMessage): Promise<any> {
   // Dispatch change event
   element.dispatchEvent(new Event('change', { bubbles: true }));
 
-  return { selected: true, values: selectedValues };
+  return `Successfully selected options [${selectedValues.join(', ')}] in element with ref "${message.payload.ref}"`;
 }
 
 export const selectOptionTool: ToolHandler<SelectOptionMessage> = {

@@ -4,12 +4,14 @@ import { log } from "./logging.js";
 
 export interface BrowserConnection {
   id: string;
+  sessionId?: string;  // Persistent session ID from sessionStorage
   ws: WebSocket;
   url?: string;
   title?: string;
   userAgent?: string;
   connected: boolean;
   lastSeen: Date;
+  isReconnect?: boolean;  // Whether this is a reconnection of an existing session
 }
 
 export interface BrowserCommand {
@@ -37,6 +39,7 @@ export interface BrowserResponse {
 
 class BrowserConnectionManager {
   private connections = new Map<string, BrowserConnection>();
+  private sessionConnections = new Map<string, string>(); // sessionId -> connectionId mapping
   private pendingCommands = new Map<
     string,
     {
@@ -48,21 +51,57 @@ class BrowserConnectionManager {
 
   addConnection(ws: WebSocket, metadata?: any): string {
     const id = randomUUID();
+    const sessionId = metadata?.sessionId;
+    
+    // Check if this session already has a connection
+    let existingConnectionId: string | undefined;
+    if (sessionId) {
+      existingConnectionId = this.sessionConnections.get(sessionId);
+      if (existingConnectionId) {
+        const existingConnection = this.connections.get(existingConnectionId);
+        if (existingConnection) {
+          log.debug(`Session ${sessionId} reconnecting, replacing old connection ${existingConnectionId}`);
+          // Close the old WebSocket if still open
+          if (existingConnection.ws.readyState === existingConnection.ws.OPEN) {
+            existingConnection.ws.close();
+          }
+          // Remove old connection
+          this.connections.delete(existingConnectionId);
+        }
+      }
+    }
+    
     const connection: BrowserConnection = {
       id,
+      sessionId,
       ws,
       url: metadata?.url,
       userAgent: metadata?.userAgent,
       connected: true,
       lastSeen: new Date(),
+      isReconnect: metadata?.isReconnect || false,
     };
 
     this.connections.set(id, connection);
+    
+    // Update session mapping
+    if (sessionId) {
+      this.sessionConnections.set(sessionId, id);
+    }
 
     ws.on("message", (data) => {
       try {
         const message = JSON.parse(data.toString());
-        this.handleBrowserMessage(id, message);
+        // Handle page_info messages to update metadata
+        if (message.type === 'page_info' && message.payload) {
+          this.updateConnectionInfo(id, message.payload);
+        } else if (message.type === 'heartbeat') {
+          // Just update last seen, no action needed
+          const conn = this.connections.get(id);
+          if (conn) conn.lastSeen = new Date();
+        } else {
+          this.handleBrowserMessage(id, message);
+        }
       } catch (error) {
         log.error("Error parsing browser message:", error);
       }
@@ -77,7 +116,10 @@ class BrowserConnectionManager {
       this.removeConnection(id);
     });
 
-    log.debug(`Browser connected: ${id} from ${connection.url || "unknown"}`);
+    const logMessage = connection.isReconnect
+      ? `Session ${sessionId} reconnected: ${id} from ${connection.url || "unknown"}`
+      : `New browser connected: ${id} (session: ${sessionId || "none"}) from ${connection.url || "unknown"}`;
+    log.info(logMessage);
     return id;
   }
 
@@ -86,22 +128,36 @@ class BrowserConnectionManager {
     if (connection) {
       connection.connected = false;
       this.connections.delete(id);
-      log.debug(`Browser disconnected: ${id}`);
+      // Clean up session mapping if it exists
+      if (connection.sessionId) {
+        const currentMappedId = this.sessionConnections.get(connection.sessionId);
+        // Only remove mapping if it points to this connection (not a newer one)
+        if (currentMappedId === id) {
+          this.sessionConnections.delete(connection.sessionId);
+        }
+      }
+      log.debug(`Browser disconnected: ${id} (session: ${connection.sessionId || "none"})`);
     }
   }
 
   updateConnectionInfo(
     id: string,
-    info: { url?: string; title?: string; userAgent?: string },
+    info: { url?: string; title?: string; userAgent?: string; sessionId?: string; isReconnect?: boolean },
   ) {
     const connection = this.connections.get(id);
     if (connection) {
       if (info.url) connection.url = info.url;
       if (info.title) connection.title = info.title;
       if (info.userAgent) connection.userAgent = info.userAgent;
+      if (info.sessionId && !connection.sessionId) {
+        connection.sessionId = info.sessionId;
+        this.sessionConnections.set(info.sessionId, id);
+      }
+      if (info.isReconnect !== undefined) connection.isReconnect = info.isReconnect;
       connection.lastSeen = new Date();
     }
   }
+
 
   private handleBrowserMessage(connectionId: string, message: BrowserResponse) {
     const pending = this.pendingCommands.get(message.commandId);
@@ -170,7 +226,21 @@ class BrowserConnectionManager {
     return this.connections.get(id);
   }
 
-  // Clean up stale connections
+  getConnectionBySessionId(sessionId: string): BrowserConnection | undefined {
+    const connectionId = this.sessionConnections.get(sessionId);
+    if (connectionId) {
+      return this.connections.get(connectionId);
+    }
+    return undefined;
+  }
+
+  getFirstBrowserId(): string | undefined {
+    const connections = Array.from(this.connections.values()).filter((c) => c.connected);
+    return connections.length > 0 ? connections[0].id : undefined;
+  }
+
+
+
   cleanup() {
     const now = new Date();
     const staleThreshold = 5 * 60 * 1000; // 5 minutes
