@@ -31,26 +31,9 @@ if (process.stdin.isTTY) {
 This is an MCP (Model Context Protocol) server that provides accessibility
 snapshot and browser automation tools for AI coding agents.
 
-To use this server with Claude Code, add it to your Claude Code settings:
+To use this server with Claude Code:
 
-{
-  "mcpServers": {
-    "a11ycap": {
-      "command": "npx",
-      "args": ["a11ycap-mcp"]
-    }
-  }
-}
-
-Or if installed locally:
-
-{
-  "mcpServers": {
-    "a11ycap": {
-      "command": "a11ycap-mcp"
-    }
-  }
-}
+claude mcp add -s user -t stdio a11ycap npx a11ycap-mcp
 
 After configuring, connect a browser by pasting this in the browser console:
 

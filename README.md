@@ -70,8 +70,34 @@ console.log('Selected:', selected);
 
 The MCP server enables AI agents to control browsers:
 
+#### Installation with Claude Code
+
 ```bash
-# Start the MCP server
+# Add to Claude Code
+claude mcp add -s user -t stdio a11ycap npx a11ycap-mcp
+```
+
+#### Local Development
+
+```bash
+# Link the package globally for local testing
+cd a11ycap-mcp
+npm link
+
+# Now you can run it like the published version
+a11ycap-mcp
+
+# Or via npx
+npx a11ycap-mcp
+
+# To unlink when done testing
+npm unlink -g a11ycap-mcp
+```
+
+#### Direct Execution
+
+```bash
+# Start the MCP server directly
 pnpm --filter a11ycap-mcp start
 
 # The server runs on stdio and provides a WebSocket server on port 12456
