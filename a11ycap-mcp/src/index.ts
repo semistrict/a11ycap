@@ -21,6 +21,47 @@ import { setupA11yCapTools } from "./mcp-server.js";
  * 3. JavaScript library for browser console injection (/a11ycap.js)
  */
 
+// Check if running from terminal (TTY) and print usage instructions
+if (process.stdin.isTTY) {
+  console.error(`
+╔════════════════════════════════════════════════════════════════════════════╗
+║                           a11ycap MCP Server                               ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+This is an MCP (Model Context Protocol) server that provides accessibility
+snapshot and browser automation tools for AI coding agents.
+
+To use this server with Claude Code, add it to your Claude Code settings:
+
+{
+  "mcpServers": {
+    "a11ycap": {
+      "command": "npx",
+      "args": ["a11ycap-mcp"]
+    }
+  }
+}
+
+Or if installed locally:
+
+{
+  "mcpServers": {
+    "a11ycap": {
+      "command": "a11ycap-mcp"
+    }
+  }
+}
+
+After configuring, connect a browser by pasting this in the browser console:
+
+${CONSOLE_INJECTION_SCRIPT}
+
+For more information, visit: https://github.com/semistrict/a11ycap
+
+Starting MCP server on stdio...
+`);
+}
+
 // Create MCP server instance
 const server = new McpServer(
   {
