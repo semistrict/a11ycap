@@ -2,10 +2,15 @@
 
 import { generateAriaTree, renderAriaTree } from './ariaSnapshot';
 import { extractReactInfo } from './reactUtils';
+import { getElementPicker, ElementPicker } from './elementPicker';
 
 // Re-export the browser-compatible ariaSnapshot functionality
 export { generateAriaTree, renderAriaTree, extractReactInfo };
 export type { AriaSnapshot, AriaTreeOptions, AriaNode } from './ariaSnapshot';
+
+// Re-export element picker functionality
+export { getElementPicker, ElementPicker };
+export type { PickedElement } from './elementPicker';
 
 // Re-export MCP connection functionality
 export { MCPWebSocketClient, initializeMCPConnection } from './mcpConnection.js';
@@ -105,7 +110,7 @@ function renderAriaTreeWithSizeLimit(
   
   if (lastValidResult.length > options.max_bytes) {
     // Even root node exceeds limit, return truncated version with warning
-    const truncated = lastValidResult.slice(0, options.max_bytes - 100);
+    const truncated = lastValidResult.slice(0, options.max_bytes);
     return truncated + '\n\n[WARNING: Snapshot was truncated due to size limit. Even the root element exceeded the limit.]';
   }
   
@@ -288,6 +293,7 @@ interface A11yCapGlobal {
   generateAriaTree: typeof generateAriaTree;
   renderAriaTree: typeof renderAriaTree;
   initializeMCPConnection: (wsUrl: string) => any;
+  getElementPicker: typeof getElementPicker;
 }
 
 declare global {

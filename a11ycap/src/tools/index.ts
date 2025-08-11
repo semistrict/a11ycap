@@ -9,6 +9,7 @@ export { pressKeyGlobalTool, pressKeyGlobalDefinition } from './pressKeyGlobal.j
 export { hoverElementTool, hoverElementDefinition } from './hoverElement.js';
 export { selectOptionTool, selectOptionDefinition } from './selectOption.js';
 export { waitForTool, waitForDefinition } from './waitFor.js';
+export { showElementPickerTool, showElementPickerDefinition } from './showElementPicker.js';
 export type { ToolDefinition, ToolHandler, BaseToolMessage } from './base.js';
 
 import { takeSnapshotTool } from './takeSnapshot.js';
@@ -22,6 +23,7 @@ import { pressKeyGlobalTool } from './pressKeyGlobal.js';
 import { hoverElementTool } from './hoverElement.js';
 import { selectOptionTool } from './selectOption.js';
 import { waitForTool } from './waitFor.js';
+import { showElementPickerTool } from './showElementPicker.js';
 
 export const allTools = [
   takeSnapshotTool,
@@ -34,7 +36,8 @@ export const allTools = [
   pressKeyGlobalTool,
   hoverElementTool,
   selectOptionTool,
-  waitForTool
+  waitForTool,
+  showElementPickerTool
 ];
 
 export const toolDefinitions = allTools.map(tool => tool.definition);

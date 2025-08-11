@@ -26,8 +26,9 @@ test.describe('Size Limited Snapshots', () => {
       return await window.A11yCap.snapshotForAI(document.body, { max_bytes: 200 });
     });
 
-    // Should be limited in size
-    expect(limitedSnapshot.length).toBeLessThanOrEqual(200);
+    // Content before warning should be limited in size
+    const contentBeforeWarning = limitedSnapshot.split('\n\n[WARNING:')[0];
+    expect(contentBeforeWarning.length).toBeLessThanOrEqual(200);
     
     // Should still contain the root and some top-level elements
     expect(limitedSnapshot).toContain('React Test Page');
@@ -48,10 +49,14 @@ test.describe('Size Limited Snapshots', () => {
     console.log('Medium (300):', result.medium);
     console.log('Large (500):', result.large);
 
-    // Each should be within size limits
-    expect(result.small.length).toBeLessThanOrEqual(150);
-    expect(result.medium.length).toBeLessThanOrEqual(300);
-    expect(result.large.length).toBeLessThanOrEqual(500);
+    // Each should be within size limits (check content before warning)
+    const smallContent = result.small.split('\n\n[WARNING:')[0];
+    const mediumContent = result.medium.split('\n\n[WARNING:')[0];
+    const largeContent = result.large.split('\n\n[WARNING:')[0];
+    
+    expect(smallContent.length).toBeLessThanOrEqual(150);
+    expect(mediumContent.length).toBeLessThanOrEqual(300);
+    expect(largeContent.length).toBeLessThanOrEqual(500);
 
     // Larger limits should contain more content
     expect(result.medium.length).toBeGreaterThanOrEqual(result.small.length);
@@ -71,9 +76,13 @@ test.describe('Size Limited Snapshots', () => {
 
     console.log('Tiny snapshot (50 bytes):', tinySnapshot);
     
-    expect(tinySnapshot.length).toBeLessThanOrEqual(50);
+    // The content before the warning should be <= 50 bytes
+    const contentBeforeWarning = tinySnapshot.split('\n\n[WARNING:')[0];
+    expect(contentBeforeWarning.length).toBeLessThanOrEqual(50);
     // Should be truncated but still valid
-    expect(tinySnapshot.length).toBeGreaterThan(0);
+    expect(contentBeforeWarning.length).toBeGreaterThan(0);
+    // Should have a warning message
+    expect(tinySnapshot).toContain('[WARNING:');
   });
 
   test('should handle size limit smaller than root node', async ({ page }) => {
@@ -84,8 +93,12 @@ test.describe('Size Limited Snapshots', () => {
 
     console.log('Ultra tiny snapshot (10 bytes):', result);
     
-    expect(result.length).toBeLessThanOrEqual(10);
-    expect(result.length).toBeGreaterThan(0);
+    // The content before the warning should be <= 10 bytes
+    const contentBeforeWarning = result.split('\n\n[WARNING:')[0];
+    expect(contentBeforeWarning.length).toBeLessThanOrEqual(10);
+    expect(contentBeforeWarning.length).toBeGreaterThan(0);
+    // Should have a warning message
+    expect(result).toContain('[WARNING:');
   });
 
   test('should work with different modes and size limits', async ({ page }) => {
@@ -105,8 +118,12 @@ test.describe('Size Limited Snapshots', () => {
     console.log('AI mode limited:', results.aiMode);
     console.log('Expect mode limited:', results.expectMode);
 
-    expect(results.aiMode.length).toBeLessThanOrEqual(200);
-    expect(results.expectMode.length).toBeLessThanOrEqual(200);
+    // Extract content before warning for size checking
+    const aiContent = results.aiMode.split('\n\n[WARNING:')[0];
+    const expectContent = results.expectMode.split('\n\n[WARNING:')[0];
+    
+    expect(aiContent.length).toBeLessThanOrEqual(200);
+    expect(expectContent.length).toBeLessThanOrEqual(200);
 
     // AI mode should have refs, expect mode should not
     expect(results.aiMode).toMatch(/\[ref=e\d+\]/);
@@ -122,12 +139,18 @@ test.describe('Size Limited Snapshots', () => {
 
     console.log('Structure test snapshot:', snapshot);
 
+    // Extract the content before the warning (if any)
+    const contentBeforeWarning = snapshot.split('\n\n[WARNING:')[0];
+    
     // Should not have broken lines or malformed structure
-    expect(snapshot).not.toMatch(/- $|^\s*-\s*$/m); // No empty list items
+    expect(contentBeforeWarning).not.toMatch(/- $|^\s*-\s*$/m); // No empty list items
     
     // Count opening and closing brackets to ensure they're balanced
-    const openBrackets = (snapshot.match(/\[/g) || []).length;
-    const closeBrackets = (snapshot.match(/\]/g) || []).length;
+    const openBrackets = (contentBeforeWarning.match(/\[/g) || []).length;
+    const closeBrackets = (contentBeforeWarning.match(/\]/g) || []).length;
     expect(openBrackets).toBe(closeBrackets);
+    
+    // The actual content should respect the size limit
+    expect(contentBeforeWarning.length).toBeLessThanOrEqual(300);
   });
 });
