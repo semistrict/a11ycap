@@ -23,8 +23,11 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: '(cd testpagecra && PORT=14652 BROWSER=none pnpm start)',
+    command: 'cd testpagecra && PORT=14652 BROWSER=none pnpm start',
     port: 14652,
     reuseExistingServer: !process.env.CI,
+    timeout: 120 * 1000,
+    stdout: 'ignore',
+    stderr: 'pipe',
   },
 });
