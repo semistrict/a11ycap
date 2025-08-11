@@ -4,8 +4,24 @@
   "description": "Babel plugin that adds debug source info to JSX elements as data attributes",
   "main": "index.js",
   "keywords": ["babel-plugin", "jsx", "debug", "source-map", "react"],
-  "author": "",
+  "author": "Ramon Nogueira <https://github.com/semistrict>",
   "license": "MIT",
+  "files": [
+    "index.js",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/semistrict/a11ycap.git",
+    "directory": "babel-plugin-a11ycap"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "clean": "echo 'No build artifacts to clean'"
+  },
   "peerDependencies": {
     "@babel/core": "^7.0.0",
     "@babel/types": "^7.0.0"

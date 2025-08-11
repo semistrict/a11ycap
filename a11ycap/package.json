@@ -25,7 +25,7 @@
     "browser",
     "playwright"
   ],
-  "author": "Microsoft Corporation",
+  "author": "Ramon Nogueira <https://github.com/semistrict>",
   "license": "Apache-2.0",
   "dependencies": {
     "yaml": "2.6.0",
@@ -48,8 +48,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/microsoft/playwright.git",
-    "directory": "snapshot"
+    "url": "https://github.com/semistrict/a11ycap.git",
+    "directory": "a11ycap"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "browserslist": [
     "defaults",
