@@ -1,4 +1,4 @@
-import { toolDefinitions as modularToolDefinitions } from "./tools/index.js";
+import { toolDefinitions as modularToolDefinitions } from './tools/index.js';
 
 export interface McpToolDefinition {
   name: string;

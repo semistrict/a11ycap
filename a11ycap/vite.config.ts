@@ -1,6 +1,6 @@
-import { defineConfig } from 'vite';
+import path from 'node:path';
 import react from '@vitejs/plugin-react';
-import path from 'path';
+import { defineConfig } from 'vite';
 
 export default defineConfig({
   build: {
@@ -12,23 +12,23 @@ export default defineConfig({
         if (format === 'iife') return 'browser.js';
         return `index.${format}.js`;
       },
-      formats: ['es', 'iife']
+      formats: ['es', 'iife'],
     },
     outDir: 'dist',
     rollupOptions: {
       external: ['react-devtools-inline'],
       output: {
         globals: {
-          'react-devtools-inline': 'ReactDevToolsInline'
-        }
-      }
-    }
+          'react-devtools-inline': 'ReactDevToolsInline',
+        },
+      },
+    },
   },
   resolve: {
     alias: {
       '@isomorphic': path.resolve(__dirname, 'src/isomorphic'),
-      '@injected': path.resolve(__dirname, 'src/injected'), 
-      '@protocol': path.resolve(__dirname, 'src/protocol')
-    }
-  }
+      '@injected': path.resolve(__dirname, 'src/injected'),
+      '@protocol': path.resolve(__dirname, 'src/protocol'),
+    },
+  },
 });

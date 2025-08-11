@@ -12,7 +12,7 @@ import { toolHandlers } from './tools/index.js';
 export class MCPWebSocketClient {
   private ws: WebSocket | null = null;
   private reconnectAttempts = 0;
-  private readonly maxReconnectAttempts = Infinity;
+  private readonly maxReconnectAttempts = Number.POSITIVE_INFINITY;
   private readonly reconnectInterval = 2000; // 2 seconds
   private readonly wsUrl: string;
 
@@ -35,8 +35,8 @@ export class MCPWebSocketClient {
         payload: {
           url: window.location.href,
           title: document.title,
-          userAgent: navigator.userAgent
-        }
+          userAgent: navigator.userAgent,
+        },
       });
     };
 
@@ -44,7 +44,9 @@ export class MCPWebSocketClient {
       console.log('🐱 Disconnected from MCP server');
       if (this.reconnectAttempts < this.maxReconnectAttempts) {
         this.reconnectAttempts++;
-        console.log(`🐱 Attempting to reconnect... (attempt ${this.reconnectAttempts})`);
+        console.log(
+          `🐱 Attempting to reconnect... (attempt ${this.reconnectAttempts})`
+        );
         setTimeout(() => this.connect(), this.reconnectInterval);
       }
     };
@@ -62,19 +64,24 @@ export class MCPWebSocketClient {
     }
   }
 
-  private sendResponse(commandId: string, success: boolean, data?: any, error?: string): void {
+  private sendResponse(
+    commandId: string,
+    success: boolean,
+    data?: any,
+    error?: string
+  ): void {
     this.send({
       commandId,
       success,
       ...(data !== undefined && { data }),
-      ...(error && { error })
+      ...(error && { error }),
     });
   }
 
   private async handleMessage(event: MessageEvent): Promise<void> {
     try {
       const rawMessage = JSON.parse(event.data);
-      
+
       // Check if we have a modular tool handler for this message type
       const toolHandler = toolHandlers[rawMessage.type];
       if (toolHandler) {
@@ -83,20 +90,22 @@ export class MCPWebSocketClient {
           const result = await toolHandler.execute(message);
           this.sendResponse(rawMessage.id, true, result);
         } catch (error) {
-          this.sendResponse(rawMessage.id, false, undefined, error instanceof Error ? error.message : 'Unknown error');
+          this.sendResponse(
+            rawMessage.id,
+            false,
+            undefined,
+            error instanceof Error ? error.message : 'Unknown error'
+          );
         }
         return;
       }
-      
+
       // No legacy handlers needed - all tools are modular now
       console.warn(`Unknown message type: ${rawMessage.type}`);
     } catch (error) {
       console.error('Error handling MCP command:', error);
     }
   }
-
-
-
 
   startHeartbeat(): void {
     setInterval(() => {
@@ -106,8 +115,8 @@ export class MCPWebSocketClient {
           payload: {
             url: window.location.href,
             title: document.title,
-            timestamp: Date.now()
-          }
+            timestamp: Date.now(),
+          },
         });
       }
     }, 30000);
@@ -117,13 +126,17 @@ export class MCPWebSocketClient {
 /**
  * Initialize MCP WebSocket connection if wsUrl is provided
  */
-export function initializeMCPConnection(wsUrl: string): MCPWebSocketClient | null {
+export function initializeMCPConnection(
+  wsUrl: string
+): MCPWebSocketClient | null {
   if (typeof window === 'undefined') return null;
-  
+
   console.log('🐱 A11yCap loaded');
   const client = new MCPWebSocketClient(wsUrl);
   client.connect();
   client.startHeartbeat();
-  console.log('🐱 a11ycap initialized! Try: window.A11yCap.snapshotForAI(document.body)');
+  console.log(
+    '🐱 a11ycap initialized! Try: window.A11yCap.snapshotForAI(document.body)'
+  );
   return client;
 }

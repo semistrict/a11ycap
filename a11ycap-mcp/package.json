@@ -44,10 +44,7 @@
   ],
   "author": "Ramon Nogueira <https://github.com/semistrict>",
   "license": "MIT",
-  "files": [
-    "dist/",
-    "README.md"
-  ],
+  "files": ["dist/", "README.md"],
   "repository": {
     "type": "git",
     "url": "https://github.com/semistrict/a11ycap.git",

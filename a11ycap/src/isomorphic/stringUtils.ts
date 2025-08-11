@@ -1,4 +1,3 @@
-
 // NOTE: this function should not be used to escape any selectors.
 export function escapeWithQuotes(text: string, char = "'") {
   const stringified = JSON.stringify(text);

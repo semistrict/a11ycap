@@ -1,6 +1,6 @@
 /**
  * Logging utility for MCP server
- * 
+ *
  * Uses MCP protocol logging via sendLoggingMessage when available,
  * falls back to stderr for startup/shutdown logging.
  */
@@ -19,7 +19,9 @@ export function setLogLevel(level: "debug" | "info" | "warning" | "error") {
   currentLogLevel = level;
 }
 
-function shouldLog(messageLevel: "debug" | "info" | "warning" | "error"): boolean {
+function shouldLog(
+  messageLevel: "debug" | "info" | "warning" | "error",
+): boolean {
   const levels = ["debug", "info", "warning", "error"];
   const currentIndex = levels.indexOf(currentLogLevel);
   const messageIndex = levels.indexOf(messageLevel);
@@ -29,7 +31,7 @@ function shouldLog(messageLevel: "debug" | "info" | "warning" | "error"): boolea
 export const log = {
   info: async (message: string, data?: any) => {
     if (!shouldLog("info")) return;
-    
+
     if (mcpServer) {
       try {
         await mcpServer.server.sendLoggingMessage({
@@ -45,14 +47,14 @@ export const log = {
       process.stderr.write(`ℹ️  ${message}\n`);
     }
   },
-  
+
   error: async (message: string, data?: any) => {
     if (!shouldLog("error")) return;
-    
+
     if (mcpServer) {
       try {
         await mcpServer.server.sendLoggingMessage({
-          level: "error", 
+          level: "error",
           data: data ? { message, data } : message,
         });
       } catch {
@@ -64,10 +66,10 @@ export const log = {
       process.stderr.write(`❌ ${message}\n`);
     }
   },
-  
+
   warn: async (message: string, data?: any) => {
     if (!shouldLog("warning")) return;
-    
+
     if (mcpServer) {
       try {
         await mcpServer.server.sendLoggingMessage({
@@ -83,10 +85,10 @@ export const log = {
       process.stderr.write(`⚠️  ${message}\n`);
     }
   },
-  
+
   debug: async (message: string, data?: any) => {
     if (!shouldLog("debug")) return;
-    
+
     if (mcpServer) {
       try {
         await mcpServer.server.sendLoggingMessage({
@@ -103,5 +105,5 @@ export const log = {
       // No MCP server available, use stderr only in debug mode
       process.stderr.write(`🐛 ${message}\n`);
     }
-  }
+  },
 };

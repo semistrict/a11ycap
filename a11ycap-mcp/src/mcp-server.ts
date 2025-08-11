@@ -2,10 +2,10 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { SetLevelRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { toolDefinitions } from "a11ycap";
-import { CONSOLE_INJECTION_SCRIPT } from "./constants.js";
+import { type ZodObject, type ZodRawShape, z } from "zod";
 import { getBrowserConnectionManager } from "./browser-connection-manager.js";
+import { CONSOLE_INJECTION_SCRIPT } from "./constants.js";
 import { setLogLevel } from "./logging.js";
-import { z, type ZodRawShape, type ZodObject } from "zod";
 
 /**
  * Helper function to add browserId parameter to tool schemas for MCP registration.
@@ -16,7 +16,9 @@ function addBrowserId(schema: ZodObject<any>) {
     browserId: z
       .string()
       .optional()
-      .describe("Browser connection ID (uses first available if not specified)")
+      .describe(
+        "Browser connection ID (uses first available if not specified)",
+      ),
   });
 }
 
@@ -28,10 +30,12 @@ export function setupA11yCapTools(server: McpServer) {
   server.server.setRequestHandler(SetLevelRequestSchema, async (request) => {
     const { level } = request.params;
     // Map MCP log levels to our simplified levels
-    const mappedLevel = 
-      level === "emergency" || level === "alert" || level === "critical" ? "error" :
-      level === "notice" ? "info" :
-      level as "debug" | "info" | "warning" | "error";
+    const mappedLevel =
+      level === "emergency" || level === "alert" || level === "critical"
+        ? "error"
+        : level === "notice"
+          ? "info"
+          : (level as "debug" | "info" | "warning" | "error");
     setLogLevel(mappedLevel);
     return {};
   });
@@ -44,7 +48,8 @@ export function setupA11yCapTools(server: McpServer) {
         toolDef.description,
         toolDef.inputSchema,
         async (): Promise<CallToolResult> => {
-          const connections = await getBrowserConnectionManager().getConnections();
+          const connections =
+            await getBrowserConnectionManager().getConnections();
 
           if (connections.length === 0) {
             return {
@@ -129,7 +134,10 @@ ${CONSOLE_INJECTION_SCRIPT}
 /**
  * Generic tool handler that sends commands to browser via WebSocket
  */
-async function handleGenericTool(toolName: string, params: any): Promise<CallToolResult> {
+async function handleGenericTool(
+  toolName: string,
+  params: any,
+): Promise<CallToolResult> {
   const browserId = params.browserId;
   const manager = getBrowserConnectionManager();
   const connections = await manager.getConnections();
@@ -152,14 +160,18 @@ async function handleGenericTool(toolName: string, params: any): Promise<CallToo
 
   try {
     // Use browser connection manager's sendCommand which handles both local and remote
-    const result = await manager.sendCommand(connection.id, {
-      type: toolName,
-      payload: params,
-    }, 30000);
+    const result = await manager.sendCommand(
+      connection.id,
+      {
+        type: toolName,
+        payload: params,
+      },
+      30000,
+    );
 
     // Format the response based on tool type
     let responseText = `Tool "${toolName}" executed successfully`;
-    
+
     if (result?.snapshot) {
       responseText = result.snapshot;
     } else if (result && typeof result === "object") {
@@ -187,4 +199,3 @@ async function handleGenericTool(toolName: string, params: any): Promise<CallToo
     };
   }
 }
-

@@ -1,4 +1,3 @@
-
 export function yamlEscapeKeyIfNeeded(str: string): string {
   if (!yamlStringNeedsQuotes(str)) return str;
   return `'${str.replace(/'/g, `''`)}'`;

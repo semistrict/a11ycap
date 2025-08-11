@@ -1,24 +1,30 @@
-import { z } from "zod";
-import type { ToolHandler } from "./base.js";
-import { baseToolSchema, ensureInstanceOf, getElementByRefOrThrow } from "./common.js";
+import { z } from 'zod';
+import type { ToolHandler } from './base.js';
+import {
+  baseToolSchema,
+  ensureInstanceOf,
+  getElementByRefOrThrow,
+} from './common.js';
 
 // Core tool schema without browserId (which is added by MCP server for routing)
 const selectOptionSchema = baseToolSchema.extend({
   values: z
     .array(z.string())
-    .describe("Array of values to select in the dropdown. This can be a single value or multiple values."),
+    .describe(
+      'Array of values to select in the dropdown. This can be a single value or multiple values.'
+    ),
 });
 
 export const selectOptionDefinition = {
-  name: "select_option",
-  description: "Select an option in a dropdown",
-  inputSchema: selectOptionSchema.shape  // Will have browserId added by MCP server
+  name: 'select_option',
+  description: 'Select an option in a dropdown',
+  inputSchema: selectOptionSchema.shape, // Will have browserId added by MCP server
 };
 
 const SelectOptionMessageSchema = z.object({
   id: z.string(),
   type: z.literal('select_option'),
-  payload: selectOptionSchema  // Same schema as the core tool
+  payload: selectOptionSchema, // Same schema as the core tool
 });
 
 type SelectOptionMessage = z.infer<typeof SelectOptionMessageSchema>;
@@ -52,7 +58,9 @@ async function executeSelectOption(message: SelectOptionMessage): Promise<any> {
       }
     }
     if (!found) {
-      throw new Error(`Option with value "${value}" not found in select element`);
+      throw new Error(
+        `Option with value "${value}" not found in select element`
+      );
     }
   }
 
@@ -65,5 +73,5 @@ async function executeSelectOption(message: SelectOptionMessage): Promise<any> {
 export const selectOptionTool: ToolHandler<SelectOptionMessage> = {
   definition: selectOptionDefinition,
   messageSchema: SelectOptionMessageSchema,
-  execute: executeSelectOption
+  execute: executeSelectOption,
 };

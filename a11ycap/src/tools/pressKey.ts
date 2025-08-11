@@ -1,28 +1,30 @@
-import { z } from "zod";
-import type { ToolHandler } from "./base.js";
+import { z } from 'zod';
+import type { ToolHandler } from './base.js';
 
 // Core tool schema without browserId (which is added by MCP server for routing)
 const pressKeySchema = z.object({
   key: z
     .string()
-    .describe("Name of the key to press or a character to generate, such as `ArrowLeft` or `a`"),
+    .describe(
+      'Name of the key to press or a character to generate, such as `ArrowLeft` or `a`'
+    ),
   captureSnapshot: z
     .boolean()
     .optional()
     .default(true)
-    .describe("Capture accessibility snapshot after action")
+    .describe('Capture accessibility snapshot after action'),
 });
 
 export const pressKeyDefinition = {
-  name: "press_key",
-  description: "Press a key on the keyboard",
-  inputSchema: pressKeySchema.shape  // Will have browserId added by MCP server
+  name: 'press_key',
+  description: 'Press a key on the keyboard',
+  inputSchema: pressKeySchema.shape, // Will have browserId added by MCP server
 };
 
 const PressKeyMessageSchema = z.object({
   id: z.string(),
   type: z.literal('press_key'),
-  payload: pressKeySchema  // Same schema as the core tool
+  payload: pressKeySchema, // Same schema as the core tool
 });
 
 type PressKeyMessage = z.infer<typeof PressKeyMessageSchema>;
@@ -46,5 +48,5 @@ async function executePressKey(message: PressKeyMessage): Promise<any> {
 export const pressKeyTool: ToolHandler<PressKeyMessage> = {
   definition: pressKeyDefinition,
   messageSchema: PressKeyMessageSchema,
-  execute: executePressKey
+  execute: executePressKey,
 };

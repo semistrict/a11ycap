@@ -11,7 +11,7 @@ export const baseToolSchema = z.object({
     .boolean()
     .optional()
     .default(true)
-    .describe('Capture accessibility snapshot after action')
+    .describe('Capture accessibility snapshot after action'),
 });
 
 export function ensureA11yCap(): any {

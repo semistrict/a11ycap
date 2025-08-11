@@ -1,4 +1,3 @@
-
 import {
   escapeRegExp,
   longestCommonSubstring,
@@ -6,10 +5,10 @@ import {
 } from '@isomorphic/stringUtils';
 
 import { box, getElementComputedStyle, isElementVisible } from './domUtils';
-import * as roleUtils from './roleUtils';
-import { yamlEscapeKeyIfNeeded, yamlEscapeValueIfNeeded } from './yamlUtils';
 import type { ReactInfo } from './reactUtils';
 import { extractReactInfo } from './reactUtils';
+import * as roleUtils from './roleUtils';
+import { yamlEscapeKeyIfNeeded, yamlEscapeValueIfNeeded } from './yamlUtils';
 
 import type {
   AriaProps,
@@ -79,8 +78,8 @@ function toInternalOptions(options: AriaTreeOptions): InternalOptions {
   }
   if (options.mode === 'autoexpect') {
     // To auto-generate assertions on visible elements.
-    return { 
-      visibility: 'ariaAndVisible', 
+    return {
+      visibility: 'ariaAndVisible',
       refs: 'none',
       enableReact: options.enableReact,
       refPrefix: options.refPrefix,
@@ -88,17 +87,17 @@ function toInternalOptions(options: AriaTreeOptions): InternalOptions {
   }
   if (options.mode === 'codegen') {
     // To generate aria assertion with regex heurisitcs.
-    return { 
-      visibility: 'aria', 
-      refs: 'none', 
+    return {
+      visibility: 'aria',
+      refs: 'none',
       enableReact: options.enableReact,
       refPrefix: options.refPrefix,
-      renderStringsAsRegex: true 
+      renderStringsAsRegex: true,
     };
   }
   // To match aria snapshot.
-  return { 
-    visibility: 'aria', 
+  return {
+    visibility: 'aria',
     refs: 'none',
     enableReact: options.enableReact,
     refPrefix: options.refPrefix,
@@ -294,12 +293,12 @@ function toAriaNode(
       active,
     };
     computeAriaRef(ariaNode, options);
-    
+
     // Extract React information if enabled
     if (options.enableReact) {
       ariaNode.react = extractReactInfo(element) || undefined;
     }
-    
+
     return ariaNode;
   }
 
@@ -615,7 +614,10 @@ export function renderAriaTree(
       if (ariaNode.react.componentState) {
         key += ` [state=${ariaNode.react.componentState}]`;
       }
-      if (ariaNode.react.interactionHints && ariaNode.react.interactionHints.length > 0) {
+      if (
+        ariaNode.react.interactionHints &&
+        ariaNode.react.interactionHints.length > 0
+      ) {
         key += ` [${ariaNode.react.interactionHints.join(', ')}]`;
       }
     }

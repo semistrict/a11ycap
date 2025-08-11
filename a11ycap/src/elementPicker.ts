@@ -3,7 +3,7 @@
  * Inspired by Playwright's element inspector
  */
 
-import { extractReactInfo, type ReactInfo } from './reactUtils.js';
+import { type ReactInfo, extractReactInfo } from './reactUtils.js';
 
 export interface PickedElement {
   element: Element;
@@ -61,10 +61,10 @@ export class ElementPicker {
     this.glassPaneElement.style.display = 'none';
     this.glassPaneElement.style.backgroundColor = 'transparent';
     this.glassPaneElement.style.cursor = 'crosshair';
-    
+
     // Create shadow root for style isolation
     this.glassPaneShadow = this.glassPaneElement.attachShadow({ mode: 'open' });
-    
+
     // Add styles
     const styleElement = document.createElement('style');
     styleElement.textContent = `
@@ -154,7 +154,7 @@ export class ElementPicker {
       }
     `;
     this.glassPaneShadow.appendChild(styleElement);
-    
+
     // Add control panel
     const controls = document.createElement('div');
     controls.className = 'controls';
@@ -166,16 +166,16 @@ export class ElementPicker {
       <div class="info selected-count">Selected: 0</div>
     `;
     this.glassPaneShadow.appendChild(controls);
-    
+
     // Setup event handlers
     this.setupEventHandlers();
     this.multiSelect = false;
   }
-  
+
   private getModifierKey(): string {
     return navigator.platform.includes('Mac') ? 'Cmd' : 'Ctrl';
   }
-  
+
   private setupEventHandlers() {
     // Prevent all events from reaching the page
     const stopEvent = (e: Event) => {
@@ -184,28 +184,28 @@ export class ElementPicker {
         e.preventDefault();
       }
     };
-    
+
     // Mouse move for hover effect
     this.glassPaneElement.addEventListener('mousemove', (e) => {
       if (!this.isActive) return;
       stopEvent(e);
-      
+
       // Temporarily disable pointer events to get element underneath
       this.glassPaneElement.style.pointerEvents = 'none';
       const element = document.elementFromPoint(e.clientX, e.clientY);
       this.glassPaneElement.style.pointerEvents = 'all';
-      
+
       if (element && element !== this.hoveredElement) {
         this.hoveredElement = element;
         this.updateHighlights();
       }
     });
-    
+
     // Click to select element
     this.glassPaneElement.addEventListener('click', (e) => {
       if (!this.isActive) return;
       stopEvent(e);
-      
+
       // Check if click is on control buttons
       const target = e.composedPath()[0] as HTMLElement;
       if (target?.classList?.contains('done')) {
@@ -216,7 +216,7 @@ export class ElementPicker {
         this.cancel();
         return;
       }
-      
+
       if (this.hoveredElement) {
         if (this.selectedElements.has(this.hoveredElement)) {
           this.selectedElements.delete(this.hoveredElement);
@@ -230,11 +230,11 @@ export class ElementPicker {
         this.updateSelectedCount();
       }
     });
-    
+
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
       if (!this.isActive) return;
-      
+
       if (e.key === 'Escape') {
         stopEvent(e);
         this.cancel();
@@ -245,73 +245,87 @@ export class ElementPicker {
         this.multiSelect = true;
       }
     });
-    
+
     document.addEventListener('keyup', (e) => {
       if (!this.isActive) return;
-      
+
       if (e.key === 'Shift') {
         this.multiSelect = false;
       }
     });
-    
+
     // Block all other events
-    for (const eventName of ['auxclick', 'dragstart', 'input', 'keypress', 'pointerdown', 'pointerup', 'mousedown', 'mouseup', 'focus', 'scroll']) {
+    for (const eventName of [
+      'auxclick',
+      'dragstart',
+      'input',
+      'keypress',
+      'pointerdown',
+      'pointerup',
+      'mousedown',
+      'mouseup',
+      'focus',
+      'scroll',
+    ]) {
       this.glassPaneElement.addEventListener(eventName, stopEvent);
     }
   }
-  
+
   private updateSelectedCount() {
     const countElement = this.glassPaneShadow.querySelector('.selected-count');
     if (countElement) {
       countElement.textContent = `Selected: ${this.selectedElements.size}`;
     }
   }
-  
+
   private updateHighlights() {
     // Clear existing highlights
-    this.renderedEntries.forEach(entry => {
+    for (const entry of this.renderedEntries) {
       entry.highlightElement?.remove();
       entry.tooltipElement?.remove();
-    });
+    }
     this.renderedEntries = [];
-    
+
     // Highlight selected elements
-    this.selectedElements.forEach(element => {
+    for (const element of this.selectedElements) {
       this.addHighlight(element, 'selected');
-    });
-    
+    }
+
     // Highlight hovered element
-    if (this.hoveredElement && !this.selectedElements.has(this.hoveredElement)) {
+    if (
+      this.hoveredElement &&
+      !this.selectedElements.has(this.hoveredElement)
+    ) {
       this.addHighlight(this.hoveredElement, 'hovered');
     }
   }
-  
+
   private addHighlight(element: Element, type: 'hovered' | 'selected') {
     const box = element.getBoundingClientRect();
     if (!box || (box.width === 0 && box.height === 0)) return;
-    
+
     const highlight = document.createElement('div');
     highlight.className = `highlight ${type}`;
-    highlight.style.left = box.left + 'px';
-    highlight.style.top = box.top + 'px';
-    highlight.style.width = box.width + 'px';
-    highlight.style.height = box.height + 'px';
-    
+    highlight.style.left = `${box.left}px`;
+    highlight.style.top = `${box.top}px`;
+    highlight.style.width = `${box.width}px`;
+    highlight.style.height = `${box.height}px`;
+
     this.glassPaneShadow.appendChild(highlight);
-    
+
     // Add tooltip for hovered element
     if (type === 'hovered') {
       const tooltip = document.createElement('div');
       tooltip.className = 'tooltip';
       tooltip.textContent = this.getElementDescription(element);
-      
+
       // Position tooltip
       const tooltipTop = box.top > 30 ? box.top - 30 : box.bottom + 5;
-      tooltip.style.left = box.left + 'px';
-      tooltip.style.top = tooltipTop + 'px';
-      
+      tooltip.style.left = `${box.left}px`;
+      tooltip.style.top = `${tooltipTop}px`;
+
       this.glassPaneShadow.appendChild(tooltip);
-      
+
       this.renderedEntries.push({
         targetElement: element,
         color: '#f97316',
@@ -320,68 +334,76 @@ export class ElementPicker {
         box,
         tooltipTop,
         tooltipLeft: box.left,
-        tooltipText: tooltip.textContent
+        tooltipText: tooltip.textContent,
       });
     } else {
       this.renderedEntries.push({
         targetElement: element,
         color: '#10b981',
         highlightElement: highlight,
-        box
+        box,
       });
     }
   }
-  
+
   private getElementDescription(element: Element): string {
     const tag = element.tagName.toLowerCase();
     const id = element.id ? `#${element.id}` : '';
-    const className = element.className ? `.${element.className.split(' ').join('.')}` : '';
+    const className = element.className
+      ? `.${element.className.split(' ').join('.')}`
+      : '';
     const ariaLabel = element.getAttribute('aria-label');
     const text = element.textContent?.trim().substring(0, 30);
-    
+
     // Get React component info if available
     const reactInfo = extractReactInfo(element);
-    
+
     let desc = `${tag}${id}${className}`;
-    
+
     // Add React component name if available
     if (reactInfo?.componentName) {
       desc = `[${reactInfo.componentName}] ${desc}`;
     }
-    
+
     if (ariaLabel) desc += ` [${ariaLabel}]`;
     else if (text) desc += ` "${text}..."`;
-    
+
     // Add source location if available
     if (reactInfo?.debugSource) {
       desc += ` (${reactInfo.debugSource})`;
     }
-    
+
     return desc;
   }
-  
+
   private generateSelector(element: Element): string {
     // Priority 1: data-testid or data-test-id attributes
-    const testId = element.getAttribute('data-testid') || 
-                   element.getAttribute('data-test-id') ||
-                   element.getAttribute('data-test');
+    const testId =
+      element.getAttribute('data-testid') ||
+      element.getAttribute('data-test-id') ||
+      element.getAttribute('data-test');
     if (testId) {
       return `[data-testid="${testId}"]`;
     }
-    
+
     // Priority 2: ID selector
     const id = element.id;
     if (id) return `#${id}`;
-    
+
     // Priority 3: aria-label for interactive elements
     const ariaLabel = element.getAttribute('aria-label');
-    if (ariaLabel && ['button', 'a', 'input', 'select', 'textarea'].includes(element.tagName.toLowerCase())) {
+    if (
+      ariaLabel &&
+      ['button', 'a', 'input', 'select', 'textarea'].includes(
+        element.tagName.toLowerCase()
+      )
+    ) {
       const selector = `${element.tagName.toLowerCase()}[aria-label="${ariaLabel}"]`;
       if (document.querySelectorAll(selector).length === 1) {
         return selector;
       }
     }
-    
+
     // Priority 4: Class-based selector
     const className = element.className;
     if (className && typeof className === 'string') {
@@ -394,80 +416,86 @@ export class ElementPicker {
         }
       }
     }
-    
+
     // Priority 5: Text content for buttons and links
     const text = element.textContent?.trim();
-    if (text && text.length < 50 && ['button', 'a'].includes(element.tagName.toLowerCase())) {
+    if (
+      text &&
+      text.length < 50 &&
+      ['button', 'a'].includes(element.tagName.toLowerCase())
+    ) {
       // Try to find by text (simplified)
       const selector = `${element.tagName.toLowerCase()}`;
       const matches = Array.from(document.querySelectorAll(selector));
-      const index = matches.findIndex(el => el.textContent?.trim() === text);
+      const index = matches.findIndex((el) => el.textContent?.trim() === text);
       if (index >= 0 && matches.length > 1) {
         return `${selector}:nth-of-type(${index + 1})`;
       }
     }
-    
+
     // Fall back to nth-child selector
-    let path = [];
+    const path = [];
     let current: Element | null = element;
-    
+
     while (current && current !== document.body) {
       const parent: Element | null = current.parentElement;
       if (!parent) break;
-      
+
       const siblings = Array.from(parent.children);
       const index = siblings.indexOf(current) + 1;
-      
+
       const tag = current.tagName.toLowerCase();
       const selector = index > 1 ? `${tag}:nth-child(${index})` : tag;
       path.unshift(selector);
-      
+
       current = parent;
     }
-    
+
     return path.join(' > ');
   }
-  
+
   private complete() {
-    const elements: PickedElement[] = Array.from(this.selectedElements).map(element => {
-      const box = element.getBoundingClientRect();
-      
-      // Extract React info if available
-      const reactInfo = extractReactInfo(element);
-      
-      return {
-        element,
-        selector: this.generateSelector(element),
-        ariaLabel: element.getAttribute('aria-label') || undefined,
-        text: element.textContent?.trim() || undefined,
-        ref: element.getAttribute('data-ref') || undefined,
-        boundingBox: {
-          x: box.x,
-          y: box.y,
-          width: box.width,
-          height: box.height
-        },
-        reactInfo: reactInfo || undefined
-      };
-    });
-    
+    const elements: PickedElement[] = Array.from(this.selectedElements).map(
+      (element) => {
+        const box = element.getBoundingClientRect();
+
+        // Extract React info if available
+        const reactInfo = extractReactInfo(element);
+
+        return {
+          element,
+          selector: this.generateSelector(element),
+          ariaLabel: element.getAttribute('aria-label') || undefined,
+          text: element.textContent?.trim() || undefined,
+          ref: element.getAttribute('data-ref') || undefined,
+          boundingBox: {
+            x: box.x,
+            y: box.y,
+            width: box.width,
+            height: box.height,
+          },
+          reactInfo: reactInfo || undefined,
+        };
+      }
+    );
+
     this.cleanup();
-    
+
     if (this.resolvePromise) {
       this.resolvePromise(elements);
       this.resolvePromise = undefined;
     }
   }
-  
+
   private cancel() {
     this.cleanup();
-    
+
     if (this.resolvePromise) {
       this.resolvePromise([]);
       this.resolvePromise = undefined;
     }
   }
-  
+
   private cleanup() {
     this.isActive = false;
     this.glassPaneElement.style.display = 'none';
@@ -476,23 +504,23 @@ export class ElementPicker {
     this.hoveredElement = null;
     this.updateHighlights();
   }
-  
+
   public async pick(): Promise<PickedElement[]> {
     return new Promise((resolve) => {
       this.resolvePromise = resolve;
       this.isActive = true;
       this.selectedElements.clear();
       this.multiSelect = false;
-      
+
       // Install glass pane if not already installed
       if (!document.body.contains(this.glassPaneElement)) {
         document.body.appendChild(this.glassPaneElement);
       }
-      
+
       // Show picker UI
       this.glassPaneElement.style.display = 'block';
       this.glassPaneElement.style.pointerEvents = 'all';
-      
+
       this.updateHighlights();
       this.updateSelectedCount();
     });

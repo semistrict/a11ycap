@@ -1,4 +1,4 @@
-import { z, type ZodRawShape } from "zod";
+import type { ZodRawShape, z } from 'zod';
 
 export interface ToolDefinition {
   name: string;

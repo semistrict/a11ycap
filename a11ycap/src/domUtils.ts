@@ -1,4 +1,3 @@
-
 type GlobalOptions = {
   browserNameForWorkarounds?: string;
 };

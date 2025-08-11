@@ -6,7 +6,13 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true
+      "recommended": true,
+      "suspicious": {
+        "noExplicitAny": "off"
+      },
+      "style": {
+        "noNonNullAssertion": "off"
+      }
     }
   },
   "formatter": {
@@ -22,6 +28,6 @@
   },
   "files": {
     "include": ["src/**/*.ts", "test/**/*.ts"],
-    "ignore": ["lib/**", "node_modules/**"]
+    "ignore": ["lib/**", "dist/**", "node_modules/**", "**/build/**", "**/coverage/**"]
   }
 }

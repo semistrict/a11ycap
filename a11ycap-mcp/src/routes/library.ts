@@ -28,7 +28,7 @@ export function setupLibraryRoutes(app: Express) {
       const wsProtocol = protocol === "https" ? "wss" : "ws";
       const wsUrl = `${wsProtocol}://${host}/browser-ws`;
 
-        // Use the new enhanced library with built-in MCP connection
+      // Use the new enhanced library with built-in MCP connection
       const enhancedBundle = `
 // Handle Trusted Types for CSP compatibility
 if (typeof window !== 'undefined' && window.trustedTypes) {
