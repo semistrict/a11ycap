@@ -26,6 +26,7 @@ export { toolHandlers } from './tools/index.js';
 
 // Re-export eventBuffer functionality
 export { addEvent, getEvents, clearEvents, getBufferStats } from './eventBuffer.js';
+import { addEvent } from './eventBuffer.js';
 
 // Re-export console forwarder functionality
 export { installConsoleForwarders, restoreConsole } from './consoleForwarder.js';
@@ -35,10 +36,103 @@ import { installConsoleForwarders } from './consoleForwarder.js';
 export { installInteractionForwarders, restoreInteractionForwarders } from './interactionForwarder.js';
 import { installInteractionForwarders } from './interactionForwarder.js';
 
+// Global page UUID
+let currentPageUUID: string = '';
+
+// Generate page UUID from URL hash
+function generatePageUUID(): string {
+  if (typeof window === 'undefined') return '';
+  const url = window.location.href;
+  let hash = 0;
+  for (let i = 0; i < url.length; i++) {
+    const char = url.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(16);
+}
+
+// Triple-ESC key listener state
+let escPressCount = 0;
+let escPressTimer: number | null = null;
+
 // Install forwarders automatically in browser environment
 if (typeof window !== 'undefined') {
   installConsoleForwarders();
   installInteractionForwarders();
+  
+  // Initialize page UUID
+  currentPageUUID = generatePageUUID();
+  // Expose globally for testing and debugging
+  (window as any)._a11yCapPageUUID = currentPageUUID;
+  (window as any)._a11yCapEscCount = () => escPressCount;
+  (window as any)._a11yCapEscTimer = () => escPressTimer;
+  
+  // Triple-ESC key listener to enable element picker
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      escPressCount++;
+      
+      // Clear existing timer
+      if (escPressTimer) {
+        window.clearTimeout(escPressTimer);
+      }
+      
+      // Check for triple press
+      if (escPressCount === 3) {
+        // Enable element picker only if not already active
+        const picker = getElementPicker();
+        if (!picker.isPickerActive()) {
+          picker.enable({
+            includeSnapshots: true,
+            onElementsPicked: (elements) => {
+              // Save picked elements to event log with page UUID
+              for (const element of elements) {
+                addEvent({
+                  type: 'element_picked',
+                  timestamp: Date.now(),
+                  url: window.location.href,
+                  pageUUID: currentPageUUID,
+                  element: {
+                    ref: element.ref,
+                    selector: element.selector,
+                    textContent: element.element?.textContent?.slice(0, 100) || '',
+                    tagName: element.element?.tagName.toLowerCase() || '',
+                    snapshot: element.snapshot || ''
+                  }
+                });
+              }
+              console.log(`Picked ${elements.length} elements for page ${currentPageUUID}`);
+            }
+          });
+        }
+        escPressCount = 0;
+      } else {
+        // Reset counter after 1 second if not triple-pressed
+        escPressTimer = window.setTimeout(() => {
+          escPressCount = 0;
+        }, 1000);
+      }
+    } else if (escPressCount > 0) {
+      // Reset if any other key is pressed
+      escPressCount = 0;
+      if (escPressTimer) {
+        window.clearTimeout(escPressTimer);
+      }
+    }
+  });
+
+  // Listen for URL changes to update page UUID
+  const updatePageUUID = () => {
+    currentPageUUID = generatePageUUID();
+    (window as any)._a11yCapPageUUID = currentPageUUID;
+  };
+
+  // Listen for popstate (back/forward button)
+  window.addEventListener('popstate', updatePageUUID);
+  
+  // Listen for hashchange
+  window.addEventListener('hashchange', updatePageUUID);
 }
 
 /**

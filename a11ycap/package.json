@@ -29,6 +29,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@mozilla/readability": "^0.6.0",
+    "html-to-image": "^1.11.13",
     "yaml": "2.6.0",
     "zod": "^3.25.76"
   },

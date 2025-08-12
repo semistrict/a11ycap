@@ -13,10 +13,6 @@ export const ShowElementPickerMessageSchema = z.object({
   type: z.literal('show_element_picker'),
   id: z.string(),
   payload: z.object({
-    multiSelect: z
-      .boolean()
-      .optional()
-      .describe('Allow selecting multiple elements (hold Shift)'),
     includeSnapshots: z
       .boolean()
       .optional()
@@ -46,12 +42,8 @@ export interface PickedElementResult {
 export const showElementPickerDefinition: ToolDefinition = {
   name: 'show_element_picker',
   description:
-    'Show an interactive element picker overlay to visually select elements on the page',
+    'Show an interactive element picker overlay to visually select elements on the page. Multiple elements can be selected by clicking.',
   inputSchema: {
-    multiSelect: z
-      .boolean()
-      .optional()
-      .describe('Allow selecting multiple elements (hold Shift)'),
     includeSnapshots: z
       .boolean()
       .optional()
@@ -66,48 +58,15 @@ export const showElementPickerHandler: ToolHandler<ShowElementPickerMessage> = {
 
   async execute(
     message: ShowElementPickerMessage
-  ): Promise<PickedElementResult[]> {
+  ): Promise<string> {
     const picker = getElementPicker();
 
-    // Show picker and wait for user to select elements
-    const pickedElements = await picker.pick();
+    // Enable picker with options but return immediately
+    picker.enable({
+      includeSnapshots: message.payload.includeSnapshots || false,
+    });
 
-    // Convert to result format
-    const results: PickedElementResult[] = [];
-
-    for (const picked of pickedElements) {
-      const rect = picked.element.getBoundingClientRect();
-
-      const result: PickedElementResult = {
-        selector: picked.selector,
-        ariaLabel: picked.ariaLabel,
-        text: picked.text?.substring(0, 100), // Limit text length
-        ref: picked.ref,
-        boundingBox: {
-          x: rect.x,
-          y: rect.y,
-          width: rect.width,
-          height: rect.height,
-        },
-      };
-
-      // Include snapshot if requested
-      if (message.payload.includeSnapshots) {
-        try {
-          const ariaTree = generateAriaTree(picked.element, {
-            mode: 'ai',
-            enableReact: true,
-          });
-          result.snapshot = JSON.stringify(ariaTree, null, 2);
-        } catch (error) {
-          console.error('Failed to generate snapshot:', error);
-        }
-      }
-
-      results.push(result);
-    }
-
-    return results;
+    return 'Element picker enabled. Multiple elements can be selected by clicking. Use triple-ESC key to activate element picker. Selected elements will be saved to the event log and can be retrieved with get_picked_elements.';
   },
 };
 

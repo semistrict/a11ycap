@@ -52,39 +52,43 @@ export class MCPWebSocketClient {
   connect(): void {
     if (typeof window === 'undefined') return;
 
-    this.ws = new WebSocket(this.wsUrl);
+    try {
+      this.ws = new WebSocket(this.wsUrl);
 
-    this.ws.onopen = () => {
-      this.reconnectAttempts = 0;
+      this.ws.onopen = () => {
+        this.reconnectAttempts = 0;
 
-      // Send page info to server with session ID
-      this.send({
-        type: 'page_info',
-        payload: {
-          sessionId: this.sessionId,
-          url: window.location.href,
-          title: document.title,
-          userAgent: navigator.userAgent,
-          isReconnect: sessionStorage.getItem('a11ycap_has_connected') === 'true',
-        },
-      });
-      
-      // Mark that we've connected at least once
-      sessionStorage.setItem('a11ycap_has_connected', 'true');
-    };
+        // Send page info to server with session ID
+        this.send({
+          type: 'page_info',
+          payload: {
+            sessionId: this.sessionId,
+            url: window.location.href,
+            title: document.title,
+            userAgent: navigator.userAgent,
+            isReconnect: sessionStorage.getItem('a11ycap_has_connected') === 'true',
+          },
+        });
+        
+        // Mark that we've connected at least once
+        sessionStorage.setItem('a11ycap_has_connected', 'true');
+      };
 
-    this.ws.onclose = () => {
-      if (this.reconnectAttempts < this.maxReconnectAttempts) {
-        this.reconnectAttempts++;
-        setTimeout(() => this.connect(), this.reconnectInterval);
-      }
-    };
+      this.ws.onclose = () => {
+        if (this.reconnectAttempts < this.maxReconnectAttempts) {
+          this.reconnectAttempts++;
+          setTimeout(() => this.connect(), this.reconnectInterval);
+        }
+      };
 
-    this.ws.onerror = () => {
-      // Silently handle errors - onclose will handle reconnection
-    };
+      this.ws.onerror = () => {
+        // Silently handle errors - onclose will handle reconnection
+      };
 
-    this.ws.onmessage = this.handleMessage.bind(this);
+      this.ws.onmessage = this.handleMessage.bind(this);
+    } catch (error) {
+      // Silently handle WebSocket creation errors
+    }
   }
 
   send(message: Record<string, unknown>): void {

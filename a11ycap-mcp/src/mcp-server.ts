@@ -3,6 +3,9 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { SetLevelRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { toolDefinitions } from "a11ycap";
 import { type ZodObject, type ZodRawShape, z } from "zod";
+import * as fs from "fs/promises";
+import * as path from "path";
+import * as os from "os";
 import { getBrowserConnectionManager } from "./browser-connection-manager.js";
 import { CONSOLE_INJECTION_SCRIPT } from "./constants.js";
 import { setLogLevel } from "./logging.js";
@@ -15,10 +18,7 @@ function addSessionId(schema: ZodObject<any>) {
   return schema.extend({
     sessionId: z
       .string()
-      .optional()
-      .describe(
-        "Browser session ID (uses first available if not specified)",
-      ),
+      .describe("Browser session ID"),
   });
 }
 
@@ -140,19 +140,14 @@ async function handleGenericTool(
 ): Promise<CallToolResult> {
   const sessionId = params.sessionId;
   const manager = getBrowserConnectionManager();
-  const connections = await manager.getConnections();
-  const connection = sessionId
-    ? await manager.getConnection(sessionId)
-    : connections[0];
+  const connection = await manager.getConnection(sessionId);
 
   if (!connection) {
     return {
       content: [
         {
           type: "text",
-          text: sessionId
-            ? `Browser session "${sessionId}" not found. Use list_tabs to see available connections.`
-            : `No browser connections available. To connect a browser, paste this in the browser console:\n\n\`\`\`javascript\n${CONSOLE_INJECTION_SCRIPT}\n\`\`\``,
+          text: `Browser session "${sessionId}" not found. Use list_tabs to see available connections.`,
         },
       ],
     };
@@ -168,6 +163,39 @@ async function handleGenericTool(
       },
       30000,
     );
+
+    // Handle special case for capture_element_image tool
+    if (toolName === "capture_element_image" && result?.base64Data) {
+      try {
+        // Create a temporary file for the image
+        const tempDir = os.tmpdir();
+        const timestamp = Date.now();
+        const filename = `a11ycap-capture-${timestamp}.png`;
+        const filepath = path.join(tempDir, filename);
+        
+        // Convert base64 to buffer and save to file
+        const buffer = Buffer.from(result.base64Data, 'base64');
+        await fs.writeFile(filepath, buffer);
+        
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Image captured successfully for element "${result.element}" (ref: ${result.ref})\nSaved to: ${filepath}`,
+            },
+          ],
+        };
+      } catch (error) {
+        return {
+          content: [
+            {
+              type: "text", 
+              text: `Image captured but failed to save to file: ${error instanceof Error ? error.message : "Unknown error"}`,
+            },
+          ],
+        };
+      }
+    }
 
     // Format the response based on tool type
     let responseText = `Tool "${toolName}" executed successfully`;

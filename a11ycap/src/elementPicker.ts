@@ -18,6 +18,12 @@ export interface PickedElement {
     height: number;
   };
   reactInfo?: ReactInfo;
+  snapshot?: string;
+}
+
+export interface ElementPickerOptions {
+  includeSnapshots?: boolean;
+  onElementsPicked?: (elements: PickedElement[]) => void;
 }
 
 interface HighlightEntry {
@@ -44,9 +50,14 @@ export class ElementPicker {
   private isActive = false;
   private pickedElements: PickedElement[] = [];
   private resolvePromise?: (elements: PickedElement[]) => void;
-  private multiSelect: boolean;
   private hoveredElement: Element | null = null;
   private selectedElements = new Set<Element>();
+  private currentOptions?: ElementPickerOptions;
+
+  /** Check if the element picker is currently active */
+  public isPickerActive(): boolean {
+    return this.isActive;
+  }
 
   constructor(private document: Document = window.document) {
     // Create glass pane overlay
@@ -160,16 +171,15 @@ export class ElementPicker {
     controls.className = 'controls';
     controls.innerHTML = `
       <h3>Element Picker</h3>
-      <div class="info">Click to select elements</div>
+      <div class="info">Click to select/deselect elements</div>
       <button class="done primary">Done (${this.getModifierKey()}+Enter)</button>
-      <button class="cancel">Cancel (Esc)</button>
+      <button class="cancel">Cancel</button>
       <div class="info selected-count">Selected: 0</div>
     `;
     this.glassPaneShadow.appendChild(controls);
 
     // Setup event handlers
     this.setupEventHandlers();
-    this.multiSelect = false;
   }
 
   private getModifierKey(): string {
@@ -221,9 +231,6 @@ export class ElementPicker {
         if (this.selectedElements.has(this.hoveredElement)) {
           this.selectedElements.delete(this.hoveredElement);
         } else {
-          if (!this.multiSelect) {
-            this.selectedElements.clear();
-          }
           this.selectedElements.add(this.hoveredElement);
         }
         this.updateHighlights();
@@ -235,22 +242,9 @@ export class ElementPicker {
     document.addEventListener('keydown', (e) => {
       if (!this.isActive) return;
 
-      if (e.key === 'Escape') {
-        stopEvent(e);
-        this.cancel();
-      } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
         stopEvent(e);
         this.complete();
-      } else if (e.key === 'Shift') {
-        this.multiSelect = true;
-      }
-    });
-
-    document.addEventListener('keyup', (e) => {
-      if (!this.isActive) return;
-
-      if (e.key === 'Shift') {
-        this.multiSelect = false;
       }
     });
 
@@ -454,7 +448,7 @@ export class ElementPicker {
     return path.join(' > ');
   }
 
-  private complete() {
+  private async complete() {
     const elements: PickedElement[] = Array.from(this.selectedElements).map(
       (element) => {
         const box = element.getBoundingClientRect();
@@ -462,12 +456,15 @@ export class ElementPicker {
         // Extract React info if available
         const reactInfo = extractReactInfo(element);
 
+        // Get element ref from aria snapshot
+        const ref = (element as any)._ariaRef?.ref;
+
         return {
           element,
           selector: this.generateSelector(element),
           ariaLabel: element.getAttribute('aria-label') || undefined,
           text: element.textContent?.trim() || undefined,
-          ref: element.getAttribute('data-ref') || undefined,
+          ref: ref || undefined,
           boundingBox: {
             x: box.x,
             y: box.y,
@@ -479,7 +476,27 @@ export class ElementPicker {
       }
     );
 
+    // Add snapshots if requested
+    if (this.currentOptions?.includeSnapshots) {
+      // Import snapshot function dynamically to avoid circular deps
+      const { snapshotForAI } = await import('./index.js');
+      
+      for (const pickedElement of elements) {
+        try {
+          const snapshot = await snapshotForAI(pickedElement.element, { max_bytes: 1024 });
+          pickedElement.snapshot = snapshot;
+        } catch (error) {
+          console.warn('Failed to generate snapshot for picked element:', error);
+        }
+      }
+    }
+
     this.cleanup();
+
+    // Call callback if provided
+    if (this.currentOptions?.onElementsPicked) {
+      this.currentOptions.onElementsPicked(elements);
+    }
 
     if (this.resolvePromise) {
       this.resolvePromise(elements);
@@ -505,24 +522,28 @@ export class ElementPicker {
     this.updateHighlights();
   }
 
+  public enable(options: ElementPickerOptions = {}): void {
+    this.currentOptions = options;
+    this.isActive = true;
+    this.selectedElements.clear();
+
+    // Install glass pane if not already installed
+    if (!document.body.contains(this.glassPaneElement)) {
+      document.body.appendChild(this.glassPaneElement);
+    }
+
+    // Show picker UI
+    this.glassPaneElement.style.display = 'block';
+    this.glassPaneElement.style.pointerEvents = 'all';
+
+    this.updateHighlights();
+    this.updateSelectedCount();
+  }
+
   public async pick(): Promise<PickedElement[]> {
     return new Promise((resolve) => {
       this.resolvePromise = resolve;
-      this.isActive = true;
-      this.selectedElements.clear();
-      this.multiSelect = false;
-
-      // Install glass pane if not already installed
-      if (!document.body.contains(this.glassPaneElement)) {
-        document.body.appendChild(this.glassPaneElement);
-      }
-
-      // Show picker UI
-      this.glassPaneElement.style.display = 'block';
-      this.glassPaneElement.style.pointerEvents = 'all';
-
-      this.updateHighlights();
-      this.updateSelectedCount();
+      this.enable();
     });
   }
 }

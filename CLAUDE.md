@@ -120,3 +120,4 @@ Key modules:
 - DO NOT run playwright directly, always use `pnpm test` from the workspace root
 - Test page (testpagecra) uses craco for custom Babel configuration
 - Babel plugin adds debug source info to JSX elements as data attributes
+- DO NOT use playwright to run tests directly, use pnpm test

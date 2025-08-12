@@ -5,6 +5,21 @@
 import { addEvent, type ClickEvent, type InputEvent, type KeyEvent, type NavigationEvent, type FocusEvent } from './eventBuffer.js';
 
 /**
+ * Generate page UUID from URL hash (same logic as in index.ts)
+ */
+function generatePageUUID(): string {
+  if (typeof window === 'undefined') return '';
+  const url = window.location.href;
+  let hash = 0;
+  for (let i = 0; i < url.length; i++) {
+    const char = url.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(16);
+}
+
+/**
  * Extract target information from DOM element
  */
 function extractTargetInfo(element: Element): {
@@ -55,6 +70,7 @@ export function installInteractionForwarders(): void {
         type: 'click',
         timestamp: Date.now(),
         url: window.location.href,
+        pageUUID: generatePageUUID(),
         target: extractTargetInfo(event.target),
         coordinates: {
           x: event.clientX,
@@ -85,6 +101,7 @@ export function installInteractionForwarders(): void {
         type: 'input',
         timestamp: Date.now(),
         url: window.location.href,
+        pageUUID: generatePageUUID(),
         target: {
           ...extractTargetInfo(element),
           inputType: element.type || undefined,
@@ -128,6 +145,7 @@ export function installInteractionForwarders(): void {
         type: 'change',
         timestamp: Date.now(),
         url: window.location.href,
+        pageUUID: generatePageUUID(),
         target: {
           ...extractTargetInfo(element),
           inputType: (element as HTMLInputElement).type || undefined,
@@ -150,6 +168,7 @@ export function installInteractionForwarders(): void {
         type: 'keydown',
         timestamp: Date.now(),
         url: window.location.href,
+        pageUUID: generatePageUUID(),
         target: extractTargetInfo(event.target),
         key: event.key,
         code: event.code,
@@ -171,6 +190,7 @@ export function installInteractionForwarders(): void {
         type: 'focus',
         timestamp: Date.now(),
         url: window.location.href,
+        pageUUID: generatePageUUID(),
         target: extractTargetInfo(event.target),
       };
 
@@ -188,6 +208,7 @@ export function installInteractionForwarders(): void {
         type: 'blur',
         timestamp: Date.now(),
         url: window.location.href,
+        pageUUID: generatePageUUID(),
         target: extractTargetInfo(event.target),
       };
 
@@ -204,6 +225,7 @@ export function installInteractionForwarders(): void {
         type: 'navigation',
         timestamp: Date.now(),
         url: window.location.href,
+        pageUUID: generatePageUUID(),
         from: from || document.referrer || window.location.href,
         to: to || window.location.href,
         method,

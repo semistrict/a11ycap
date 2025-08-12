@@ -6,6 +6,7 @@ export interface BaseEvent {
   type: string;
   timestamp: number;
   url: string;
+  pageUUID?: string;
 }
 
 export interface ConsoleEvent extends BaseEvent {
@@ -88,9 +89,21 @@ export interface FocusEvent extends BaseEvent {
   };
 }
 
+export interface ElementPickedEvent extends BaseEvent {
+  type: 'element_picked';
+  pageUUID: string;
+  element: {
+    ref?: string;
+    selector: string;
+    textContent: string;
+    tagName: string;
+    snapshot?: string;
+  };
+}
+
 export type InteractionEvent = ClickEvent | InputEvent | KeyEvent | NavigationEvent | FocusEvent;
 
-export type BufferedEvent = ConsoleEvent | InteractionEvent;
+export type BufferedEvent = ConsoleEvent | InteractionEvent | ElementPickedEvent;
 
 // Store events directly in sessionStorage with indexed keys
 const MAX_BUFFER_SIZE = 500;

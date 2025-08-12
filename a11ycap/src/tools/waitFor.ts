@@ -5,7 +5,8 @@ import type { ToolHandler } from './base.js';
 const waitForSchema = z.object({
   text: z.string().optional().describe('The text to wait for'),
   textGone: z.string().optional().describe('The text to wait for to disappear'),
-  time: z.number().optional().describe('The time to wait in seconds'),
+  selector: z.string().optional().describe('CSS selector to wait for (element to appear)'),
+  selectorGone: z.string().optional().describe('CSS selector to wait for to disappear'),
   captureSnapshot: z
     .boolean()
     .optional()
@@ -15,8 +16,7 @@ const waitForSchema = z.object({
 
 export const waitForDefinition = {
   name: 'wait_for',
-  description:
-    'Wait for text to appear or disappear or a specified time to pass',
+  description: 'Wait for text to appear/disappear or CSS selectors to match/not match on the page',
   inputSchema: waitForSchema.shape, // Will have sessionId added by MCP server
 };
 
@@ -33,13 +33,7 @@ async function executeWaitFor(message: WaitForMessage): Promise<any> {
     throw new Error('waitFor requires browser environment');
   }
 
-  const { text, textGone, time } = message.payload;
-
-  if (time) {
-    // Wait for specified time
-    await new Promise((resolve) => setTimeout(resolve, time * 1000));
-    return `Successfully waited ${time} seconds`;
-  }
+  const { text, textGone, selector, selectorGone } = message.payload;
 
   if (text) {
     // Wait for text to appear
@@ -71,7 +65,47 @@ async function executeWaitFor(message: WaitForMessage): Promise<any> {
     throw new Error(`Timeout waiting for text "${textGone}" to disappear`);
   }
 
-  throw new Error('Must specify either text, textGone, or time parameter');
+  if (selector) {
+    // Wait for CSS selector to match (element to appear)
+    const startTime = Date.now();
+    const timeout = 30000; // 30 second timeout
+
+    while (Date.now() - startTime < timeout) {
+      try {
+        const element = document.querySelector(selector);
+        if (element) {
+          return `Element matching selector "${selector}" appeared on page`;
+        }
+      } catch (error) {
+        throw new Error(`Invalid CSS selector "${selector}": ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 100)); // Check every 100ms
+    }
+
+    throw new Error(`Timeout waiting for selector "${selector}" to appear`);
+  }
+
+  if (selectorGone) {
+    // Wait for CSS selector to not match (element to disappear)
+    const startTime = Date.now();
+    const timeout = 30000; // 30 second timeout
+
+    while (Date.now() - startTime < timeout) {
+      try {
+        const element = document.querySelector(selectorGone);
+        if (!element) {
+          return `Element matching selector "${selectorGone}" disappeared from page`;
+        }
+      } catch (error) {
+        throw new Error(`Invalid CSS selector "${selectorGone}": ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 100)); // Check every 100ms
+    }
+
+    throw new Error(`Timeout waiting for selector "${selectorGone}" to disappear`);
+  }
+
+  throw new Error('Must specify either text, textGone, selector, or selectorGone parameter');
 }
 
 export const waitForTool: ToolHandler<WaitForMessage> = {
