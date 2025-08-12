@@ -28,12 +28,22 @@ function generateUUID(): string {
  */
 function getTabSessionId(): string {
   const SESSION_KEY = 'a11ycap_session_id';
-  let sessionId = sessionStorage.getItem(SESSION_KEY);
+  let sessionId: string | null = null;
+
+  try {
+    sessionId = sessionStorage.getItem(SESSION_KEY);
+  } catch {
+    // sessionStorage may not be available (private mode, etc.)
+  }
 
   if (!sessionId) {
     sessionId = generateUUID();
-    sessionStorage.setItem(SESSION_KEY, sessionId);
-    sessionStorage.setItem('a11ycap_session_created', Date.now().toString());
+    try {
+      sessionStorage.setItem(SESSION_KEY, sessionId);
+      sessionStorage.setItem('a11ycap_session_created', Date.now().toString());
+    } catch {
+      // Ignore storage errors (e.g., private mode or quota)
+    }
   }
 
   return sessionId;
@@ -65,6 +75,14 @@ export class MCPWebSocketClient {
         this.reconnectAttempts = 0;
 
         // Send page info to server with session ID at top level
+        let isReconnect = false;
+        try {
+          isReconnect =
+            sessionStorage.getItem('a11ycap_has_connected') === 'true';
+        } catch {
+          // Ignore sessionStorage errors
+        }
+
         const message: PageInfoMessage = {
           sessionId: this.sessionId,
           type: 'page_info',
@@ -72,14 +90,17 @@ export class MCPWebSocketClient {
             url: window.location.href,
             title: document.title,
             userAgent: navigator.userAgent,
-            isReconnect:
-              sessionStorage.getItem('a11ycap_has_connected') === 'true',
+            isReconnect,
           },
         };
         this.send(message);
 
         // Mark that we've connected at least once
-        sessionStorage.setItem('a11ycap_has_connected', 'true');
+        try {
+          sessionStorage.setItem('a11ycap_has_connected', 'true');
+        } catch {
+          // Ignore storage errors
+        }
       };
 
       this.ws.onclose = () => {
@@ -154,8 +175,23 @@ export class MCPWebSocketClient {
           return;
         }
         console.warn(`Unknown command type: ${rawMessage.commandType}`);
+        this.sendResponse(
+          rawMessage.id,
+          false,
+          undefined,
+          `Unknown command type: ${rawMessage.commandType}`
+        );
       } else {
         console.warn(`Unknown message type: ${rawMessage.type}`);
+        // For unknown message types, try to extract an id and send error response
+        if ('id' in rawMessage && typeof rawMessage.id === 'string') {
+          this.sendResponse(
+            rawMessage.id,
+            false,
+            undefined,
+            `Unknown message type: ${rawMessage.type}`
+          );
+        }
       }
     } catch (error) {
       console.error('Error handling MCP command:', error);
@@ -194,9 +230,16 @@ export function initializeMCPConnection(
 
   // Log a single consolidated message
   const sessionId = client.sessionId;
-  const isReconnect =
-    sessionStorage.getItem('a11ycap_has_connected') === 'true';
-  const sessionAge = sessionStorage.getItem('a11ycap_session_created');
+  let isReconnect = false;
+  let sessionAge: string | null = null;
+
+  try {
+    isReconnect = sessionStorage.getItem('a11ycap_has_connected') === 'true';
+    sessionAge = sessionStorage.getItem('a11ycap_session_created');
+  } catch {
+    // Ignore sessionStorage errors
+  }
+
   const age = sessionAge
     ? Math.round((Date.now() - Number.parseInt(sessionAge, 10)) / 1000)
     : 0;
