@@ -90,6 +90,7 @@ class MultiInstanceTest {
     // Send browser page info (matching browser library format)
     this.browserWs.send(
       JSON.stringify({
+        sessionId: "test-session-123",
         type: "page_info",
         payload: {
           url: "http://localhost:3000/test",
@@ -103,13 +104,15 @@ class MultiInstanceTest {
     this.browserWs.on("message", (data) => {
       try {
         const message = JSON.parse(data.toString());
-        if (message.id && message.type) {
+        if (message.id && message.type === 'command') {
           // Simulate successful tool execution
           const response = {
+            sessionId: message.sessionId || "test-session-123",
+            type: "command_response",
             commandId: message.id,
             success: true,
             data: {
-              snapshot: `Mock snapshot for ${message.type}`,
+              snapshot: `Mock snapshot for ${message.commandType}`,
               result: "Tool executed successfully",
             },
           };
@@ -217,7 +220,9 @@ describe("Multi-instance MCP Server Coordination", () => {
     await testHarness.connectBrowser();
 
     // Call take_snapshot from secondary server (should route to primary -> browser)
-    const result = await testHarness.callTool(secondary, "take_snapshot");
+    const result = await testHarness.callTool(secondary, "take_snapshot", {
+      sessionId: "test-session-123",
+    });
 
     expect(result.content).toBeDefined();
     expect(result.content[0].text).toContain("Mock snapshot");
@@ -250,7 +255,9 @@ describe("Multi-instance MCP Server Coordination", () => {
 
     // All instances should be able to call tools
     for (const instance of instances) {
-      const result = await testHarness.callTool(instance, "take_snapshot");
+      const result = await testHarness.callTool(instance, "take_snapshot", {
+        sessionId: "test-session-123",
+      });
       expect(result.content[0].text).toContain("Mock snapshot");
     }
   });
@@ -299,8 +306,22 @@ describe("Multi-instance MCP Server Coordination", () => {
     console.log("Reconnecting browser to new leader...");
     await testHarness.connectBrowser();
 
-    // Verify the new leader works with browser connections
-    tabs = await testHarness.listTabs(secondary);
+    // Poll until the new leader sees the browser connection
+    const pollTimeout = 5000;
+    const pollInterval = 200;
+    const startTime = Date.now();
+    let connected = false;
+
+    while (Date.now() - startTime < pollTimeout) {
+      tabs = await testHarness.listTabs(secondary);
+      if (tabs.content[0].text.includes("Test Page")) {
+        connected = true;
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, pollInterval));
+    }
+
+    expect(connected).toBe(true);
     expect(tabs.content[0].text).toContain("Test Page");
     console.log("New leader successfully handling browser connections!");
   }, 15000);

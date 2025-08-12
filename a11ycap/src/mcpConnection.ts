@@ -3,6 +3,12 @@
  */
 
 import { toolHandlers } from './tools/index.js';
+import type { 
+  PageInfoMessage, 
+  HeartbeatMessage, 
+  CommandResponseMessage,
+  BrowserCommand 
+} from './types/messages.js';
 
 // All tools are now handled by the modular tool system
 
@@ -58,17 +64,18 @@ export class MCPWebSocketClient {
       this.ws.onopen = () => {
         this.reconnectAttempts = 0;
 
-        // Send page info to server with session ID
-        this.send({
+        // Send page info to server with session ID at top level
+        const message: PageInfoMessage = {
+          sessionId: this.sessionId,
           type: 'page_info',
           payload: {
-            sessionId: this.sessionId,
             url: window.location.href,
             title: document.title,
             userAgent: navigator.userAgent,
             isReconnect: sessionStorage.getItem('a11ycap_has_connected') === 'true',
           },
-        });
+        };
+        this.send(message);
         
         // Mark that we've connected at least once
         sessionStorage.setItem('a11ycap_has_connected', 'true');
@@ -91,7 +98,7 @@ export class MCPWebSocketClient {
     }
   }
 
-  send(message: Record<string, unknown>): void {
+  send(message: PageInfoMessage | HeartbeatMessage | CommandResponseMessage): void {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message));
     }
@@ -103,38 +110,50 @@ export class MCPWebSocketClient {
     data?: any,
     error?: string
   ): void {
-    this.send({
+    const response: CommandResponseMessage = {
+      sessionId: this.sessionId,
+      type: 'command_response',
       commandId,
       success,
       ...(data !== undefined && { data }),
       ...(error && { error }),
-    });
+    };
+    this.send(response);
   }
 
   private async handleMessage(event: MessageEvent): Promise<void> {
     try {
-      const rawMessage = JSON.parse(event.data);
+      const rawMessage = JSON.parse(event.data) as BrowserCommand;
 
-      // Check if we have a modular tool handler for this message type
-      const toolHandler = toolHandlers[rawMessage.type];
-      if (toolHandler) {
-        try {
-          const message = toolHandler.messageSchema.parse(rawMessage);
-          const result = await toolHandler.execute(message);
-          this.sendResponse(rawMessage.id, true, result);
-        } catch (error) {
-          this.sendResponse(
-            rawMessage.id,
-            false,
-            undefined,
-            error instanceof Error ? error.message : 'Unknown error'
-          );
+      // Server sends commands with type 'command', actual command type in commandType
+      if (rawMessage.type === 'command') {
+        // Check if we have a modular tool handler for this command type
+        const toolHandler = toolHandlers[rawMessage.commandType];
+        if (toolHandler) {
+          try {
+            // Create message in expected format for the tool handler
+            const toolMessage = {
+              id: rawMessage.id,
+              type: rawMessage.commandType,
+              payload: rawMessage.payload
+            };
+            const message = toolHandler.messageSchema.parse(toolMessage);
+            const result = await toolHandler.execute(message);
+            this.sendResponse(rawMessage.id, true, result);
+          } catch (error) {
+            this.sendResponse(
+              rawMessage.id,
+              false,
+              undefined,
+              error instanceof Error ? error.message : 'Unknown error'
+            );
+          }
+          return;
         }
-        return;
+        console.warn(`Unknown command type: ${rawMessage.commandType}`);
+      } else {
+        console.warn(`Unknown message type: ${rawMessage.type}`);
       }
-
-      // No legacy handlers needed - all tools are modular now
-      console.warn(`Unknown message type: ${rawMessage.type}`);
     } catch (error) {
       console.error('Error handling MCP command:', error);
     }
@@ -143,15 +162,16 @@ export class MCPWebSocketClient {
   startHeartbeat(): void {
     setInterval(() => {
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        this.send({
+        const heartbeat: HeartbeatMessage = {
+          sessionId: this.sessionId,
           type: 'heartbeat',
           payload: {
-            sessionId: this.sessionId,
             url: window.location.href,
             title: document.title,
             timestamp: Date.now(),
           },
-        });
+        };
+        this.send(heartbeat);
       }
     }, 30000);
   }

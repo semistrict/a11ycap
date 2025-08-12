@@ -18,6 +18,17 @@ export {
   initializeMCPConnection,
 } from './mcpConnection.js';
 
+// Re-export message types
+export type { 
+  BaseMessage,
+  PageInfoMessage,
+  HeartbeatMessage,
+  CommandResponseMessage,
+  BrowserToServerMessage,
+  BrowserCommand,
+  ServerToBrowserMessage
+} from './types/messages.js';
+
 // Re-export MCP tool definitions
 export { toolDefinitions, type McpToolDefinition } from './mcpTools.js';
 

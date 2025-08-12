@@ -92,8 +92,7 @@ Stdio-based MCP server with WebSocket support for browser connections:
 Key modules:
 - `index.ts` - Main server entry with stdio transport
 - `mcp-server.ts` - MCP tool implementations
-- `browser-connection-manager.ts` - Primary/secondary WebSocket management
-- `browser-connections.ts` - Individual browser tab connection handling
+- `browser-connection-manager.ts` - WebSocket management and browser connection handling
 
 ### Testing Architecture
 - Playwright for end-to-end testing with accessibility snapshots
