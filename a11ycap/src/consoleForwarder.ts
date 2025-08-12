@@ -2,7 +2,7 @@
  * Console message buffering using event buffer
  */
 
-import { addEvent, type ConsoleEvent } from './eventBuffer.js';
+import { type ConsoleEvent, addEvent } from './eventBuffer.js';
 
 /**
  * Install console wrappers to buffer messages locally
@@ -27,7 +27,7 @@ export function installConsoleForwarders(): void {
 
     try {
       // Serialize arguments safely
-      const serializedArgs = args.map(arg => {
+      const serializedArgs = args.map((arg) => {
         try {
           if (arg instanceof Error) {
             return {
@@ -94,6 +94,6 @@ export function restoreConsole(): void {
     console.error = originals.error;
     console.info = originals.info;
     console.debug = originals.debug;
-    delete (window as any).__a11ycap_original_console;
+    (window as any).__a11ycap_original_console = undefined;
   }
 }

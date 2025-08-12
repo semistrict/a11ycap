@@ -38,9 +38,9 @@ export interface CommandResponseMessage extends BaseMessage {
 }
 
 // Union type for all browser-to-server messages
-export type BrowserToServerMessage = 
-  | PageInfoMessage 
-  | HeartbeatMessage 
+export type BrowserToServerMessage =
+  | PageInfoMessage
+  | HeartbeatMessage
   | CommandResponseMessage;
 
 // Server to Browser messages
@@ -52,5 +52,5 @@ export interface BrowserCommand extends BaseMessage {
   payload: any;
 }
 
-// Union type for all server-to-browser messages  
+// Union type for all server-to-browser messages
 export type ServerToBrowserMessage = BrowserCommand;

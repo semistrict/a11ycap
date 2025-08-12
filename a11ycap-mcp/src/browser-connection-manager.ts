@@ -8,19 +8,19 @@
 
 import { randomUUID } from "node:crypto";
 import { createServer } from "node:http";
+import type {
+  BrowserCommand,
+  BrowserToServerMessage,
+  CommandResponseMessage,
+  HeartbeatMessage,
+  PageInfoMessage,
+} from "a11ycap";
 import cors from "cors";
 import express from "express";
 import { WebSocketServer } from "ws";
 import type WebSocket from "ws";
 import { log } from "./logging.js";
 import { setupLibraryRoutes } from "./routes/library.js";
-import type { 
-  BrowserToServerMessage,
-  PageInfoMessage,
-  HeartbeatMessage,
-  CommandResponseMessage,
-  BrowserCommand
-} from "a11ycap";
 
 export interface BrowserConnection {
   sessionId: string;
@@ -372,7 +372,7 @@ export class PrimaryBrowserConnectionManager
 
     const fullCommand: BrowserCommand = {
       sessionId,
-      type: 'command',
+      type: "command",
       id: randomUUID(),
       commandType: command.commandType,
       payload: command.payload,
@@ -519,7 +519,7 @@ export class RemoteBrowserConnectionManager
   ): Promise<any> {
     const fullCommand: BrowserCommand = {
       sessionId,
-      type: 'command',
+      type: "command",
       id: randomUUID(),
       commandType: command.commandType,
       payload: command.payload,

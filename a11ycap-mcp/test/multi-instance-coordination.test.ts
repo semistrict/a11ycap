@@ -104,7 +104,7 @@ class MultiInstanceTest {
     this.browserWs.on("message", (data) => {
       try {
         const message = JSON.parse(data.toString());
-        if (message.id && message.type === 'command') {
+        if (message.id && message.type === "command") {
           // Simulate successful tool execution
           const response = {
             sessionId: message.sessionId || "test-session-123",

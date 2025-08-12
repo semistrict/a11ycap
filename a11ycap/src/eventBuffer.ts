@@ -101,9 +101,17 @@ export interface ElementPickedEvent extends BaseEvent {
   };
 }
 
-export type InteractionEvent = ClickEvent | InputEvent | KeyEvent | NavigationEvent | FocusEvent;
+export type InteractionEvent =
+  | ClickEvent
+  | InputEvent
+  | KeyEvent
+  | NavigationEvent
+  | FocusEvent;
 
-export type BufferedEvent = ConsoleEvent | InteractionEvent | ElementPickedEvent;
+export type BufferedEvent =
+  | ConsoleEvent
+  | InteractionEvent
+  | ElementPickedEvent;
 
 // Store events directly in sessionStorage with indexed keys
 const MAX_BUFFER_SIZE = 500;
@@ -160,16 +168,16 @@ export function addEvent(event: BufferedEvent): void {
 
   const state = getBufferState();
   const serializedEvent = JSON.stringify(event);
-  
+
   // Store the event directly in sessionStorage
   const eventKey = `${EVENT_KEY_PREFIX}${state.currentIndex}`;
-  
+
   try {
     sessionStorage.setItem(eventKey, serializedEvent);
-    
+
     // Update state
     state.currentIndex = (state.currentIndex + 1) % MAX_BUFFER_SIZE;
-    
+
     if (state.size < MAX_BUFFER_SIZE) {
       state.size++;
     } else {
@@ -178,7 +186,7 @@ export function addEvent(event: BufferedEvent): void {
       sessionStorage.removeItem(oldestKey);
       state.oldestIndex = (state.oldestIndex + 1) % MAX_BUFFER_SIZE;
     }
-    
+
     saveBufferState(state);
   } catch (error) {
     console.warn('Failed to add event to buffer:', error);
@@ -205,31 +213,34 @@ export function getEvents(options?: {
   }
 
   const eventStrings: string[] = [];
-  
+
   // Iterate through events in chronological order
   for (let i = 0; i < state.size; i++) {
     const index = (state.oldestIndex + i) % MAX_BUFFER_SIZE;
     const eventKey = `${EVENT_KEY_PREFIX}${index}`;
-    
+
     try {
       const eventStr = sessionStorage.getItem(eventKey);
       if (!eventStr) continue;
-      
+
       // Apply filters if needed
       if (options?.type || options?.level || options?.since) {
         try {
           const event = JSON.parse(eventStr);
-          
+
           // Filter by type
           if (options.type && event.type !== options.type) {
             continue;
           }
-          
+
           // Filter by level (for console events)
-          if (options.level && (event.type !== 'console' || event.level !== options.level)) {
+          if (
+            options.level &&
+            (event.type !== 'console' || event.level !== options.level)
+          ) {
             continue;
           }
-          
+
           // Filter by timestamp
           if (options.since && event.timestamp < options.since) {
             continue;
@@ -238,7 +249,7 @@ export function getEvents(options?: {
           continue; // Skip malformed events
         }
       }
-      
+
       eventStrings.push(eventStr);
     } catch {
       // Skip events that can't be read
@@ -262,14 +273,14 @@ export function clearEvents(): void {
   }
 
   const state = getBufferState();
-  
+
   // Remove all event keys from sessionStorage
   for (let i = 0; i < state.size; i++) {
     const index = (state.oldestIndex + i) % MAX_BUFFER_SIZE;
     const eventKey = `${EVENT_KEY_PREFIX}${index}`;
     sessionStorage.removeItem(eventKey);
   }
-  
+
   // Reset state
   const newState: BufferState = { currentIndex: 0, size: 0, oldestIndex: 0 };
   saveBufferState(newState);
@@ -307,32 +318,37 @@ export function getBufferStats(): {
     for (let i = 0; i < state.size; i++) {
       const index = (state.oldestIndex + i) % MAX_BUFFER_SIZE;
       const eventKey = `${EVENT_KEY_PREFIX}${index}`;
-      
+
       try {
         const eventStr = sessionStorage.getItem(eventKey);
         if (!eventStr) continue;
-        
+
         const event = JSON.parse(eventStr);
-        
+
         // Count events by type
         stats.eventTypes[event.type] = (stats.eventTypes[event.type] || 0) + 1;
-        
+
         // Track timestamps
-        if (oldestTimestamp === undefined || event.timestamp < oldestTimestamp) {
+        if (
+          oldestTimestamp === undefined ||
+          event.timestamp < oldestTimestamp
+        ) {
           oldestTimestamp = event.timestamp;
         }
-        if (newestTimestamp === undefined || event.timestamp > newestTimestamp) {
+        if (
+          newestTimestamp === undefined ||
+          event.timestamp > newestTimestamp
+        ) {
           newestTimestamp = event.timestamp;
         }
       } catch {
         // Skip malformed events
       }
     }
-    
+
     stats.oldestTimestamp = oldestTimestamp;
     stats.newestTimestamp = newestTimestamp;
   }
 
   return stats;
 }
-

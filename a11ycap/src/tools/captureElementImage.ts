@@ -1,7 +1,7 @@
+import { toPng } from 'html-to-image';
 import { z } from 'zod';
 import type { ToolHandler } from './base.js';
 import { baseToolSchema, ensureA11yCap } from './common.js';
-import { toPng } from 'html-to-image';
 
 // Core tool schema without sessionId (which is added by MCP server for routing)
 const captureElementImageSchema = baseToolSchema.extend({
@@ -16,14 +16,8 @@ const captureElementImageSchema = baseToolSchema.extend({
     .string()
     .optional()
     .describe('Background color for the image (CSS color)'),
-  width: z
-    .number()
-    .optional()
-    .describe('Width of the captured image'),
-  height: z
-    .number()
-    .optional()
-    .describe('Height of the captured image'),
+  width: z.number().optional().describe('Width of the captured image'),
+  height: z.number().optional().describe('Height of the captured image'),
   cacheBust: z
     .boolean()
     .optional()
@@ -33,7 +27,8 @@ const captureElementImageSchema = baseToolSchema.extend({
 
 export const captureElementImageDefinition = {
   name: 'capture_element_image',
-  description: 'Capture a PNG image of an element using its accessibility snapshot reference. Uses html-to-image library and may not be pixel-perfect compared to browser screenshots.',
+  description:
+    'Capture a PNG image of an element using its accessibility snapshot reference. Uses html-to-image library and may not be pixel-perfect compared to browser screenshots.',
   inputSchema: captureElementImageSchema.shape, // Will have sessionId added by MCP server
 };
 
@@ -43,16 +38,22 @@ const CaptureElementImageMessageSchema = z.object({
   payload: captureElementImageSchema,
 });
 
-type CaptureElementImageMessage = z.infer<typeof CaptureElementImageMessageSchema>;
+type CaptureElementImageMessage = z.infer<
+  typeof CaptureElementImageMessageSchema
+>;
 
-async function executeCaptureElementImage(message: CaptureElementImageMessage): Promise<any> {
+async function executeCaptureElementImage(
+  message: CaptureElementImageMessage
+): Promise<any> {
   if (typeof window === 'undefined') {
     throw new Error('captureElementImage requires browser environment');
   }
 
   ensureA11yCap();
 
-  const element = window.A11yCap.findElementByRef(message.payload.ref) as HTMLElement;
+  const element = window.A11yCap.findElementByRef(
+    message.payload.ref
+  ) as HTMLElement;
   if (!element) {
     throw new Error(`Element with ref "${message.payload.ref}" not found`);
   }
@@ -66,18 +67,18 @@ async function executeCaptureElementImage(message: CaptureElementImageMessage): 
   };
 
   // Remove undefined values
-  Object.keys(options).forEach(key => {
+  for (const key of Object.keys(options)) {
     if (options[key as keyof typeof options] === undefined) {
       delete options[key as keyof typeof options];
     }
-  });
+  }
 
   try {
     const dataUrl = await toPng(element, options);
-    
+
     // Extract base64 data from data URL (remove "data:image/png;base64," prefix)
     const base64Data = dataUrl.split(',')[1];
-    
+
     return {
       format: 'png',
       base64Data,
@@ -91,8 +92,9 @@ async function executeCaptureElementImage(message: CaptureElementImageMessage): 
   }
 }
 
-export const captureElementImageTool: ToolHandler<CaptureElementImageMessage> = {
-  definition: captureElementImageDefinition,
-  messageSchema: CaptureElementImageMessageSchema,
-  execute: executeCaptureElementImage,
-};
+export const captureElementImageTool: ToolHandler<CaptureElementImageMessage> =
+  {
+    definition: captureElementImageDefinition,
+    messageSchema: CaptureElementImageMessageSchema,
+    execute: executeCaptureElementImage,
+  };

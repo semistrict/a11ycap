@@ -2,7 +2,14 @@
  * User interaction recording using event buffer
  */
 
-import { addEvent, type ClickEvent, type InputEvent, type KeyEvent, type NavigationEvent, type FocusEvent } from './eventBuffer.js';
+import {
+  type ClickEvent,
+  type FocusEvent,
+  type InputEvent,
+  type KeyEvent,
+  type NavigationEvent,
+  addEvent,
+} from './eventBuffer.js';
 
 /**
  * Generate page UUID from URL hash (same logic as in index.ts)
@@ -13,7 +20,7 @@ function generatePageUUID(): string {
   let hash = 0;
   for (let i = 0; i < url.length; i++) {
     const char = url.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash; // Convert to 32bit integer
   }
   return Math.abs(hash).toString(16);
@@ -59,167 +66,207 @@ export function installInteractionForwarders(): void {
   }
 
   // Track previous values for input change detection
-  const inputPreviousValues = new WeakMap<HTMLInputElement | HTMLTextAreaElement, string>();
+  const inputPreviousValues = new WeakMap<
+    HTMLInputElement | HTMLTextAreaElement,
+    string
+  >();
 
   // Click events
-  document.addEventListener('click', (event) => {
-    try {
-      if (!(event.target instanceof Element)) return;
+  document.addEventListener(
+    'click',
+    (event) => {
+      try {
+        if (!(event.target instanceof Element)) return;
 
-      const clickEvent: ClickEvent = {
-        type: 'click',
-        timestamp: Date.now(),
-        url: window.location.href,
-        pageUUID: generatePageUUID(),
-        target: extractTargetInfo(event.target),
-        coordinates: {
-          x: event.clientX,
-          y: event.clientY,
-        },
-        button: event.button,
-        metaKeys: extractMetaKeys(event),
-      };
+        const clickEvent: ClickEvent = {
+          type: 'click',
+          timestamp: Date.now(),
+          url: window.location.href,
+          pageUUID: generatePageUUID(),
+          target: extractTargetInfo(event.target),
+          coordinates: {
+            x: event.clientX,
+            y: event.clientY,
+          },
+          button: event.button,
+          metaKeys: extractMetaKeys(event),
+        };
 
-      addEvent(clickEvent);
-    } catch (error) {
-      console.error('Failed to record click event:', error);
-    }
-  }, true); // Use capture phase to catch all clicks
+        addEvent(clickEvent);
+      } catch (error) {
+        console.error('Failed to record click event:', error);
+      }
+    },
+    true
+  ); // Use capture phase to catch all clicks
 
   // Input events
-  document.addEventListener('input', (event) => {
-    try {
-      if (!(event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement)) {
-        return;
+  document.addEventListener(
+    'input',
+    (event) => {
+      try {
+        if (
+          !(
+            event.target instanceof HTMLInputElement ||
+            event.target instanceof HTMLTextAreaElement
+          )
+        ) {
+          return;
+        }
+
+        const element = event.target;
+        const previousValue = inputPreviousValues.get(element) || '';
+        const currentValue = element.value;
+
+        const inputEvent: InputEvent = {
+          type: 'input',
+          timestamp: Date.now(),
+          url: window.location.href,
+          pageUUID: generatePageUUID(),
+          target: {
+            ...extractTargetInfo(element),
+            inputType: element.type || undefined,
+          },
+          value: currentValue,
+          previousValue:
+            previousValue !== currentValue ? previousValue : undefined,
+          selectionStart: element.selectionStart || undefined,
+          selectionEnd: element.selectionEnd || undefined,
+        };
+
+        // Update previous value
+        inputPreviousValues.set(element, currentValue);
+
+        addEvent(inputEvent);
+      } catch (error) {
+        console.error('Failed to record input event:', error);
       }
-
-      const element = event.target;
-      const previousValue = inputPreviousValues.get(element) || '';
-      const currentValue = element.value;
-      
-      const inputEvent: InputEvent = {
-        type: 'input',
-        timestamp: Date.now(),
-        url: window.location.href,
-        pageUUID: generatePageUUID(),
-        target: {
-          ...extractTargetInfo(element),
-          inputType: element.type || undefined,
-        },
-        value: currentValue,
-        previousValue: previousValue !== currentValue ? previousValue : undefined,
-        selectionStart: element.selectionStart || undefined,
-        selectionEnd: element.selectionEnd || undefined,
-      };
-
-      // Update previous value
-      inputPreviousValues.set(element, currentValue);
-
-      addEvent(inputEvent);
-    } catch (error) {
-      console.error('Failed to record input event:', error);
-    }
-  }, true);
+    },
+    true
+  );
 
   // Change events (for selects, checkboxes, radios)
-  document.addEventListener('change', (event) => {
-    try {
-      if (!(event.target instanceof HTMLElement)) return;
+  document.addEventListener(
+    'change',
+    (event) => {
+      try {
+        if (!(event.target instanceof HTMLElement)) return;
 
-      const element = event.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
-      let value = '';
-      
-      if (element instanceof HTMLInputElement) {
-        if (element.type === 'checkbox' || element.type === 'radio') {
-          value = element.checked ? element.value || 'checked' : 'unchecked';
-        } else {
+        const element = event.target as
+          | HTMLInputElement
+          | HTMLSelectElement
+          | HTMLTextAreaElement;
+        let value = '';
+
+        if (element instanceof HTMLInputElement) {
+          if (element.type === 'checkbox' || element.type === 'radio') {
+            value = element.checked ? element.value || 'checked' : 'unchecked';
+          } else {
+            value = element.value;
+          }
+        } else if (element instanceof HTMLSelectElement) {
+          value = element.value;
+        } else if (element instanceof HTMLTextAreaElement) {
           value = element.value;
         }
-      } else if (element instanceof HTMLSelectElement) {
-        value = element.value;
-      } else if (element instanceof HTMLTextAreaElement) {
-        value = element.value;
+
+        const changeEvent: InputEvent = {
+          type: 'change',
+          timestamp: Date.now(),
+          url: window.location.href,
+          pageUUID: generatePageUUID(),
+          target: {
+            ...extractTargetInfo(element),
+            inputType: (element as HTMLInputElement).type || undefined,
+          },
+          value,
+        };
+
+        addEvent(changeEvent);
+      } catch (error) {
+        console.error('Failed to record change event:', error);
       }
-
-      const changeEvent: InputEvent = {
-        type: 'change',
-        timestamp: Date.now(),
-        url: window.location.href,
-        pageUUID: generatePageUUID(),
-        target: {
-          ...extractTargetInfo(element),
-          inputType: (element as HTMLInputElement).type || undefined,
-        },
-        value,
-      };
-
-      addEvent(changeEvent);
-    } catch (error) {
-      console.error('Failed to record change event:', error);
-    }
-  }, true);
+    },
+    true
+  );
 
   // Key events
-  document.addEventListener('keydown', (event) => {
-    try {
-      if (!(event.target instanceof Element)) return;
+  document.addEventListener(
+    'keydown',
+    (event) => {
+      try {
+        if (!(event.target instanceof Element)) return;
 
-      const keyEvent: KeyEvent = {
-        type: 'keydown',
-        timestamp: Date.now(),
-        url: window.location.href,
-        pageUUID: generatePageUUID(),
-        target: extractTargetInfo(event.target),
-        key: event.key,
-        code: event.code,
-        metaKeys: extractMetaKeys(event),
-      };
+        const keyEvent: KeyEvent = {
+          type: 'keydown',
+          timestamp: Date.now(),
+          url: window.location.href,
+          pageUUID: generatePageUUID(),
+          target: extractTargetInfo(event.target),
+          key: event.key,
+          code: event.code,
+          metaKeys: extractMetaKeys(event),
+        };
 
-      addEvent(keyEvent);
-    } catch (error) {
-      console.error('Failed to record keydown event:', error);
-    }
-  }, true);
+        addEvent(keyEvent);
+      } catch (error) {
+        console.error('Failed to record keydown event:', error);
+      }
+    },
+    true
+  );
 
   // Focus events
-  document.addEventListener('focus', (event) => {
-    try {
-      if (!(event.target instanceof Element)) return;
+  document.addEventListener(
+    'focus',
+    (event) => {
+      try {
+        if (!(event.target instanceof Element)) return;
 
-      const focusEvent: FocusEvent = {
-        type: 'focus',
-        timestamp: Date.now(),
-        url: window.location.href,
-        pageUUID: generatePageUUID(),
-        target: extractTargetInfo(event.target),
-      };
+        const focusEvent: FocusEvent = {
+          type: 'focus',
+          timestamp: Date.now(),
+          url: window.location.href,
+          pageUUID: generatePageUUID(),
+          target: extractTargetInfo(event.target),
+        };
 
-      addEvent(focusEvent);
-    } catch (error) {
-      console.error('Failed to record focus event:', error);
-    }
-  }, true);
+        addEvent(focusEvent);
+      } catch (error) {
+        console.error('Failed to record focus event:', error);
+      }
+    },
+    true
+  );
 
-  document.addEventListener('blur', (event) => {
-    try {
-      if (!(event.target instanceof Element)) return;
+  document.addEventListener(
+    'blur',
+    (event) => {
+      try {
+        if (!(event.target instanceof Element)) return;
 
-      const blurEvent: FocusEvent = {
-        type: 'blur',
-        timestamp: Date.now(),
-        url: window.location.href,
-        pageUUID: generatePageUUID(),
-        target: extractTargetInfo(event.target),
-      };
+        const blurEvent: FocusEvent = {
+          type: 'blur',
+          timestamp: Date.now(),
+          url: window.location.href,
+          pageUUID: generatePageUUID(),
+          target: extractTargetInfo(event.target),
+        };
 
-      addEvent(blurEvent);
-    } catch (error) {
-      console.error('Failed to record blur event:', error);
-    }
-  }, true);
+        addEvent(blurEvent);
+      } catch (error) {
+        console.error('Failed to record blur event:', error);
+      }
+    },
+    true
+  );
 
   // Navigation events
-  const recordNavigation = (method: NavigationEvent['method'], from?: string, to?: string) => {
+  const recordNavigation = (
+    method: NavigationEvent['method'],
+    from?: string,
+    to?: string
+  ) => {
     try {
       const navigationEvent: NavigationEvent = {
         type: 'navigation',
@@ -263,7 +310,7 @@ export function installInteractionForwarders(): void {
 
   // Override pushState to track programmatic navigation
   const originalPushState = history.pushState;
-  history.pushState = function(...args) {
+  history.pushState = function (...args) {
     const previousUrl = window.location.href;
     const result = originalPushState.apply(this, args);
     setTimeout(() => {
@@ -283,9 +330,9 @@ export function restoreInteractionForwarders(): void {
   const originalPushState = (window as any).__a11ycap_original_pushState;
   if (originalPushState) {
     history.pushState = originalPushState;
-    delete (window as any).__a11ycap_original_pushState;
+    (window as any).__a11ycap_original_pushState = undefined;
   }
-  
+
   // Note: Individual event listeners can't be removed without keeping references
   // This is acceptable since we're using WeakMap for memory management
 }

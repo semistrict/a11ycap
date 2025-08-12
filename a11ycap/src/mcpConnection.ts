@@ -3,11 +3,11 @@
  */
 
 import { toolHandlers } from './tools/index.js';
-import type { 
-  PageInfoMessage, 
-  HeartbeatMessage, 
+import type {
+  BrowserCommand,
   CommandResponseMessage,
-  BrowserCommand 
+  HeartbeatMessage,
+  PageInfoMessage,
 } from './types/messages.js';
 
 // All tools are now handled by the modular tool system
@@ -29,13 +29,13 @@ function generateUUID(): string {
 function getTabSessionId(): string {
   const SESSION_KEY = 'a11ycap_session_id';
   let sessionId = sessionStorage.getItem(SESSION_KEY);
-  
+
   if (!sessionId) {
     sessionId = generateUUID();
     sessionStorage.setItem(SESSION_KEY, sessionId);
     sessionStorage.setItem('a11ycap_session_created', Date.now().toString());
   }
-  
+
   return sessionId;
 }
 
@@ -72,11 +72,12 @@ export class MCPWebSocketClient {
             url: window.location.href,
             title: document.title,
             userAgent: navigator.userAgent,
-            isReconnect: sessionStorage.getItem('a11ycap_has_connected') === 'true',
+            isReconnect:
+              sessionStorage.getItem('a11ycap_has_connected') === 'true',
           },
         };
         this.send(message);
-        
+
         // Mark that we've connected at least once
         sessionStorage.setItem('a11ycap_has_connected', 'true');
       };
@@ -98,7 +99,9 @@ export class MCPWebSocketClient {
     }
   }
 
-  send(message: PageInfoMessage | HeartbeatMessage | CommandResponseMessage): void {
+  send(
+    message: PageInfoMessage | HeartbeatMessage | CommandResponseMessage
+  ): void {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message));
     }
@@ -135,7 +138,7 @@ export class MCPWebSocketClient {
             const toolMessage = {
               id: rawMessage.id,
               type: rawMessage.commandType,
-              payload: rawMessage.payload
+              payload: rawMessage.payload,
             };
             const message = toolHandler.messageSchema.parse(toolMessage);
             const result = await toolHandler.execute(message);
@@ -188,16 +191,19 @@ export function initializeMCPConnection(
   const client = new MCPWebSocketClient(wsUrl);
   client.connect();
   client.startHeartbeat();
-  
+
   // Log a single consolidated message
   const sessionId = client.sessionId;
-  const isReconnect = sessionStorage.getItem('a11ycap_has_connected') === 'true';
+  const isReconnect =
+    sessionStorage.getItem('a11ycap_has_connected') === 'true';
   const sessionAge = sessionStorage.getItem('a11ycap_session_created');
-  const age = sessionAge ? Math.round((Date.now() - parseInt(sessionAge, 10)) / 1000) : 0;
-  
+  const age = sessionAge
+    ? Math.round((Date.now() - Number.parseInt(sessionAge, 10)) / 1000)
+    : 0;
+
   console.log(
     `🐱 a11ycap ${isReconnect ? `reconnected (session: ${sessionId.slice(0, 8)}..., age: ${age}s)` : 'loaded'} - Try: window.A11yCap.snapshotForAI(document.body)`
   );
-  
+
   return client;
 }

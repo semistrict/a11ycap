@@ -114,10 +114,14 @@ async function executeGetNetworkRequests(
       return 'No network requests found';
     }
 
-    const formattedRequests = networkRequests.map(req => {
-      const method = req.initiatorType ? req.initiatorType.toUpperCase() : 'GET';
+    const formattedRequests = networkRequests.map((req) => {
+      const method = req.initiatorType
+        ? req.initiatorType.toUpperCase()
+        : 'GET';
       const duration = req.duration ? ` (${Math.round(req.duration)}ms)` : '';
-      const size = req.transferSize ? ` [${Math.round(req.transferSize / 1024)}KB]` : '';
+      const size = req.transferSize
+        ? ` [${Math.round(req.transferSize / 1024)}KB]`
+        : '';
       return `${method} ${req.name}${duration}${size}`;
     });
 

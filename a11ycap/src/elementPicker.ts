@@ -480,13 +480,18 @@ export class ElementPicker {
     if (this.currentOptions?.includeSnapshots) {
       // Import snapshot function dynamically to avoid circular deps
       const { snapshotForAI } = await import('./index.js');
-      
+
       for (const pickedElement of elements) {
         try {
-          const snapshot = await snapshotForAI(pickedElement.element, { max_bytes: 1024 });
+          const snapshot = await snapshotForAI(pickedElement.element, {
+            max_bytes: 1024,
+          });
           pickedElement.snapshot = snapshot;
         } catch (error) {
-          console.warn('Failed to generate snapshot for picked element:', error);
+          console.warn(
+            'Failed to generate snapshot for picked element:',
+            error
+          );
         }
       }
     }

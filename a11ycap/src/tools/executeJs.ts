@@ -6,7 +6,11 @@ const executeJsSchema = z.object({
   description: z
     .string()
     .describe('Human-readable description of what this code does'),
-  code: z.string().describe('JavaScript code to execute. MUST be an IIFE (Immediately Invoked Function Expression) like: (() => { /* code */ })() or (async () => { /* code */ })()'),
+  code: z
+    .string()
+    .describe(
+      'JavaScript code to execute. MUST be an IIFE (Immediately Invoked Function Expression) like: (() => { /* code */ })() or (async () => { /* code */ })()'
+    ),
   returnValue: z
     .boolean()
     .optional()
@@ -16,7 +20,8 @@ const executeJsSchema = z.object({
 
 export const executeJsDefinition = {
   name: 'execute_js',
-  description: 'Execute JavaScript code in a connected browser. Code MUST be wrapped in an IIFE.',
+  description:
+    'Execute JavaScript code in a connected browser. Code MUST be wrapped in an IIFE.',
   inputSchema: executeJsSchema.shape, // Will have sessionId added by MCP server
 };
 
@@ -34,32 +39,39 @@ async function executeExecuteJs(message: ExecuteJsMessage): Promise<any> {
   }
 
   const code = message.payload.code.trim();
-  
+
   // Validate that code is an IIFE (regular or async)
-  const iifePattern = /^(\(async\s*)?(\([^)]*\)|[a-zA-Z_$][a-zA-Z0-9_$]*)\s*=>\s*[\s\S]*\)\s*\(\s*\)$/;
-  const functionIifePattern = /^(\(async\s+)?function\s*\([^)]*\)\s*\{[\s\S]*\}\s*\)\s*\(\s*\)$/;
-  const arrowIifePattern = /^\(\s*(async\s+)?\([^)]*\)\s*=>\s*[\s\S]*\)\s*\(\s*\)$/;
-  
-  if (!iifePattern.test(code) && !functionIifePattern.test(code) && !arrowIifePattern.test(code)) {
+  const iifePattern =
+    /^(\(async\s*)?(\([^)]*\)|[a-zA-Z_$][a-zA-Z0-9_$]*)\s*=>\s*[\s\S]*\)\s*\(\s*\)$/;
+  const functionIifePattern =
+    /^(\(async\s+)?function\s*\([^)]*\)\s*\{[\s\S]*\}\s*\)\s*\(\s*\)$/;
+  const arrowIifePattern =
+    /^\(\s*(async\s+)?\([^)]*\)\s*=>\s*[\s\S]*\)\s*\(\s*\)$/;
+
+  if (
+    !iifePattern.test(code) &&
+    !functionIifePattern.test(code) &&
+    !arrowIifePattern.test(code)
+  ) {
     throw new Error(
       'Code must be an IIFE (Immediately Invoked Function Expression). ' +
-      'Examples: (() => { /* code */ })() or (async () => { /* code */ })()'
+        'Examples: (() => { /* code */ })() or (async () => { /* code */ })()'
     );
   }
 
   try {
     // biome-ignore lint/security/noGlobalEval: Required for MCP tool functionality
     const result = eval(message.payload.code);
-    
+
     // Handle async results
     if (result instanceof Promise) {
       const asyncResult = await result;
-      return message.payload.returnValue 
+      return message.payload.returnValue
         ? `JavaScript executed successfully. Result: ${JSON.stringify(asyncResult, null, 2)}`
         : 'JavaScript executed successfully';
     }
-    
-    return message.payload.returnValue 
+
+    return message.payload.returnValue
       ? `JavaScript executed successfully. Result: ${JSON.stringify(result, null, 2)}`
       : 'JavaScript executed successfully';
   } catch (error) {
