@@ -1,10 +1,12 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test.describe('Readability Tool', () => {
-  test('should extract readable content from article page', async ({ page }) => {
+  test('should extract readable content from article page', async ({
+    page,
+  }) => {
     // Navigate to test server
     await page.goto('http://localhost:14652/');
-    
+
     // Create a simple article page
     await page.evaluate(() => {
       document.body.innerHTML = `
@@ -29,16 +31,16 @@ test.describe('Readability Tool', () => {
 
     // Wait for A11yCap to be available
     await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
-    
+
     // Execute the readability tool
     const result = await page.evaluate(async () => {
       const { toolHandlers } = window.A11yCap;
-      const handler = toolHandlers['get_readability'];
-      
+      const handler = toolHandlers.get_readability;
+
       if (!handler) {
         throw new Error('get_readability tool not found');
       }
-      
+
       const message = {
         id: 'test-1',
         type: 'get_readability' as const,
@@ -48,10 +50,10 @@ test.describe('Readability Tool', () => {
           maxContentLength: 5000,
         },
       };
-      
+
       return await handler.execute(message);
     });
-    
+
     // Verify the result is now human-readable text
     expect(typeof result).toBe('string');
     expect(result).toContain('Test Article');
@@ -63,7 +65,7 @@ test.describe('Readability Tool', () => {
 
   test('should handle pages without substantial content', async ({ page }) => {
     await page.goto('http://localhost:14652/');
-    
+
     // Create a page with only navigation (no article content)
     await page.evaluate(() => {
       document.body.innerHTML = `
@@ -80,12 +82,12 @@ test.describe('Readability Tool', () => {
 
     // Wait for A11yCap to be available
     await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
-    
+
     // Execute the readability tool
     const result = await page.evaluate(async () => {
       const { toolHandlers } = window.A11yCap;
-      const handler = toolHandlers['get_readability'];
-      
+      const handler = toolHandlers.get_readability;
+
       const message = {
         id: 'test-2',
         type: 'get_readability' as const,
@@ -95,10 +97,10 @@ test.describe('Readability Tool', () => {
           maxContentLength: 5000,
         },
       };
-      
+
       return await handler.execute(message);
     });
-    
+
     // With minimal content, readability tool should return a message
     expect(typeof result).toBe('string');
     // Should indicate limited content or provide what it could extract
@@ -107,7 +109,7 @@ test.describe('Readability Tool', () => {
 
   test('should respect maxContentLength option', async ({ page }) => {
     await page.goto('http://localhost:14652/');
-    
+
     // Create a page with long content
     await page.evaluate(() => {
       const longText = 'This is a very long paragraph. '.repeat(100);
@@ -126,12 +128,12 @@ test.describe('Readability Tool', () => {
 
     // Wait for A11yCap to be available
     await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
-    
+
     // Execute with a small maxContentLength
     const result = await page.evaluate(async () => {
       const { toolHandlers } = window.A11yCap;
-      const handler = toolHandlers['get_readability'];
-      
+      const handler = toolHandlers.get_readability;
+
       const message = {
         id: 'test-3',
         type: 'get_readability' as const,
@@ -141,10 +143,10 @@ test.describe('Readability Tool', () => {
           maxContentLength: 500,
         },
       };
-      
+
       return await handler.execute(message);
     });
-    
+
     expect(typeof result).toBe('string');
     expect(result.length).toBeGreaterThan(0);
     // Should contain some indication of content, may be truncated

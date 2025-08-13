@@ -14,7 +14,7 @@ test.describe('MCP Tools Implementation', () => {
 
     expect(snapshot).toContain('React Test Page');
     expect(snapshot).toContain('[ref=');
-    
+
     // Test snapshot with different modes
     const expectSnapshot = await page.evaluate(() => {
       return window.A11yCap.snapshot(document.body, { mode: 'expect' });
@@ -68,14 +68,17 @@ test.describe('MCP Tools Implementation', () => {
 
     // Test typing text into input
     const testText = 'John Doe';
-    await page.evaluate((data) => {
-      const element = window.A11yCap.findElementByRef(data.ref);
-      if (element && element instanceof HTMLInputElement) {
-        element.value = data.text;
-        element.dispatchEvent(new Event('input', { bubbles: true }));
-        element.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-    }, { ref: nameInputRef, text: testText });
+    await page.evaluate(
+      (data) => {
+        const element = window.A11yCap.findElementByRef(data.ref);
+        if (element && element instanceof HTMLInputElement) {
+          element.value = data.text;
+          element.dispatchEvent(new Event('input', { bubbles: true }));
+          element.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      },
+      { ref: nameInputRef, text: testText }
+    );
 
     // Verify text was entered
     const inputValue = await page.locator('#name').inputValue();
@@ -99,23 +102,32 @@ test.describe('MCP Tools Implementation', () => {
 
     // Test typing slowly (character by character)
     const testText = 'test@example.com';
-    await page.evaluate(async (data) => {
-      const element = window.A11yCap.findElementByRef(data.ref);
-      if (element && element instanceof HTMLInputElement) {
-        element.value = ''; // Clear first
-        
-        // Type character by character
-        for (let i = 0; i < data.text.length; i++) {
-          const char = data.text[i];
-          element.dispatchEvent(new KeyboardEvent('keydown', { key: char, bubbles: true }));
-          element.dispatchEvent(new KeyboardEvent('keypress', { key: char, bubbles: true }));
-          element.value += char;
-          element.dispatchEvent(new Event('input', { bubbles: true }));
-          element.dispatchEvent(new KeyboardEvent('keyup', { key: char, bubbles: true }));
-          await new Promise(resolve => setTimeout(resolve, 10)); // Small delay
+    await page.evaluate(
+      async (data) => {
+        const element = window.A11yCap.findElementByRef(data.ref);
+        if (element && element instanceof HTMLInputElement) {
+          element.value = ''; // Clear first
+
+          // Type character by character
+          for (let i = 0; i < data.text.length; i++) {
+            const char = data.text[i];
+            element.dispatchEvent(
+              new KeyboardEvent('keydown', { key: char, bubbles: true })
+            );
+            element.dispatchEvent(
+              new KeyboardEvent('keypress', { key: char, bubbles: true })
+            );
+            element.value += char;
+            element.dispatchEvent(new Event('input', { bubbles: true }));
+            element.dispatchEvent(
+              new KeyboardEvent('keyup', { key: char, bubbles: true })
+            );
+            await new Promise((resolve) => setTimeout(resolve, 10)); // Small delay
+          }
         }
-      }
-    }, { ref: emailInputRef, text: testText });
+      },
+      { ref: emailInputRef, text: testText }
+    );
 
     // Verify text was entered
     const inputValue = await page.locator('#email').inputValue();
@@ -132,19 +144,30 @@ test.describe('MCP Tools Implementation', () => {
     });
 
     // Extract key test input ref
-    const inputMatch = snapshot.match(/textbox.*"Focus and press keys here".*\[ref=(e\d+)\]/);
+    const inputMatch = snapshot.match(
+      /textbox.*"Focus and press keys here".*\[ref=(e\d+)\]/
+    );
     expect(inputMatch).toBeTruthy();
     const inputRef = inputMatch![1];
 
     // Simulate pressing Enter key
-    await page.evaluate((data) => {
-      const element = window.A11yCap.findElementByRef(data.ref);
-      if (element) {
-        element.dispatchEvent(new KeyboardEvent('keydown', { key: data.key, bubbles: true }));
-        element.dispatchEvent(new KeyboardEvent('keypress', { key: data.key, bubbles: true }));
-        element.dispatchEvent(new KeyboardEvent('keyup', { key: data.key, bubbles: true }));
-      }
-    }, { ref: inputRef, key: 'Enter' });
+    await page.evaluate(
+      (data) => {
+        const element = window.A11yCap.findElementByRef(data.ref);
+        if (element) {
+          element.dispatchEvent(
+            new KeyboardEvent('keydown', { key: data.key, bubbles: true })
+          );
+          element.dispatchEvent(
+            new KeyboardEvent('keypress', { key: data.key, bubbles: true })
+          );
+          element.dispatchEvent(
+            new KeyboardEvent('keyup', { key: data.key, bubbles: true })
+          );
+        }
+      },
+      { ref: inputRef, key: 'Enter' }
+    );
 
     // Verify key press was registered
     const keyDisplay = await page.locator('#key-press-display').textContent();
@@ -183,7 +206,9 @@ test.describe('MCP Tools Implementation', () => {
     });
 
     // Extract select element ref
-    const selectMatch = snapshot.match(/combobox.*"Choose an option:".*\[ref=(e\d+)\]/);
+    const selectMatch = snapshot.match(
+      /combobox.*"Choose an option:".*\[ref=(e\d+)\]/
+    );
     expect(selectMatch).toBeTruthy();
     const selectRef = selectMatch![1];
 
@@ -193,19 +218,22 @@ test.describe('MCP Tools Implementation', () => {
 
     // Select an option
     const testValue = 'option2';
-    await page.evaluate((data) => {
-      const element = window.A11yCap.findElementByRef(data.ref);
-      if (element && element instanceof HTMLSelectElement) {
-        // Find the option and select it
-        for (let option of element.options) {
-          if (option.value === data.value) {
-            option.selected = true;
-            break;
+    await page.evaluate(
+      (data) => {
+        const element = window.A11yCap.findElementByRef(data.ref);
+        if (element && element instanceof HTMLSelectElement) {
+          // Find the option and select it
+          for (const option of element.options) {
+            if (option.value === data.value) {
+              option.selected = true;
+              break;
+            }
           }
+          element.dispatchEvent(new Event('change', { bubbles: true }));
         }
-        element.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-    }, { ref: selectRef, value: testValue });
+      },
+      { ref: selectRef, value: testValue }
+    );
 
     // Verify selection
     const selectedValue = await page.locator('#test-select').inputValue();
@@ -224,16 +252,16 @@ test.describe('MCP Tools Implementation', () => {
 
     // Test waiting for text to appear
     await page.click('text=Start Loading (2s delay)');
-    
+
     // Verify loading message appears
     await expect(page.locator('text=Loading...')).toBeVisible();
-    
+
     // Wait for completion message
     await expect(page.locator('text=Loading complete!')).toBeVisible();
-    
+
     // Clear the message
     await page.click('text=Clear Message');
-    
+
     // Test that loading messages are gone
     await expect(page.locator('text=Loading...')).not.toBeVisible();
     await expect(page.locator('text=Loading complete!')).not.toBeVisible();
@@ -242,24 +270,26 @@ test.describe('MCP Tools Implementation', () => {
   test('should handle execute_js functionality', async ({ page }) => {
     // Test simple JavaScript execution
     const titleResult = await page.evaluate(() => {
-      return eval('document.title');
+      return document.title;
     });
     expect(titleResult).toBe('React App');
 
     // Test more complex JavaScript
     const buttonCount = await page.evaluate(() => {
-      return eval('document.querySelectorAll("button").length');
+      return document.querySelectorAll('button').length;
     });
     expect(buttonCount).toBeGreaterThan(0);
 
     // Test accessing React state indirectly
     const pageText = await page.evaluate(() => {
-      return eval('document.body.textContent.includes("React Test Page")');
+      return document.body.textContent.includes('React Test Page');
     });
     expect(pageText).toBe(true);
   });
 
-  test('should capture snapshots after actions (integration test)', async ({ page }) => {
+  test('should capture snapshots after actions (integration test)', async ({
+    page,
+  }) => {
     // Take initial snapshot
     const initialSnapshot = await page.evaluate(() => {
       return window.A11yCap.snapshotForAI(document.body, { enableReact: true });
@@ -269,7 +299,9 @@ test.describe('MCP Tools Implementation', () => {
     expect(initialSnapshot).toContain('Show Form');
 
     // Click the counter button
-    const buttonMatch = initialSnapshot.match(/button.*"Click me.*\[ref=(e\d+)\]/);
+    const buttonMatch = initialSnapshot.match(
+      /button.*"Click me.*\[ref=(e\d+)\]/
+    );
     expect(buttonMatch).toBeTruthy();
     const buttonRef = buttonMatch![1];
 
@@ -286,7 +318,9 @@ test.describe('MCP Tools Implementation', () => {
     expect(afterClickSnapshot).not.toBe(initialSnapshot);
 
     // Show form
-    const formButtonMatch = initialSnapshot.match(/button.*"Show Form".*\[ref=(e\d+)\]/);
+    const formButtonMatch = initialSnapshot.match(
+      /button.*"Show Form".*\[ref=(e\d+)\]/
+    );
     expect(formButtonMatch).toBeTruthy();
     const formButtonRef = formButtonMatch![1];
 
@@ -317,8 +351,10 @@ test.describe('MCP Tools Implementation', () => {
 
     // Extract various element refs
     const buttonMatch = snapshot.match(/button.*"Click me.*\[ref=(e\d+)\]/);
-    const headingMatch = snapshot.match(/heading.*"React Test Page".*\[ref=(e\d+)\]/);
-    
+    const headingMatch = snapshot.match(
+      /heading.*"React Test Page".*\[ref=(e\d+)\]/
+    );
+
     expect(buttonMatch).toBeTruthy();
     expect(headingMatch).toBeTruthy();
 
@@ -326,17 +362,20 @@ test.describe('MCP Tools Implementation', () => {
     const headingRef = headingMatch![1];
 
     // Test finding elements by ref
-    const elementsFound = await page.evaluate((refs) => {
-      const button = window.A11yCap.findElementByRef(refs.button);
-      const heading = window.A11yCap.findElementByRef(refs.heading);
-      const nonExistent = window.A11yCap.findElementByRef('e999');
+    const elementsFound = await page.evaluate(
+      (refs) => {
+        const button = window.A11yCap.findElementByRef(refs.button);
+        const heading = window.A11yCap.findElementByRef(refs.heading);
+        const nonExistent = window.A11yCap.findElementByRef('e999');
 
-      return {
-        buttonFound: button?.tagName?.toLowerCase(),
-        headingFound: heading?.tagName?.toLowerCase(),
-        nonExistentFound: nonExistent === null
-      };
-    }, { button: buttonRef, heading: headingRef });
+        return {
+          buttonFound: button?.tagName?.toLowerCase(),
+          headingFound: heading?.tagName?.toLowerCase(),
+          nonExistentFound: nonExistent === null,
+        };
+      },
+      { button: buttonRef, heading: headingRef }
+    );
 
     expect(elementsFound.buttonFound).toBe('button');
     expect(elementsFound.headingFound).toBe('h1');

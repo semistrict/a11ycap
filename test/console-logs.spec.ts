@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test.describe('Console logs buffering', () => {
   test.beforeEach(async ({ page }) => {
@@ -24,13 +24,13 @@ test.describe('Console logs buffering', () => {
       return window.A11yCap.toolHandlers.get_console_logs.execute({
         id: 'test-1',
         type: 'get_console_logs',
-        payload: {}
+        payload: {},
       });
     });
 
     expect(typeof logs).toBe('string');
     expect(logs).toContain('Console logs');
-    
+
     // Check that we have our test messages in the formatted output
     expect(logs.includes('Test log message')).toBe(true);
     expect(logs.includes('Test warning')).toBe(true);
@@ -54,7 +54,7 @@ test.describe('Console logs buffering', () => {
       return window.A11yCap.toolHandlers.get_console_logs.execute({
         id: 'test-2',
         type: 'get_console_logs',
-        payload: { level: 'error' }
+        payload: { level: 'error' },
       });
     });
 
@@ -71,7 +71,7 @@ test.describe('Console logs buffering', () => {
       return window.A11yCap.toolHandlers.get_console_logs.execute({
         id: 'test-3',
         type: 'get_console_logs',
-        payload: { level: 'warn' }
+        payload: { level: 'warn' },
       });
     });
 
@@ -99,20 +99,22 @@ test.describe('Console logs buffering', () => {
       return window.A11yCap.toolHandlers.get_console_logs.execute({
         id: 'test-4',
         type: 'get_console_logs',
-        payload: { limit: 3 }
+        payload: { limit: 3 },
       });
     });
 
     expect(typeof limitedLogs).toBe('string');
     expect(limitedLogs).toContain('Console logs');
     // Count the number of log entries in the formatted output
-    const logLines = limitedLogs.split('\n').filter(line => line.includes('LOG '));
+    const logLines = limitedLogs
+      .split('\n')
+      .filter((line) => line.includes('LOG '));
     expect(logLines.length).toBeLessThanOrEqual(3);
   });
 
   test('should filter console logs by timestamp', async ({ page }) => {
     const startTime = Date.now();
-    
+
     // Generate a message before timestamp
     await page.evaluate(() => {
       console.log('Before timestamp message');
@@ -135,24 +137,26 @@ test.describe('Console logs buffering', () => {
       return window.A11yCap.toolHandlers.get_console_logs.execute({
         id: 'test-5',
         type: 'get_console_logs',
-        payload: { since }
+        payload: { since },
       });
     }, filterTime);
 
     expect(typeof recentLogs).toBe('string');
     expect(recentLogs).toContain('Console logs');
-    
+
     // Should include the "after" message but not the "before" message
     expect(recentLogs).toContain('After timestamp message');
     expect(recentLogs).not.toContain('Before timestamp message');
   });
 
-  test('should handle console messages with complex objects', async ({ page }) => {
+  test('should handle console messages with complex objects', async ({
+    page,
+  }) => {
     await page.evaluate(() => {
-      const complexObj = { 
-        nested: { value: 42 }, 
+      const complexObj = {
+        nested: { value: 42 },
         array: [1, 2, 3],
-        func: function() { return 'test'; }
+        func: () => 'test',
       };
       console.log('Complex object:', complexObj);
       console.error(new Error('Test error with stack'));
@@ -165,26 +169,28 @@ test.describe('Console logs buffering', () => {
       return window.A11yCap.toolHandlers.get_console_logs.execute({
         id: 'test-6',
         type: 'get_console_logs',
-        payload: {}
+        payload: {},
       });
     });
 
     expect(typeof logs).toBe('string');
     expect(logs).toContain('Console logs');
-    
+
     // Should have formatted the complex object and error
     expect(logs).toContain('Complex object:');
     expect(logs).toContain('Error: Test error with stack');
   });
 
-  test('should not interfere with original console behavior', async ({ page }) => {
+  test('should not interfere with original console behavior', async ({
+    page,
+  }) => {
     // Check that console methods still work normally
     const consoleCalls: any[] = [];
-    
-    page.on('console', msg => {
+
+    page.on('console', (msg) => {
       consoleCalls.push({
         type: msg.type(),
-        text: msg.text()
+        text: msg.text(),
       });
     });
 
@@ -197,8 +203,12 @@ test.describe('Console logs buffering', () => {
 
     // Original console should still work
     expect(consoleCalls.length).toBeGreaterThanOrEqual(2);
-    expect(consoleCalls.some(call => call.text.includes('Original console test'))).toBe(true);
-    expect(consoleCalls.some(call => call.text.includes('Original warning test'))).toBe(true);
+    expect(
+      consoleCalls.some((call) => call.text.includes('Original console test'))
+    ).toBe(true);
+    expect(
+      consoleCalls.some((call) => call.text.includes('Original warning test'))
+    ).toBe(true);
 
     // And buffered logs should also be available
     const bufferedLogs = await page.evaluate(() => {
@@ -206,7 +216,7 @@ test.describe('Console logs buffering', () => {
       return window.A11yCap.toolHandlers.get_console_logs.execute({
         id: 'test-7',
         type: 'get_console_logs',
-        payload: {}
+        payload: {},
       });
     });
 

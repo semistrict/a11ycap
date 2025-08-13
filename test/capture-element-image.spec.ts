@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test.describe('Capture Element Image Tool', () => {
   test.beforeEach(async ({ page }) => {
@@ -10,13 +10,13 @@ test.describe('Capture Element Image Tool', () => {
     const snapshotResult = await page.evaluate(() => {
       return window.A11yCap.snapshotForAI(document.body);
     });
-    
+
     expect(snapshotResult).toContain('button "Click me (0)"');
     expect(snapshotResult).toContain('[ref=e5]');
 
     // Capture image of the button
     const result = await page.evaluate(() => {
-      return window.A11yCap.toolHandlers['capture_element_image'].execute({
+      return window.A11yCap.toolHandlers.capture_element_image.execute({
         id: 'test-capture',
         type: 'capture_element_image',
         payload: {
@@ -25,8 +25,8 @@ test.describe('Capture Element Image Tool', () => {
           captureSnapshot: false,
           quality: 0.8,
           backgroundColor: '#ffffff',
-          cacheBust: false
-        }
+          cacheBust: false,
+        },
       });
     });
 
@@ -40,7 +40,7 @@ test.describe('Capture Element Image Tool', () => {
 
   test('should handle non-existent element ref', async ({ page }) => {
     const resultPromise = page.evaluate(() => {
-      return window.A11yCap.toolHandlers['capture_element_image'].execute({
+      return window.A11yCap.toolHandlers.capture_element_image.execute({
         id: 'test-capture',
         type: 'capture_element_image',
         payload: {
@@ -48,15 +48,19 @@ test.describe('Capture Element Image Tool', () => {
           ref: 'e999',
           captureSnapshot: false,
           quality: 0.8,
-          cacheBust: false
-        }
+          cacheBust: false,
+        },
       });
     });
 
-    await expect(resultPromise).rejects.toThrow('Element with ref "e999" not found');
+    await expect(resultPromise).rejects.toThrow(
+      'Element with ref "e999" not found'
+    );
   });
 
-  test('should handle quality parameter (PNG ignores quality)', async ({ page }) => {
+  test('should handle quality parameter (PNG ignores quality)', async ({
+    page,
+  }) => {
     // Get a valid element ref first
     await page.evaluate(() => {
       return window.A11yCap.snapshotForAI(document.body);
@@ -64,7 +68,7 @@ test.describe('Capture Element Image Tool', () => {
 
     // Test with quality setting (PNG ignores this but should not error)
     const result = await page.evaluate(() => {
-      return window.A11yCap.toolHandlers['capture_element_image'].execute({
+      return window.A11yCap.toolHandlers.capture_element_image.execute({
         id: 'test-capture',
         type: 'capture_element_image',
         payload: {
@@ -72,8 +76,8 @@ test.describe('Capture Element Image Tool', () => {
           ref: 'e5',
           captureSnapshot: false,
           quality: 0.5,
-          cacheBust: false
-        }
+          cacheBust: false,
+        },
       });
     });
 
@@ -88,7 +92,7 @@ test.describe('Capture Element Image Tool', () => {
     });
 
     const result = await page.evaluate(() => {
-      return window.A11yCap.toolHandlers['capture_element_image'].execute({
+      return window.A11yCap.toolHandlers.capture_element_image.execute({
         id: 'test-capture',
         type: 'capture_element_image',
         payload: {
@@ -97,8 +101,8 @@ test.describe('Capture Element Image Tool', () => {
           captureSnapshot: false,
           quality: 0.8,
           backgroundColor: '#ff0000', // Red background
-          cacheBust: false
-        }
+          cacheBust: false,
+        },
       });
     });
 
@@ -113,7 +117,7 @@ test.describe('Capture Element Image Tool', () => {
     });
 
     const result = await page.evaluate(() => {
-      return window.A11yCap.toolHandlers['capture_element_image'].execute({
+      return window.A11yCap.toolHandlers.capture_element_image.execute({
         id: 'test-capture',
         type: 'capture_element_image',
         payload: {
@@ -123,8 +127,8 @@ test.describe('Capture Element Image Tool', () => {
           quality: 0.8,
           width: 200,
           height: 100,
-          cacheBust: false
-        }
+          cacheBust: false,
+        },
       });
     });
 

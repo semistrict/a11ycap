@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test.describe('User Interaction Recording', () => {
   test.beforeEach(async ({ page }) => {
@@ -13,7 +13,7 @@ test.describe('User Interaction Recording', () => {
       return window.A11yCap.clearEvents();
     });
 
-    // Click the button to generate interaction events  
+    // Click the button to generate interaction events
     await page.click('#test-button');
 
     // Get recorded interactions
@@ -24,7 +24,7 @@ test.describe('User Interaction Recording', () => {
         payload: {
           type: 'click',
           limit: 10,
-        }
+        },
       });
     });
 
@@ -50,7 +50,7 @@ test.describe('User Interaction Recording', () => {
         payload: {
           type: 'input',
           limit: 10,
-        }
+        },
       });
     });
 
@@ -68,7 +68,7 @@ test.describe('User Interaction Recording', () => {
         payload: {
           type: 'navigation',
           limit: 10,
-        }
+        },
       });
     });
 
@@ -85,7 +85,7 @@ test.describe('User Interaction Recording', () => {
 
     // Focus on the input field
     await page.focus('#key-test-input');
-    
+
     // Blur by clicking elsewhere
     await page.click('body');
 
@@ -96,7 +96,7 @@ test.describe('User Interaction Recording', () => {
         type: 'get_user_interactions',
         payload: {
           limit: 10,
-        }
+        },
       });
     });
 
@@ -106,7 +106,7 @@ test.describe('User Interaction Recording', () => {
   });
 
   test('should record keyboard events', async ({ page }) => {
-    // Clear any existing events  
+    // Clear any existing events
     await page.evaluate(() => {
       return window.A11yCap.clearEvents();
     });
@@ -124,7 +124,7 @@ test.describe('User Interaction Recording', () => {
         payload: {
           type: 'keydown',
           limit: 10,
-        }
+        },
       });
     });
 
@@ -147,7 +147,7 @@ test.describe('User Interaction Recording', () => {
         payload: {
           type: 'click',
           limit: 10,
-        }
+        },
       });
     });
 
@@ -173,7 +173,7 @@ test.describe('User Interaction Recording', () => {
         payload: {
           type: 'click',
           limit: 10,
-        }
+        },
       });
     });
 
@@ -185,13 +185,13 @@ test.describe('User Interaction Recording', () => {
         payload: {
           type: 'input',
           limit: 10,
-        }
+        },
       });
     });
 
     expect(clickInteractions).toContain('Click on button');
     expect(clickInteractions).not.toContain('Type in input');
-    
+
     expect(inputInteractions).toContain('Type in input');
     expect(inputInteractions).not.toContain('Click on button');
   });
@@ -215,7 +215,7 @@ test.describe('User Interaction Recording', () => {
         payload: {
           type: 'click',
           limit: 2,
-        }
+        },
       });
     });
 

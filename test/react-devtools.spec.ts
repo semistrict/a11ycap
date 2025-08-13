@@ -7,13 +7,15 @@ test.describe('React DevTools Integration', () => {
 
     // Wait for the library and React DevTools to load
     await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
-    await page.waitForFunction(() => window.__REACT_DEVTOOLS_GLOBAL_HOOK__, { timeout: 5000 });
+    await page.waitForFunction(() => window.__REACT_DEVTOOLS_GLOBAL_HOOK__, {
+      timeout: 5000,
+    });
 
     const result = await page.evaluate(() => {
       // Get the React DevTools hook
       const hook = window.__REACT_DEVTOOLS_GLOBAL_HOOK__;
       if (!hook) return { error: 'React DevTools hook not found' };
-      
+
       // Check if getFiberRoots exists, otherwise use a different approach
       let fiberNode = null;
       if (hook.getFiberRoots && typeof hook.getFiberRoots === 'function') {
@@ -23,7 +25,9 @@ test.describe('React DevTools Integration', () => {
         // Fallback: try to find fiber directly from DOM element
         const button = document.getElementById('test-button');
         if (button) {
-          const fiberKey = Object.keys(button).find(k => k.startsWith('__reactFiber'));
+          const fiberKey = Object.keys(button).find((k) =>
+            k.startsWith('__reactFiber')
+          );
           if (fiberKey) {
             fiberNode = (button as any)[fiberKey];
           }
@@ -33,7 +37,9 @@ test.describe('React DevTools Integration', () => {
       function findFiberForDom(dom: any): any {
         let node = dom;
         while (node) {
-          const fiberKey = Object.keys(node).find((k: string) => k.startsWith("__reactFiber$"));
+          const fiberKey = Object.keys(node).find((k: string) =>
+            k.startsWith('__reactFiber$')
+          );
           if (fiberKey) {
             const fiber = node[fiberKey];
             if (fiber) return fiber;
@@ -51,14 +57,14 @@ test.describe('React DevTools Integration', () => {
 
       // Find the fiber node for the button
       const fiber = findFiberForDom(button);
-      
+
       return {
         hasFiberRoot: !!fiberNode,
         hasButton: !!button,
         buttonText: button.textContent,
         hasFiber: !!fiber,
         fiberType: fiber ? fiber.type : null,
-        fiberProps: fiber ? Object.keys(fiber.memoizedProps || {}) : null
+        fiberProps: fiber ? Object.keys(fiber.memoizedProps || {}) : null,
       };
     });
 
@@ -75,15 +81,19 @@ test.describe('React DevTools Integration', () => {
 
   test('should find React component for form elements', async ({ page }) => {
     await page.goto('http://localhost:14652/');
-    
+
     // Remove CRA dev overlay for clicks
     await page.evaluate(() => {
-      const overlay = document.getElementById('webpack-dev-server-client-overlay');
+      const overlay = document.getElementById(
+        'webpack-dev-server-client-overlay'
+      );
       if (overlay) overlay.remove();
     });
-    
+
     await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
-    await page.waitForFunction(() => window.__REACT_DEVTOOLS_GLOBAL_HOOK__, { timeout: 5000 });
+    await page.waitForFunction(() => window.__REACT_DEVTOOLS_GLOBAL_HOOK__, {
+      timeout: 5000,
+    });
 
     // Click the "Show Form" button to render form elements
     await page.click('button:has-text("Show Form")');
@@ -92,7 +102,9 @@ test.describe('React DevTools Integration', () => {
       function findFiberForDom(dom: any): any {
         let node = dom;
         while (node) {
-          const fiberKey = Object.keys(node).find((k: string) => k.startsWith("__reactFiber$"));
+          const fiberKey = Object.keys(node).find((k: string) =>
+            k.startsWith('__reactFiber$')
+          );
           if (fiberKey) {
             const fiber = node[fiberKey];
             if (fiber) return fiber;
@@ -115,7 +127,7 @@ test.describe('React DevTools Integration', () => {
         formFiber: !!findFiberForDom(form),
         nameInputFiber: !!findFiberForDom(nameInput),
         emailInputFiber: !!findFiberForDom(emailInput),
-        formVisible: form.style.display !== 'none'
+        formVisible: form.style.display !== 'none',
       };
     });
 
@@ -129,21 +141,27 @@ test.describe('React DevTools Integration', () => {
 
   test('should track React component state changes', async ({ page }) => {
     await page.goto('http://localhost:14652/');
-    
+
     // Remove CRA dev overlay for clicks
     await page.evaluate(() => {
-      const overlay = document.getElementById('webpack-dev-server-client-overlay');
+      const overlay = document.getElementById(
+        'webpack-dev-server-client-overlay'
+      );
       if (overlay) overlay.remove();
     });
-    
+
     await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
-    await page.waitForFunction(() => window.__REACT_DEVTOOLS_GLOBAL_HOOK__, { timeout: 5000 });
+    await page.waitForFunction(() => window.__REACT_DEVTOOLS_GLOBAL_HOOK__, {
+      timeout: 5000,
+    });
 
     const initialState = await page.evaluate(() => {
       function findFiberForDom(dom: any): any {
         let node = dom;
         while (node) {
-          const fiberKey = Object.keys(node).find((k: string) => k.startsWith("__reactFiber$"));
+          const fiberKey = Object.keys(node).find((k: string) =>
+            k.startsWith('__reactFiber$')
+          );
           if (fiberKey) {
             const fiber = node[fiberKey];
             if (fiber) return fiber;
@@ -155,10 +173,10 @@ test.describe('React DevTools Integration', () => {
 
       const button = document.getElementById('test-button');
       const fiber = findFiberForDom(button);
-      
+
       return {
         buttonText: button?.textContent || '',
-        hasHooks: !!fiber?.memoizedState
+        hasHooks: !!fiber?.memoizedState,
       };
     });
 
@@ -169,7 +187,9 @@ test.describe('React DevTools Integration', () => {
       function findFiberForDom(dom: any): any {
         let node = dom;
         while (node) {
-          const fiberKey = Object.keys(node).find((k: string) => k.startsWith("__reactFiber$"));
+          const fiberKey = Object.keys(node).find((k: string) =>
+            k.startsWith('__reactFiber$')
+          );
           if (fiberKey) {
             const fiber = node[fiberKey];
             if (fiber) return fiber;
@@ -181,14 +201,17 @@ test.describe('React DevTools Integration', () => {
 
       const button = document.getElementById('test-button');
       const fiber = findFiberForDom(button);
-      
+
       return {
         buttonText: button?.textContent || '',
-        hasHooks: !!fiber?.memoizedState
+        hasHooks: !!fiber?.memoizedState,
       };
     });
 
-    console.log('State change:', { initial: initialState, afterClick: afterClickState });
+    console.log('State change:', {
+      initial: initialState,
+      afterClick: afterClickState,
+    });
 
     expect(initialState.buttonText).toContain('(0)');
     expect(afterClickState.buttonText).toContain('(1)');
@@ -196,35 +219,43 @@ test.describe('React DevTools Integration', () => {
 });
 
 test.describe('React-Aware Snapshot Integration', () => {
-  test('should include React component info when enableReact is true', async ({ page }) => {
+  test('should include React component info when enableReact is true', async ({
+    page,
+  }) => {
     await page.goto('http://localhost:14652/');
     await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
-    await page.waitForFunction(() => window.__REACT_DEVTOOLS_GLOBAL_HOOK__, { timeout: 5000 });
+    await page.waitForFunction(() => window.__REACT_DEVTOOLS_GLOBAL_HOOK__, {
+      timeout: 5000,
+    });
 
     const debugInfo = await page.evaluate(() => {
       const button = document.getElementById('test-button');
       if (!button) return { error: 'Button not found' };
-      
+
       // Enable debug logging
       (window as any).DEBUG_REACT_SNAPSHOT = true;
-      
+
       // Test extractReactInfo directly
       const { extractReactInfo } = window as any;
       let reactInfo = null;
       try {
-        reactInfo = extractReactInfo ? extractReactInfo(button) : 'extractReactInfo not found';
+        reactInfo = extractReactInfo
+          ? extractReactInfo(button)
+          : 'extractReactInfo not found';
       } catch (e) {
         reactInfo = { error: e.message };
       }
-      
+
       // Get fiber directly to inspect its properties
-      const fiberKey = Object.keys(button).find(k => k.startsWith('__reactFiber'));
+      const fiberKey = Object.keys(button).find((k) =>
+        k.startsWith('__reactFiber')
+      );
       let fiberProperties = [];
       let hasDebugSource = false;
       let debugSourceValue = null;
       let hasDebugOwner = false;
       let debugOwnerValue = null;
-      
+
       if (fiberKey) {
         const fiber = (button as any)[fiberKey];
         const componentFiber = (() => {
@@ -237,7 +268,7 @@ test.describe('React-Aware Snapshot Integration', () => {
           }
           return fiber;
         })();
-        
+
         fiberProperties = Object.keys(componentFiber);
         hasDebugSource = '_debugSource' in componentFiber;
         debugSourceValue = componentFiber._debugSource;
@@ -254,14 +285,17 @@ test.describe('React-Aware Snapshot Integration', () => {
         debugSourceValue,
         hasDebugOwner,
         debugOwnerValue,
-        reactInfo
+        reactInfo,
       };
     });
-    
+
     console.log('Debug info:', debugInfo);
 
     const snapshot = await page.evaluate(() => {
-      return window.A11yCap.snapshot(document.body, { mode: 'ai', enableReact: true });
+      return window.A11yCap.snapshot(document.body, {
+        mode: 'ai',
+        enableReact: true,
+      });
     });
 
     console.log('React-aware snapshot:', snapshot);
@@ -273,12 +307,17 @@ test.describe('React-Aware Snapshot Integration', () => {
     expect(snapshot).toContain('Click me');
   });
 
-  test('should not include React info when enableReact is false', async ({ page }) => {
+  test('should not include React info when enableReact is false', async ({
+    page,
+  }) => {
     await page.goto('http://localhost:14652/');
     await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
 
     const snapshot = await page.evaluate(() => {
-      return window.A11yCap.snapshot(document.body, { mode: 'ai', enableReact: false });
+      return window.A11yCap.snapshot(document.body, {
+        mode: 'ai',
+        enableReact: false,
+      });
     });
 
     console.log('Non-React snapshot:', snapshot);
@@ -291,31 +330,38 @@ test.describe('React-Aware Snapshot Integration', () => {
 
   test('should include React state and interaction hints', async ({ page }) => {
     await page.goto('http://localhost:14652/');
-    
+
     // Remove CRA dev overlay for clicks
     await page.evaluate(() => {
-      const overlay = document.getElementById('webpack-dev-server-client-overlay');
+      const overlay = document.getElementById(
+        'webpack-dev-server-client-overlay'
+      );
       if (overlay) overlay.remove();
     });
-    
+
     await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
-    await page.waitForFunction(() => window.__REACT_DEVTOOLS_GLOBAL_HOOK__, { timeout: 5000 });
+    await page.waitForFunction(() => window.__REACT_DEVTOOLS_GLOBAL_HOOK__, {
+      timeout: 5000,
+    });
 
     // Click the button to change state
     await page.click('#test-button');
-    
+
     // Show the form to get more React components
     await page.click('button:has-text("Show Form")');
 
     const snapshot = await page.evaluate(() => {
-      return window.A11yCap.snapshot(document.body, { mode: 'ai', enableReact: true });
+      return window.A11yCap.snapshot(document.body, {
+        mode: 'ai',
+        enableReact: true,
+      });
     });
 
     console.log('React snapshot with state and interactions:', snapshot);
 
     // Should contain interaction hints like onClick
     expect(snapshot).toContain('onClick');
-    
+
     // Should show form elements with React info
     expect(snapshot).toContain('textbox');
   });
@@ -323,7 +369,9 @@ test.describe('React-Aware Snapshot Integration', () => {
   test('should work with snapshotForAI function', async ({ page }) => {
     await page.goto('http://localhost:14652/');
     await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
-    await page.waitForFunction(() => window.__REACT_DEVTOOLS_GLOBAL_HOOK__, { timeout: 5000 });
+    await page.waitForFunction(() => window.__REACT_DEVTOOLS_GLOBAL_HOOK__, {
+      timeout: 5000,
+    });
 
     const snapshot = await page.evaluate(() => {
       return window.A11yCap.snapshotForAI(document.body, { enableReact: true });
@@ -336,5 +384,4 @@ test.describe('React-Aware Snapshot Integration', () => {
     expect(snapshot).toContain('button');
     expect(snapshot).toContain('[component=');
   });
-
 });

@@ -1,21 +1,23 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test.describe('Selector Snapshot Functionality', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('http://localhost:14652');
   });
 
-  test('should capture snapshot using CSS selector for buttons', async ({ page }) => {
+  test('should capture snapshot using CSS selector for buttons', async ({
+    page,
+  }) => {
     const result = await page.evaluate(() => {
-      return window.A11yCap.toolHandlers['take_snapshot'].execute({
+      return window.A11yCap.toolHandlers.take_snapshot.execute({
         id: 'test-selector-snapshot',
         type: 'take_snapshot',
         payload: {
           selector: 'button',
           mode: 'ai',
           enableReact: true,
-          max_bytes: 8192
-        }
+          max_bytes: 8192,
+        },
       });
     });
 
@@ -25,17 +27,19 @@ test.describe('Selector Snapshot Functionality', () => {
     expect(result).toContain('button "Show Form"');
   });
 
-  test('should capture snapshot using specific CSS selector', async ({ page }) => {
+  test('should capture snapshot using specific CSS selector', async ({
+    page,
+  }) => {
     const result = await page.evaluate(() => {
-      return window.A11yCap.toolHandlers['take_snapshot'].execute({
+      return window.A11yCap.toolHandlers.take_snapshot.execute({
         id: 'test-specific-selector',
         type: 'take_snapshot',
         payload: {
           selector: 'h1',
           mode: 'ai',
           enableReact: true,
-          max_bytes: 4096
-        }
+          max_bytes: 4096,
+        },
       });
     });
 
@@ -44,14 +48,14 @@ test.describe('Selector Snapshot Functionality', () => {
 
   test('should handle invalid CSS selector gracefully', async ({ page }) => {
     const resultPromise = page.evaluate(() => {
-      return window.A11yCap.toolHandlers['take_snapshot'].execute({
+      return window.A11yCap.toolHandlers.take_snapshot.execute({
         id: 'test-invalid-selector',
         type: 'take_snapshot',
         payload: {
           selector: 'invalid[selector[',
           mode: 'ai',
-          max_bytes: 4096
-        }
+          max_bytes: 4096,
+        },
       });
     });
 
@@ -60,31 +64,33 @@ test.describe('Selector Snapshot Functionality', () => {
 
   test('should handle selector with no matches', async ({ page }) => {
     const resultPromise = page.evaluate(() => {
-      return window.A11yCap.toolHandlers['take_snapshot'].execute({
+      return window.A11yCap.toolHandlers.take_snapshot.execute({
         id: 'test-no-matches',
         type: 'take_snapshot',
         payload: {
           selector: '.nonexistent-class',
           mode: 'ai',
-          max_bytes: 4096
-        }
+          max_bytes: 4096,
+        },
       });
     });
 
-    await expect(resultPromise).rejects.toThrow('No elements found matching selector');
+    await expect(resultPromise).rejects.toThrow(
+      'No elements found matching selector'
+    );
   });
 
   test('should respect size limit with multiple elements', async ({ page }) => {
     const result = await page.evaluate(() => {
-      return window.A11yCap.toolHandlers['take_snapshot'].execute({
+      return window.A11yCap.toolHandlers.take_snapshot.execute({
         id: 'test-size-limit',
         type: 'take_snapshot',
         payload: {
           selector: 'div',
           mode: 'ai',
           enableReact: true,
-          max_bytes: 500 // Very small limit to trigger truncation
-        }
+          max_bytes: 500, // Very small limit to trigger truncation
+        },
       });
     });
 
@@ -93,17 +99,19 @@ test.describe('Selector Snapshot Functionality', () => {
     // Should be truncated before capturing all divs
   });
 
-  test('should work with single element selector (no headers)', async ({ page }) => {
+  test('should work with single element selector (no headers)', async ({
+    page,
+  }) => {
     const result = await page.evaluate(() => {
-      return window.A11yCap.toolHandlers['take_snapshot'].execute({
+      return window.A11yCap.toolHandlers.take_snapshot.execute({
         id: 'test-single-element',
         type: 'take_snapshot',
         payload: {
           selector: 'h1',
           mode: 'ai',
           enableReact: true,
-          max_bytes: 4096
-        }
+          max_bytes: 4096,
+        },
       });
     });
 
@@ -112,14 +120,16 @@ test.describe('Selector Snapshot Functionality', () => {
     expect(result).toContain('heading "React Test Page"');
   });
 
-  test('should preserve refs parameter behavior when refs is specified', async ({ page }) => {
+  test('should preserve refs parameter behavior when refs is specified', async ({
+    page,
+  }) => {
     // First get a snapshot to find a ref
     await page.evaluate(() => {
       return window.A11yCap.snapshotForAI(document.body);
     });
 
     const result = await page.evaluate(() => {
-      return window.A11yCap.toolHandlers['take_snapshot'].execute({
+      return window.A11yCap.toolHandlers.take_snapshot.execute({
         id: 'test-refs-priority',
         type: 'take_snapshot',
         payload: {
@@ -127,8 +137,8 @@ test.describe('Selector Snapshot Functionality', () => {
           selector: 'button', // Should be ignored
           mode: 'ai',
           enableReact: true,
-          max_bytes: 4096
-        }
+          max_bytes: 4096,
+        },
       });
     });
 
@@ -145,15 +155,15 @@ test.describe('Selector Snapshot Functionality', () => {
     });
 
     const result = await page.evaluate(() => {
-      return window.A11yCap.toolHandlers['take_snapshot'].execute({
+      return window.A11yCap.toolHandlers.take_snapshot.execute({
         id: 'test-multiple-refs',
         type: 'take_snapshot',
         payload: {
           refs: ['e5', 'e7'], // Multiple refs
           mode: 'ai',
           enableReact: true,
-          max_bytes: 8192
-        }
+          max_bytes: 8192,
+        },
       });
     });
 
@@ -171,22 +181,22 @@ test.describe('Selector Snapshot Functionality', () => {
 
     // Capture console warnings
     const consoleMessages: string[] = [];
-    page.on('console', msg => {
+    page.on('console', (msg) => {
       if (msg.type() === 'warning') {
         consoleMessages.push(msg.text());
       }
     });
 
     const result = await page.evaluate(() => {
-      return window.A11yCap.toolHandlers['take_snapshot'].execute({
+      return window.A11yCap.toolHandlers.take_snapshot.execute({
         id: 'test-missing-refs',
         type: 'take_snapshot',
         payload: {
           refs: ['e5', 'nonexistent'], // One valid, one missing
           mode: 'ai',
           enableReact: true,
-          max_bytes: 8192
-        }
+          max_bytes: 8192,
+        },
       });
     });
 
@@ -195,38 +205,40 @@ test.describe('Selector Snapshot Functionality', () => {
     // Should warn about missing ref
     expect(consoleMessages).toEqual(
       expect.arrayContaining([
-        expect.stringContaining('Elements not found with refs: nonexistent')
+        expect.stringContaining('Elements not found with refs: nonexistent'),
       ])
     );
   });
 
   test('should handle all missing refs with error', async ({ page }) => {
     const resultPromise = page.evaluate(() => {
-      return window.A11yCap.toolHandlers['take_snapshot'].execute({
+      return window.A11yCap.toolHandlers.take_snapshot.execute({
         id: 'test-all-missing-refs',
         type: 'take_snapshot',
         payload: {
           refs: ['nonexistent1', 'nonexistent2'], // All missing
           mode: 'ai',
-          max_bytes: 4096
-        }
+          max_bytes: 4096,
+        },
       });
     });
 
-    await expect(resultPromise).rejects.toThrow('No elements found with refs: nonexistent1, nonexistent2');
+    await expect(resultPromise).rejects.toThrow(
+      'No elements found with refs: nonexistent1, nonexistent2'
+    );
   });
 
   test('should handle complex CSS selectors', async ({ page }) => {
     const result = await page.evaluate(() => {
-      return window.A11yCap.toolHandlers['take_snapshot'].execute({
+      return window.A11yCap.toolHandlers.take_snapshot.execute({
         id: 'test-complex-selector',
         type: 'take_snapshot',
         payload: {
           selector: 'button, input[type="text"]',
           mode: 'ai',
           enableReact: true,
-          max_bytes: 8192
-        }
+          max_bytes: 8192,
+        },
       });
     });
 
@@ -239,7 +251,7 @@ test.describe('Selector Snapshot Functionality', () => {
 
   test('should capture elements within bounding box', async ({ page }) => {
     const result = await page.evaluate(() => {
-      return window.A11yCap.toolHandlers['take_snapshot'].execute({
+      return window.A11yCap.toolHandlers.take_snapshot.execute({
         id: 'test-bounding-box',
         type: 'take_snapshot',
         payload: {
@@ -247,12 +259,12 @@ test.describe('Selector Snapshot Functionality', () => {
             x: 0,
             y: 0,
             width: 200,
-            height: 150
+            height: 150,
           },
           mode: 'ai',
           enableReact: true,
-          max_bytes: 8192
-        }
+          max_bytes: 8192,
+        },
       });
     });
 
@@ -265,23 +277,25 @@ test.describe('Selector Snapshot Functionality', () => {
 
   test('should handle bounding box with no elements', async ({ page }) => {
     const resultPromise = page.evaluate(() => {
-      return window.A11yCap.toolHandlers['take_snapshot'].execute({
+      return window.A11yCap.toolHandlers.take_snapshot.execute({
         id: 'test-empty-bounding-box',
         type: 'take_snapshot',
         payload: {
           boundingBox: {
-            x: 5000,  // Way off screen
+            x: 5000, // Way off screen
             y: 5000,
             width: 100,
-            height: 100
+            height: 100,
           },
           mode: 'ai',
-          max_bytes: 4096
-        }
+          max_bytes: 4096,
+        },
       });
     });
 
-    await expect(resultPromise).rejects.toThrow('No elements found within bounding box (5000, 5000, 100x100)');
+    await expect(resultPromise).rejects.toThrow(
+      'No elements found within bounding box (5000, 5000, 100x100)'
+    );
   });
 
   test('should capture specific area with bounding box', async ({ page }) => {
@@ -294,14 +308,14 @@ test.describe('Selector Snapshot Functionality', () => {
         x: rect.left,
         y: rect.top,
         width: rect.width,
-        height: rect.height
+        height: rect.height,
       };
     });
 
     expect(buttonInfo).not.toBeNull();
 
     const result = await page.evaluate((buttonRect) => {
-      return window.A11yCap.toolHandlers['take_snapshot'].execute({
+      return window.A11yCap.toolHandlers.take_snapshot.execute({
         id: 'test-specific-bounding-box',
         type: 'take_snapshot',
         payload: {
@@ -309,12 +323,12 @@ test.describe('Selector Snapshot Functionality', () => {
             x: buttonRect.x - 10,
             y: buttonRect.y - 10,
             width: buttonRect.width + 20,
-            height: buttonRect.height + 20
+            height: buttonRect.height + 20,
           },
           mode: 'ai',
           enableReact: true,
-          max_bytes: 4096
-        }
+          max_bytes: 4096,
+        },
       });
     }, buttonInfo);
 
@@ -323,7 +337,9 @@ test.describe('Selector Snapshot Functionality', () => {
     expect(result).toContain('boundingBox');
   });
 
-  test('should handle bounding box capturing multiple elements with headers', async ({ page }) => {
+  test('should handle bounding box capturing multiple elements with headers', async ({
+    page,
+  }) => {
     // Get heading position - this will catch multiple overlapping elements including containers
     const headingInfo = await page.evaluate(() => {
       const heading = document.querySelector('h1');
@@ -333,14 +349,14 @@ test.describe('Selector Snapshot Functionality', () => {
         x: rect.left,
         y: rect.top,
         width: rect.width,
-        height: rect.height
+        height: rect.height,
       };
     });
 
     expect(headingInfo).not.toBeNull();
 
     const result = await page.evaluate((headingRect) => {
-      return window.A11yCap.toolHandlers['take_snapshot'].execute({
+      return window.A11yCap.toolHandlers.take_snapshot.execute({
         id: 'test-multi-bounding-box',
         type: 'take_snapshot',
         payload: {
@@ -348,12 +364,12 @@ test.describe('Selector Snapshot Functionality', () => {
             x: headingRect.x,
             y: headingRect.y,
             width: headingRect.width,
-            height: headingRect.height
+            height: headingRect.height,
           },
           mode: 'ai',
           enableReact: true,
-          max_bytes: 4096
-        }
+          max_bytes: 4096,
+        },
       });
     }, headingInfo);
 
