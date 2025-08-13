@@ -69,7 +69,7 @@ async function executeTakeSnapshot(message: TakeSnapshotMessage): Promise<any> {
     // Multiple elements by refs
     const foundElements: Element[] = [];
     const missingRefs: string[] = [];
-    
+
     for (const ref of message.payload.refs) {
       const element = window.A11yCap.findElementByRef(ref);
       if (element) {
@@ -78,15 +78,17 @@ async function executeTakeSnapshot(message: TakeSnapshotMessage): Promise<any> {
         missingRefs.push(ref);
       }
     }
-    
+
     if (foundElements.length === 0) {
-      throw new Error(`No elements found with refs: ${message.payload.refs.join(', ')}`);
+      throw new Error(
+        `No elements found with refs: ${message.payload.refs.join(', ')}`
+      );
     }
-    
+
     if (missingRefs.length > 0) {
       console.warn(`Elements not found with refs: ${missingRefs.join(', ')}`);
     }
-    
+
     elements = foundElements;
   } else if (message.payload.selector) {
     // Multiple elements by CSS selector
@@ -94,37 +96,43 @@ async function executeTakeSnapshot(message: TakeSnapshotMessage): Promise<any> {
       const nodeList = document.querySelectorAll(message.payload.selector);
       elements = Array.from(nodeList);
       if (elements.length === 0) {
-        throw new Error(`No elements found matching selector "${message.payload.selector}"`);
+        throw new Error(
+          `No elements found matching selector "${message.payload.selector}"`
+        );
       }
     } catch (error) {
-      throw new Error(`Invalid CSS selector "${message.payload.selector}": ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Invalid CSS selector "${message.payload.selector}": ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   } else if (message.payload.boundingBox) {
     // Multiple elements within bounding box
     const bbox = message.payload.boundingBox;
     const allElements = document.querySelectorAll('*');
     const elementsInBounds: Element[] = [];
-    
+
     for (const element of allElements) {
       const rect = element.getBoundingClientRect();
-      
+
       // Check if element intersects with the bounding box
       const intersects = !(
-        rect.right < bbox.x || 
+        rect.right < bbox.x ||
         rect.left > bbox.x + bbox.width ||
-        rect.bottom < bbox.y || 
+        rect.bottom < bbox.y ||
         rect.top > bbox.y + bbox.height
       );
-      
+
       if (intersects && rect.width > 0 && rect.height > 0) {
         elementsInBounds.push(element);
       }
     }
-    
+
     if (elementsInBounds.length === 0) {
-      throw new Error(`No elements found within bounding box (${bbox.x}, ${bbox.y}, ${bbox.width}x${bbox.height})`);
+      throw new Error(
+        `No elements found within bounding box (${bbox.x}, ${bbox.y}, ${bbox.width}x${bbox.height})`
+      );
     }
-    
+
     elements = elementsInBounds;
   } else {
     // Default to document.body
@@ -143,9 +151,9 @@ async function executeTakeSnapshot(message: TakeSnapshotMessage): Promise<any> {
         ...message.payload,
         max_bytes: undefined, // Remove individual limit, we'll apply global limit
       });
-      
+
       let headerLabel = '';
-      if (message.payload.refs && message.payload.refs[i]) {
+      if (message.payload.refs?.[i]) {
         headerLabel = message.payload.refs[i];
       } else if (message.payload.selector) {
         headerLabel = message.payload.selector;
@@ -155,16 +163,19 @@ async function executeTakeSnapshot(message: TakeSnapshotMessage): Promise<any> {
       } else {
         headerLabel = 'element';
       }
-      
-      const snapshotWithHeader = elements.length > 1 
-        ? `Element ${i + 1} (${headerLabel}):\n${snapshot}\n`
-        : snapshot;
+
+      const snapshotWithHeader =
+        elements.length > 1
+          ? `Element ${i + 1} (${headerLabel}):\n${snapshot}\n`
+          : snapshot;
 
       // Check if adding this snapshot would exceed the limit
       const newLength = totalLength + snapshotWithHeader.length;
       if (newLength > maxBytes && snapshots.length > 0) {
         // If we already have some snapshots and this would exceed limit, stop here
-        snapshots.push(`\n[WARNING: Additional elements truncated due to size limit. Captured ${snapshots.length} of ${elements.length} elements.]`);
+        snapshots.push(
+          `\n[WARNING: Additional elements truncated due to size limit. Captured ${snapshots.length} of ${elements.length} elements.]`
+        );
         break;
       }
 
@@ -175,17 +186,17 @@ async function executeTakeSnapshot(message: TakeSnapshotMessage): Promise<any> {
       if (totalLength > maxBytes) {
         const combined = snapshots.join('\n');
         const truncated = combined.slice(0, maxBytes);
-        
+
         // Ensure we don't cut off in the middle of a bracket expression
-        let lastOpenBracket = truncated.lastIndexOf('[');
-        let lastCloseBracket = truncated.lastIndexOf(']');
-        
+        const lastOpenBracket = truncated.lastIndexOf('[');
+        const lastCloseBracket = truncated.lastIndexOf(']');
+
         if (lastOpenBracket > lastCloseBracket) {
           // We have an unclosed bracket, truncate before it
           const finalTruncated = truncated.slice(0, lastOpenBracket).trimEnd();
           return `${finalTruncated}\n\n[WARNING: Snapshot was truncated due to size limit. To get a focused snapshot of a specific element, use take_snapshot with the 'refs' parameter, e.g., take_snapshot(refs=["e5"]) to snapshot just that element and its children.]`;
         }
-        
+
         return `${truncated}\n\n[WARNING: Snapshot was truncated due to size limit. To get a focused snapshot of a specific element, use take_snapshot with the 'refs' parameter, e.g., take_snapshot(refs=["e5"]) to snapshot just that element and its children.]`;
       }
     } catch (error) {

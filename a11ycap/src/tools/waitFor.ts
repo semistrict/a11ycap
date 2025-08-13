@@ -5,8 +5,14 @@ import type { ToolHandler } from './base.js';
 const waitForSchema = z.object({
   text: z.string().optional().describe('The text to wait for'),
   textGone: z.string().optional().describe('The text to wait for to disappear'),
-  selector: z.string().optional().describe('CSS selector to wait for (element to appear)'),
-  selectorGone: z.string().optional().describe('CSS selector to wait for to disappear'),
+  selector: z
+    .string()
+    .optional()
+    .describe('CSS selector to wait for (element to appear)'),
+  selectorGone: z
+    .string()
+    .optional()
+    .describe('CSS selector to wait for to disappear'),
   captureSnapshot: z
     .boolean()
     .optional()
@@ -16,7 +22,8 @@ const waitForSchema = z.object({
 
 export const waitForDefinition = {
   name: 'wait_for',
-  description: 'Wait for text to appear/disappear or CSS selectors to match/not match on the page',
+  description:
+    'Wait for text to appear/disappear or CSS selectors to match/not match on the page',
   inputSchema: waitForSchema.shape, // Will have sessionId added by MCP server
 };
 
@@ -77,7 +84,9 @@ async function executeWaitFor(message: WaitForMessage): Promise<any> {
           return `Element matching selector "${selector}" appeared on page`;
         }
       } catch (error) {
-        throw new Error(`Invalid CSS selector "${selector}": ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw new Error(
+          `Invalid CSS selector "${selector}": ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
       }
       await new Promise((resolve) => setTimeout(resolve, 100)); // Check every 100ms
     }
@@ -97,15 +106,21 @@ async function executeWaitFor(message: WaitForMessage): Promise<any> {
           return `Element matching selector "${selectorGone}" disappeared from page`;
         }
       } catch (error) {
-        throw new Error(`Invalid CSS selector "${selectorGone}": ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw new Error(
+          `Invalid CSS selector "${selectorGone}": ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
       }
       await new Promise((resolve) => setTimeout(resolve, 100)); // Check every 100ms
     }
 
-    throw new Error(`Timeout waiting for selector "${selectorGone}" to disappear`);
+    throw new Error(
+      `Timeout waiting for selector "${selectorGone}" to disappear`
+    );
   }
 
-  throw new Error('Must specify either text, textGone, selector, or selectorGone parameter');
+  throw new Error(
+    'Must specify either text, textGone, selector, or selectorGone parameter'
+  );
 }
 
 export const waitForTool: ToolHandler<WaitForMessage> = {

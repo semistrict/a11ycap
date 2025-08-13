@@ -3,7 +3,7 @@
  */
 
 import { z } from 'zod';
-import { getEvents, type InteractionEvent } from '../eventBuffer.js';
+import { type InteractionEvent, getEvents } from '../eventBuffer.js';
 import type { ToolHandler } from './base.js';
 
 // Core tool schema without sessionId (which is added by MCP server for routing)
@@ -11,11 +11,15 @@ const getUserInteractionsSchema = z.object({
   type: z
     .string()
     .optional()
-    .describe('Filter by interaction type (click, input, change, keydown, navigation, focus, blur)'),
+    .describe(
+      'Filter by interaction type (click, input, change, keydown, navigation, focus, blur)'
+    ),
   since: z
     .number()
     .optional()
-    .describe('Get interactions since this timestamp (milliseconds since epoch)'),
+    .describe(
+      'Get interactions since this timestamp (milliseconds since epoch)'
+    ),
   limit: z
     .number()
     .optional()
@@ -35,14 +39,18 @@ const GetUserInteractionsMessageSchema = z.object({
   payload: getUserInteractionsSchema,
 });
 
-type GetUserInteractionsMessage = z.infer<typeof GetUserInteractionsMessageSchema>;
+type GetUserInteractionsMessage = z.infer<
+  typeof GetUserInteractionsMessageSchema
+>;
 
-export async function execute(message: GetUserInteractionsMessage): Promise<string> {
+export async function execute(
+  message: GetUserInteractionsMessage
+): Promise<string> {
   const { type, since, limit = 100 } = message.payload;
 
   // Get interaction events (filter out console events)
   const allEventStrings = getEvents({ since, limit: limit * 2 }); // Get more to ensure we have enough after filtering
-  const interactionStrings = allEventStrings.filter(eventStr => {
+  const interactionStrings = allEventStrings.filter((eventStr) => {
     try {
       const event = JSON.parse(eventStr);
       return event.type !== 'console';
@@ -54,7 +62,7 @@ export async function execute(message: GetUserInteractionsMessage): Promise<stri
   // Further filter by specific interaction type if requested
   let filteredInteractionStrings = interactionStrings;
   if (type) {
-    filteredInteractionStrings = interactionStrings.filter(eventStr => {
+    filteredInteractionStrings = interactionStrings.filter((eventStr) => {
       try {
         const event = JSON.parse(eventStr);
         return event.type === type;
@@ -72,75 +80,88 @@ export async function execute(message: GetUserInteractionsMessage): Promise<stri
   }
 
   // Format interactions for human reading
-  const formatted = finalInteractionStrings.map(eventStr => {
+  const formatted = finalInteractionStrings.map((eventStr) => {
     try {
       const interaction = JSON.parse(eventStr);
       const timestamp = new Date(interaction.timestamp).toISOString();
-      
+
       switch (interaction.type) {
-        case 'click':
-          const target = interaction.target.ariaRef 
+        case 'click': {
+          const target = interaction.target.ariaRef
             ? `${interaction.target.tagName}[${interaction.target.ariaRef}]`
-            : interaction.target.id 
+            : interaction.target.id
               ? `${interaction.target.tagName}#${interaction.target.id}`
               : `${interaction.target.tagName}`;
-          
-          const coords = interaction.coordinates 
+
+          const coords = interaction.coordinates
             ? ` at (${interaction.coordinates.x}, ${interaction.coordinates.y})`
             : '';
-          
+
           const metaKeys = Object.entries(interaction.metaKeys)
             .filter(([_, pressed]) => pressed)
             .map(([key, _]) => key)
             .join('+');
-          
+
           const modifiers = metaKeys ? ` with ${metaKeys}` : '';
-          
+
           return `[${timestamp}] Click on ${target}${coords}${modifiers}`;
+        }
 
         case 'input':
-        case 'change':
-          const inputTarget = interaction.target.ariaRef 
+        case 'change': {
+          const inputTarget = interaction.target.ariaRef
             ? `${interaction.target.tagName}[${interaction.target.ariaRef}]`
-            : interaction.target.id 
+            : interaction.target.id
               ? `${interaction.target.tagName}#${interaction.target.id}`
               : `${interaction.target.tagName}`;
-              
-          const inputType = interaction.target.inputType ? ` (${interaction.target.inputType})` : '';
-          const value = interaction.value.length > 50 ? `${interaction.value.slice(0, 50)}...` : interaction.value;
-          
-          return `[${timestamp}] ${interaction.type === 'input' ? 'Type' : 'Change'} in ${inputTarget}${inputType}: "${value}"`;
 
-        case 'keydown':
-          const keyTarget = interaction.target.ariaRef 
+          const inputType = interaction.target.inputType
+            ? ` (${interaction.target.inputType})`
+            : '';
+          const value =
+            interaction.value.length > 50
+              ? `${interaction.value.slice(0, 50)}...`
+              : interaction.value;
+
+          return `[${timestamp}] ${interaction.type === 'input' ? 'Type' : 'Change'} in ${inputTarget}${inputType}: "${value}"`;
+        }
+
+        case 'keydown': {
+          const keyTarget = interaction.target.ariaRef
             ? `${interaction.target.tagName}[${interaction.target.ariaRef}]`
-            : interaction.target.id 
+            : interaction.target.id
               ? `${interaction.target.tagName}#${interaction.target.id}`
               : `${interaction.target.tagName}`;
-              
+
           const keyMetaKeys = Object.entries(interaction.metaKeys)
             .filter(([_, pressed]) => pressed)
             .map(([key, _]) => key)
             .join('+');
-          
-          const keyModifiers = keyMetaKeys ? `${keyMetaKeys}+` : '';
-          
-          return `[${timestamp}] Key press ${keyModifiers}${interaction.key} on ${keyTarget}`;
 
-        case 'navigation':
+          const keyModifiers = keyMetaKeys ? `${keyMetaKeys}+` : '';
+
+          return `[${timestamp}] Key press ${keyModifiers}${interaction.key} on ${keyTarget}`;
+        }
+
+        case 'navigation': {
           const method = interaction.method;
-          const from = interaction.from !== interaction.to ? ` from ${interaction.from}` : '';
+          const from =
+            interaction.from !== interaction.to
+              ? ` from ${interaction.from}`
+              : '';
           return `[${timestamp}] Navigation (${method})${from} to ${interaction.to}`;
+        }
 
         case 'focus':
-        case 'blur':
-          const focusTarget = interaction.target.ariaRef 
+        case 'blur': {
+          const focusTarget = interaction.target.ariaRef
             ? `${interaction.target.tagName}[${interaction.target.ariaRef}]`
-            : interaction.target.id 
+            : interaction.target.id
               ? `${interaction.target.tagName}#${interaction.target.id}`
               : `${interaction.target.tagName}`;
-              
+
           return `[${timestamp}] ${interaction.type === 'focus' ? 'Focus' : 'Blur'} ${focusTarget}`;
+        }
 
         default:
           return `[${timestamp}] ${interaction.type}: ${JSON.stringify(interaction)}`;

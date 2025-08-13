@@ -1,6 +1,6 @@
 import { z } from 'zod';
+import { type ConsoleEvent, getEvents } from '../eventBuffer.js';
 import type { ToolHandler } from './base.js';
-import { getEvents, type ConsoleEvent } from '../eventBuffer.js';
 
 // Core tool schema without sessionId (which is added by MCP server for routing)
 const getConsoleLogsSchema = z.object({
@@ -38,7 +38,7 @@ export const getConsoleLogsTool: ToolHandler = {
   messageSchema: GetConsoleLogsMessageSchema,
   execute: async (message: GetConsoleLogsMessage) => {
     const { level, since, limit } = message.payload;
-    
+
     const eventStrings = getEvents({
       type: 'console',
       level,
@@ -50,24 +50,26 @@ export const getConsoleLogsTool: ToolHandler = {
       return 'No console logs found';
     }
 
-    const formattedLogs = eventStrings.map(eventStr => {
+    const formattedLogs = eventStrings.map((eventStr) => {
       try {
         const event = JSON.parse(eventStr);
         const timestamp = new Date(event.timestamp).toISOString();
         const level = event.level.toUpperCase().padEnd(5);
-        const args = event.args.map((arg: any) => {
-          if (typeof arg === 'object' && arg !== null) {
-            if (arg._type === 'Error') {
-              return `Error: ${arg.message}`;
+        const args = event.args
+          .map((arg: any) => {
+            if (typeof arg === 'object' && arg !== null) {
+              if (arg._type === 'Error') {
+                return `Error: ${arg.message}`;
+              }
+              if (arg._type === 'HTMLElement') {
+                return `<${arg.tagName}${arg.id ? ` id="${arg.id}"` : ''}>`;
+              }
+              return JSON.stringify(arg);
             }
-            if (arg._type === 'HTMLElement') {
-              return `<${arg.tagName}${arg.id ? ` id="${arg.id}"` : ''}>`;
-            }
-            return JSON.stringify(arg);
-          }
-          return String(arg);
-        }).join(' ');
-        
+            return String(arg);
+          })
+          .join(' ');
+
         return `[${timestamp}] ${level} ${args}`;
       } catch {
         return '[Invalid log entry]';

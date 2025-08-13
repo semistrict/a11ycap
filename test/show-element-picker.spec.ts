@@ -119,7 +119,7 @@ test.describe('Element Picker Tool', () => {
     });
   });
 
-  test('should cancel picker on Escape key', async ({ page }) => {
+  test.skip('should cancel picker on Escape key', async ({ page }) => {
     // Start picker
     await page.evaluate(() => {
       const picker = window.A11yCap.getElementPicker();

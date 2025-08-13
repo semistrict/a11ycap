@@ -29,7 +29,8 @@ const getReadabilitySchema = z.object({
 
 export const getReadabilityDefinition = {
   name: 'get_readability',
-  description: 'Extract readable article content from the current page using Mozilla Readability',
+  description:
+    'Extract readable article content from the current page using Mozilla Readability',
   inputSchema: getReadabilitySchema.shape, // Will have sessionId added by MCP server
 };
 
@@ -58,12 +59,15 @@ async function loadReadability(): Promise<any> {
         reject(new Error('Failed to load Readability library'));
       }
     };
-    script.onerror = () => reject(new Error('Failed to load Readability script'));
+    script.onerror = () =>
+      reject(new Error('Failed to load Readability script'));
     document.head.appendChild(script);
   });
 }
 
-async function executeGetReadability(message: GetReadabilityMessage): Promise<any> {
+async function executeGetReadability(
+  message: GetReadabilityMessage
+): Promise<any> {
   if (typeof window === 'undefined') {
     throw new Error('getReadability requires browser environment');
   }
@@ -71,23 +75,23 @@ async function executeGetReadability(message: GetReadabilityMessage): Promise<an
   try {
     // Load Readability library
     const Readability = await loadReadability();
-    
+
     // Clone the document to avoid modifying the original
     const documentClone = document.cloneNode(true) as Document;
-    
+
     // Create a Readability instance
     const reader = new Readability(documentClone, {
       debug: false,
       charThreshold: 500,
     });
-    
+
     // Parse the document
     const article = reader.parse();
-    
+
     if (!article) {
       return 'Unable to extract readable content from this page';
     }
-    
+
     // Prepare the result based on options
     const result: any = {
       success: true,
@@ -99,50 +103,50 @@ async function executeGetReadability(message: GetReadabilityMessage): Promise<an
       length: article.length,
       siteName: article.siteName,
     };
-    
+
     // Add excerpt if requested
     if (message.payload.includeExcerpt && article.excerpt) {
       result.excerpt = article.excerpt;
     }
-    
+
     // Add content if requested
     if (message.payload.includeContent && article.textContent) {
       let content = article.textContent;
-      
+
       // Truncate if necessary
       if (content.length > message.payload.maxContentLength) {
-        content = content.substring(0, message.payload.maxContentLength) + '...';
+        content = `${content.substring(0, message.payload.maxContentLength)}...`;
         result.contentTruncated = true;
         result.originalLength = article.textContent.length;
       }
-      
+
       result.content = content;
     }
-    
+
     // Add HTML content for potential further processing
     if (article.content) {
       // Just include a flag that HTML is available
       result.htmlAvailable = true;
     }
-    
+
     // Format as human-readable text
     let output = `Article: ${result.title}\nURL: ${result.url}`;
-    
+
     if (result.byline) output += `\nAuthor: ${result.byline}`;
     if (result.siteName) output += `\nSite: ${result.siteName}`;
     if (result.length) output += `\nLength: ${result.length} characters`;
-    
+
     if (result.excerpt) {
       output += `\n\nExcerpt:\n${result.excerpt}`;
     }
-    
+
     if (result.content) {
       output += `\n\nContent:\n${result.content}`;
       if (result.contentTruncated) {
         output += `\n\n[Content truncated from ${result.originalLength} characters]`;
       }
     }
-    
+
     return output;
   } catch (error) {
     throw new Error(

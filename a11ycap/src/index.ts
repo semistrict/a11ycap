@@ -18,6 +18,17 @@ export {
   initializeMCPConnection,
 } from './mcpConnection.js';
 
+// Re-export message types
+export type {
+  BaseMessage,
+  PageInfoMessage,
+  HeartbeatMessage,
+  CommandResponseMessage,
+  BrowserToServerMessage,
+  BrowserCommand,
+  ServerToBrowserMessage,
+} from './types/messages.js';
+
 // Re-export MCP tool definitions
 export { toolDefinitions, type McpToolDefinition } from './mcpTools.js';
 
@@ -25,19 +36,30 @@ export { toolDefinitions, type McpToolDefinition } from './mcpTools.js';
 export { toolHandlers } from './tools/index.js';
 
 // Re-export eventBuffer functionality
-export { addEvent, getEvents, clearEvents, getBufferStats } from './eventBuffer.js';
+export {
+  addEvent,
+  getEvents,
+  clearEvents,
+  getBufferStats,
+} from './eventBuffer.js';
 import { addEvent } from './eventBuffer.js';
 
 // Re-export console forwarder functionality
-export { installConsoleForwarders, restoreConsole } from './consoleForwarder.js';
+export {
+  installConsoleForwarders,
+  restoreConsole,
+} from './consoleForwarder.js';
 import { installConsoleForwarders } from './consoleForwarder.js';
 
-// Re-export interaction forwarder functionality  
-export { installInteractionForwarders, restoreInteractionForwarders } from './interactionForwarder.js';
+// Re-export interaction forwarder functionality
+export {
+  installInteractionForwarders,
+  restoreInteractionForwarders,
+} from './interactionForwarder.js';
 import { installInteractionForwarders } from './interactionForwarder.js';
 
 // Global page UUID
-let currentPageUUID: string = '';
+let currentPageUUID = '';
 
 // Generate page UUID from URL hash
 function generatePageUUID(): string {
@@ -46,7 +68,7 @@ function generatePageUUID(): string {
   let hash = 0;
   for (let i = 0; i < url.length; i++) {
     const char = url.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash; // Convert to 32bit integer
   }
   return Math.abs(hash).toString(16);
@@ -60,24 +82,24 @@ let escPressTimer: number | null = null;
 if (typeof window !== 'undefined') {
   installConsoleForwarders();
   installInteractionForwarders();
-  
+
   // Initialize page UUID
   currentPageUUID = generatePageUUID();
   // Expose globally for testing and debugging
   (window as any)._a11yCapPageUUID = currentPageUUID;
   (window as any)._a11yCapEscCount = () => escPressCount;
   (window as any)._a11yCapEscTimer = () => escPressTimer;
-  
+
   // Triple-ESC key listener to enable element picker
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
       escPressCount++;
-      
+
       // Clear existing timer
       if (escPressTimer) {
         window.clearTimeout(escPressTimer);
       }
-      
+
       // Check for triple press
       if (escPressCount === 3) {
         // Enable element picker only if not already active
@@ -96,14 +118,17 @@ if (typeof window !== 'undefined') {
                   element: {
                     ref: element.ref,
                     selector: element.selector,
-                    textContent: element.element?.textContent?.slice(0, 100) || '',
+                    textContent:
+                      element.element?.textContent?.slice(0, 100) || '',
                     tagName: element.element?.tagName.toLowerCase() || '',
-                    snapshot: element.snapshot || ''
-                  }
+                    snapshot: element.snapshot || '',
+                  },
                 });
               }
-              console.log(`Picked ${elements.length} elements for page ${currentPageUUID}`);
-            }
+              console.log(
+                `Picked ${elements.length} elements for page ${currentPageUUID}`
+              );
+            },
           });
         }
         escPressCount = 0;
@@ -130,7 +155,7 @@ if (typeof window !== 'undefined') {
 
   // Listen for popstate (back/forward button)
   window.addEventListener('popstate', updatePageUUID);
-  
+
   // Listen for hashchange
   window.addEventListener('hashchange', updatePageUUID);
 }
@@ -228,17 +253,17 @@ function renderAriaTreeWithSizeLimit(
   if (lastValidResult.length > options.max_bytes) {
     // Even root node exceeds limit, return truncated version with warning
     let truncated = lastValidResult.slice(0, options.max_bytes);
-    
+
     // Ensure we don't cut off in the middle of a bracket expression
     // Find the last complete bracket pair or cut before any incomplete one
-    let lastOpenBracket = truncated.lastIndexOf('[');
-    let lastCloseBracket = truncated.lastIndexOf(']');
-    
+    const lastOpenBracket = truncated.lastIndexOf('[');
+    const lastCloseBracket = truncated.lastIndexOf(']');
+
     if (lastOpenBracket > lastCloseBracket) {
       // We have an unclosed bracket, truncate before it
       truncated = truncated.slice(0, lastOpenBracket).trimEnd();
     }
-    
+
     return `${truncated}\n\n[WARNING: Snapshot was truncated due to size limit. Even the root element exceeded the limit. To get a focused snapshot of a specific element, use take_snapshot with the 'ref' parameter, e.g., take_snapshot(ref="e5") to snapshot just that element and its children.]`;
   }
 

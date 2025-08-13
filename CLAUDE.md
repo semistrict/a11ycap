@@ -2,6 +2,22 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Repository Information
+
+- **GitHub Origin**: git@github.com:semistrict/a11ycap.git
+- **Current Branch**: refactor/sessionid-primary-identifier
+- **PR Commands**:
+  ```bash
+  # View current PR
+  gh pr view --repo semistrict/a11ycap
+  
+  # Check PR comments and reviews
+  gh pr view 1 --repo semistrict/a11ycap --comments
+  
+  # Check CodeRabbit or other bot reviews
+  gh pr view 1 --repo semistrict/a11ycap --json comments --jq '.comments[] | select(.user.login == "coderabbitai")'
+  ```
+
 ## Project Structure
 
 This is a monorepo with 4 packages managed by pnpm workspace:
@@ -87,13 +103,13 @@ Stdio-based MCP server with WebSocket support for browser connections:
 - WebSocket server on port 12456 (configurable via PORT env var)
 - Primary/secondary server architecture for multiple MCP instances
 - Browser injection script available via console paste
-- Manages browser tabs as separate connections
+- Uses sessionId as primary identifier for browser connections
+- Defers connection creation until page_info message is received
 
 Key modules:
 - `index.ts` - Main server entry with stdio transport
 - `mcp-server.ts` - MCP tool implementations
-- `browser-connection-manager.ts` - Primary/secondary WebSocket management
-- `browser-connections.ts` - Individual browser tab connection handling
+- `browser-connection-manager.ts` - WebSocket management and browser connection handling with sessionId-based routing
 
 ### Testing Architecture
 - Playwright for end-to-end testing with accessibility snapshots

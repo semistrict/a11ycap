@@ -56,9 +56,7 @@ export const showElementPickerHandler: ToolHandler<ShowElementPickerMessage> = {
   definition: showElementPickerDefinition,
   messageSchema: ShowElementPickerMessageSchema,
 
-  async execute(
-    message: ShowElementPickerMessage
-  ): Promise<string> {
+  async execute(message: ShowElementPickerMessage): Promise<string> {
     const picker = getElementPicker();
 
     // Enable picker with options but return immediately

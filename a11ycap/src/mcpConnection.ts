@@ -3,6 +3,12 @@
  */
 
 import { toolHandlers } from './tools/index.js';
+import type {
+  BrowserCommand,
+  CommandResponseMessage,
+  HeartbeatMessage,
+  PageInfoMessage,
+} from './types/messages.js';
 
 // All tools are now handled by the modular tool system
 
@@ -22,14 +28,24 @@ function generateUUID(): string {
  */
 function getTabSessionId(): string {
   const SESSION_KEY = 'a11ycap_session_id';
-  let sessionId = sessionStorage.getItem(SESSION_KEY);
-  
+  let sessionId: string | null = null;
+
+  try {
+    sessionId = sessionStorage.getItem(SESSION_KEY);
+  } catch {
+    // sessionStorage may not be available (private mode, etc.)
+  }
+
   if (!sessionId) {
     sessionId = generateUUID();
-    sessionStorage.setItem(SESSION_KEY, sessionId);
-    sessionStorage.setItem('a11ycap_session_created', Date.now().toString());
+    try {
+      sessionStorage.setItem(SESSION_KEY, sessionId);
+      sessionStorage.setItem('a11ycap_session_created', Date.now().toString());
+    } catch {
+      // Ignore storage errors (e.g., private mode or quota)
+    }
   }
-  
+
   return sessionId;
 }
 
@@ -58,20 +74,33 @@ export class MCPWebSocketClient {
       this.ws.onopen = () => {
         this.reconnectAttempts = 0;
 
-        // Send page info to server with session ID
-        this.send({
+        // Send page info to server with session ID at top level
+        let isReconnect = false;
+        try {
+          isReconnect =
+            sessionStorage.getItem('a11ycap_has_connected') === 'true';
+        } catch {
+          // Ignore sessionStorage errors
+        }
+
+        const message: PageInfoMessage = {
+          sessionId: this.sessionId,
           type: 'page_info',
           payload: {
-            sessionId: this.sessionId,
             url: window.location.href,
             title: document.title,
             userAgent: navigator.userAgent,
-            isReconnect: sessionStorage.getItem('a11ycap_has_connected') === 'true',
+            isReconnect,
           },
-        });
-        
+        };
+        this.send(message);
+
         // Mark that we've connected at least once
-        sessionStorage.setItem('a11ycap_has_connected', 'true');
+        try {
+          sessionStorage.setItem('a11ycap_has_connected', 'true');
+        } catch {
+          // Ignore storage errors
+        }
       };
 
       this.ws.onclose = () => {
@@ -91,7 +120,9 @@ export class MCPWebSocketClient {
     }
   }
 
-  send(message: Record<string, unknown>): void {
+  send(
+    message: PageInfoMessage | HeartbeatMessage | CommandResponseMessage
+  ): void {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message));
     }
@@ -103,38 +134,65 @@ export class MCPWebSocketClient {
     data?: any,
     error?: string
   ): void {
-    this.send({
+    const response: CommandResponseMessage = {
+      sessionId: this.sessionId,
+      type: 'command_response',
       commandId,
       success,
       ...(data !== undefined && { data }),
       ...(error && { error }),
-    });
+    };
+    this.send(response);
   }
 
   private async handleMessage(event: MessageEvent): Promise<void> {
     try {
-      const rawMessage = JSON.parse(event.data);
+      const rawMessage = JSON.parse(event.data) as BrowserCommand;
 
-      // Check if we have a modular tool handler for this message type
-      const toolHandler = toolHandlers[rawMessage.type];
-      if (toolHandler) {
-        try {
-          const message = toolHandler.messageSchema.parse(rawMessage);
-          const result = await toolHandler.execute(message);
-          this.sendResponse(rawMessage.id, true, result);
-        } catch (error) {
+      // Server sends commands with type 'command', actual command type in commandType
+      if (rawMessage.type === 'command') {
+        // Check if we have a modular tool handler for this command type
+        const toolHandler = toolHandlers[rawMessage.commandType];
+        if (toolHandler) {
+          try {
+            // Create message in expected format for the tool handler
+            const toolMessage = {
+              id: rawMessage.id,
+              type: rawMessage.commandType,
+              payload: rawMessage.payload,
+            };
+            const message = toolHandler.messageSchema.parse(toolMessage);
+            const result = await toolHandler.execute(message);
+            this.sendResponse(rawMessage.id, true, result);
+          } catch (error) {
+            this.sendResponse(
+              rawMessage.id,
+              false,
+              undefined,
+              error instanceof Error ? error.message : 'Unknown error'
+            );
+          }
+          return;
+        }
+        console.warn(`Unknown command type: ${rawMessage.commandType}`);
+        this.sendResponse(
+          rawMessage.id,
+          false,
+          undefined,
+          `Unknown command type: ${rawMessage.commandType}`
+        );
+      } else {
+        console.warn(`Unknown message type: ${rawMessage.type}`);
+        // For unknown message types, try to extract an id and send error response
+        if ('id' in rawMessage && typeof rawMessage.id === 'string') {
           this.sendResponse(
             rawMessage.id,
             false,
             undefined,
-            error instanceof Error ? error.message : 'Unknown error'
+            `Unknown message type: ${rawMessage.type}`
           );
         }
-        return;
       }
-
-      // No legacy handlers needed - all tools are modular now
-      console.warn(`Unknown message type: ${rawMessage.type}`);
     } catch (error) {
       console.error('Error handling MCP command:', error);
     }
@@ -143,15 +201,16 @@ export class MCPWebSocketClient {
   startHeartbeat(): void {
     setInterval(() => {
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        this.send({
+        const heartbeat: HeartbeatMessage = {
+          sessionId: this.sessionId,
           type: 'heartbeat',
           payload: {
-            sessionId: this.sessionId,
             url: window.location.href,
             title: document.title,
             timestamp: Date.now(),
           },
-        });
+        };
+        this.send(heartbeat);
       }
     }, 30000);
   }
@@ -168,16 +227,26 @@ export function initializeMCPConnection(
   const client = new MCPWebSocketClient(wsUrl);
   client.connect();
   client.startHeartbeat();
-  
+
   // Log a single consolidated message
   const sessionId = client.sessionId;
-  const isReconnect = sessionStorage.getItem('a11ycap_has_connected') === 'true';
-  const sessionAge = sessionStorage.getItem('a11ycap_session_created');
-  const age = sessionAge ? Math.round((Date.now() - parseInt(sessionAge, 10)) / 1000) : 0;
-  
+  let isReconnect = false;
+  let sessionAge: string | null = null;
+
+  try {
+    isReconnect = sessionStorage.getItem('a11ycap_has_connected') === 'true';
+    sessionAge = sessionStorage.getItem('a11ycap_session_created');
+  } catch {
+    // Ignore sessionStorage errors
+  }
+
+  const age = sessionAge
+    ? Math.round((Date.now() - Number.parseInt(sessionAge, 10)) / 1000)
+    : 0;
+
   console.log(
     `🐱 a11ycap ${isReconnect ? `reconnected (session: ${sessionId.slice(0, 8)}..., age: ${age}s)` : 'loaded'} - Try: window.A11yCap.snapshotForAI(document.body)`
   );
-  
+
   return client;
 }

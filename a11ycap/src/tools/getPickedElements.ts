@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import type { ToolHandler } from './base.js';
 import { getEvents } from '../eventBuffer.js';
+import type { ToolHandler } from './base.js';
 
 const getPickedElementsSchema = z.object({
   limit: z
@@ -11,7 +11,9 @@ const getPickedElementsSchema = z.object({
   since: z
     .number()
     .optional()
-    .describe('Get picked elements since this timestamp (milliseconds since epoch)'),
+    .describe(
+      'Get picked elements since this timestamp (milliseconds since epoch)'
+    ),
 });
 
 export const getPickedElementsDefinition = {
@@ -36,34 +38,40 @@ function generatePageUUID(): string {
   let hash = 0;
   for (let i = 0; i < url.length; i++) {
     const char = url.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash; // Convert to 32bit integer
   }
   return Math.abs(hash).toString(16);
 }
 
-async function executeGetPickedElements(message: GetPickedElementsMessage): Promise<any> {
+async function executeGetPickedElements(
+  message: GetPickedElementsMessage
+): Promise<any> {
   if (message.type !== 'get_picked_elements') {
     throw new Error('Invalid message type for getPickedElements handler');
   }
 
   const currentPageUUID = generatePageUUID();
   const allEventStrings = getEvents();
-  
+
   // Parse and filter for element_picked events for the current page
-  let pickedElements = allEventStrings.filter((eventStr: string) => {
-    try {
-      const event = JSON.parse(eventStr);
-      return event.type === 'element_picked' && event.pageUUID === currentPageUUID;
-    } catch {
-      return false;
-    }
-  }).map((eventStr: string) => JSON.parse(eventStr));
+  let pickedElements = allEventStrings
+    .filter((eventStr: string) => {
+      try {
+        const event = JSON.parse(eventStr);
+        return (
+          event.type === 'element_picked' && event.pageUUID === currentPageUUID
+        );
+      } catch {
+        return false;
+      }
+    })
+    .map((eventStr: string) => JSON.parse(eventStr));
 
   // Filter by timestamp if specified
   if (message.payload.since) {
-    pickedElements = pickedElements.filter((event: any) => 
-      event.timestamp >= message.payload.since!
+    pickedElements = pickedElements.filter(
+      (event: any) => event.timestamp >= message.payload.since!
     );
   }
 
@@ -78,14 +86,14 @@ async function executeGetPickedElements(message: GetPickedElementsMessage): Prom
     tagName: event.element?.tagName || 'unknown',
     textContent: event.element?.textContent || '',
     selector: event.element?.selector || 'unknown',
-    snapshot: event.element?.snapshot || ''
+    snapshot: event.element?.snapshot || '',
   }));
 
   return {
     pageUUID: currentPageUUID,
     currentUrl: typeof window !== 'undefined' ? window.location.href : '',
     totalPicked: pickedElements.length,
-    elements: summary
+    elements: summary,
   };
 }
 
