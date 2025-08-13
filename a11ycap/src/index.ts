@@ -42,21 +42,21 @@ export {
   clearEvents,
   getBufferStats,
 } from './eventBuffer.js';
-import { addEvent } from './eventBuffer.js';
+import { addEvent, getEvents, clearEvents, getBufferStats } from './eventBuffer.js';
 
 // Re-export console forwarder functionality
 export {
   installConsoleForwarders,
   restoreConsole,
 } from './consoleForwarder.js';
-import { installConsoleForwarders } from './consoleForwarder.js';
+import { installConsoleForwarders, restoreConsole } from './consoleForwarder.js';
 
 // Re-export interaction forwarder functionality
 export {
   installInteractionForwarders,
   restoreInteractionForwarders,
 } from './interactionForwarder.js';
-import { installInteractionForwarders } from './interactionForwarder.js';
+import { installInteractionForwarders, restoreInteractionForwarders } from './interactionForwarder.js';
 
 // Global page UUID
 let currentPageUUID = '';
@@ -479,5 +479,43 @@ interface A11yCapGlobal {
 declare global {
   interface Window {
     A11yCap: A11yCapGlobal;
+    a11ycap: A11yCapGlobal;
   }
+}
+
+// Expose a11ycap globally in browser environment
+if (typeof window !== 'undefined') {
+  const a11yCapAPI: A11yCapGlobal = {
+    snapshotForAI,
+    snapshot,
+    extractReactInfo,
+    clickRef,
+    findElementByRef,
+    generateAriaTree,
+    renderAriaTree,
+    initializeMCPConnection: (wsUrl: string) => {
+      const { initializeMCPConnection } = require('./mcpConnection.js');
+      return initializeMCPConnection(wsUrl);
+    },
+    getElementPicker,
+    toolHandlers: (() => {
+      try {
+        return require('./tools/index.js').toolHandlers;
+      } catch {
+        return {};
+      }
+    })(),
+    addEvent,
+    getEvents,
+    clearEvents,
+    getBufferStats,
+    installConsoleForwarders,
+    restoreConsole,
+    installInteractionForwarders,
+    restoreInteractionForwarders,
+  };
+  
+  // Expose as both A11yCap and a11ycap for compatibility
+  window.A11yCap = a11yCapAPI;
+  window.a11ycap = a11yCapAPI;
 }

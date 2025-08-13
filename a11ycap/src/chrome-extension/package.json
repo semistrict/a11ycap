@@ -2,7 +2,7 @@
   "name": "a11ycap-chrome-extension",
   "private": true,
   "scripts": {
-    "build:ext": "vite build && cp manifest.json dist/ && cp ../../dist/browser.js dist/a11ycap.js && (cp ../../dist/browser.js.map dist/a11ycap.js.map 2>/dev/null || true)"
+    "build:ext": "npx vite build && cp manifest.json dist/ && cp ../../dist/browser.js dist/a11ycap.js && (cp ../../dist/browser.js.map dist/a11ycap.js.map 2>/dev/null || true)"
   },
   "devDependencies": {
     "vite": "^5.0.0"

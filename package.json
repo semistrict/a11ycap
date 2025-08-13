@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build": "pnpm -r build",
+    "build:extension": "pnpm --filter a11ycap build && cd a11ycap/src/chrome-extension && pnpm run build:ext",
     "test": "pnpm --filter a11ycap build && pnpm --filter a11ycap-mcp build && playwright test --max-failures=1 && pnpm --filter a11ycap-mcp test",
     "test:headed": "pnpm --filter a11ycap build && playwright test --headed",
     "lint": "pnpm -r lint",
