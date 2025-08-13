@@ -21,10 +21,15 @@ import { WebSocketServer } from "ws";
 import type WebSocket from "ws";
 import { log } from "./logging.js";
 import { setupLibraryRoutes } from "./routes/library.js";
+import {
+  type ServerTransport,
+  WebSocketServerTransport,
+} from "./transport/ServerTransport.js";
 
 export interface BrowserConnection {
   sessionId: string;
-  ws: WebSocket;
+  transport: ServerTransport;
+  ws?: WebSocket; // Keep for backward compatibility
   url: string;
   title: string;
   userAgent: string;
@@ -218,31 +223,27 @@ export class PrimaryBrowserConnectionManager
 
   addConnection(ws: WebSocket, _metadata?: any): void {
     // Connection starts without sessionId - it will come in page_info message
+    const transport = new WebSocketServerTransport(ws);
 
-    ws.on("message", (data) => {
-      try {
-        const message = JSON.parse(data.toString());
+    transport.setHandlers({
+      onMessage: (message) => {
         this.handleBrowserMessage(ws, message);
-      } catch (error) {
-        log.error("Error parsing browser message:", error);
-      }
-    });
-
-    ws.on("close", () => {
-      const sessionId = this.wsToSessionId.get(ws);
-      if (sessionId) {
-        this.removeConnection(sessionId);
-      }
-      this.wsToSessionId.delete(ws);
-    });
-
-    ws.on("error", (error) => {
-      const sessionId = this.wsToSessionId.get(ws);
-      log.error(`Browser connection ${sessionId || "unknown"} error:`, error);
-      if (sessionId) {
-        this.removeConnection(sessionId);
-      }
-      this.wsToSessionId.delete(ws);
+      },
+      onClose: () => {
+        const sessionId = this.wsToSessionId.get(ws);
+        if (sessionId) {
+          this.removeConnection(sessionId);
+        }
+        this.wsToSessionId.delete(ws);
+      },
+      onError: (error) => {
+        const sessionId = this.wsToSessionId.get(ws);
+        log.error(`Browser connection ${sessionId || "unknown"} error:`, error);
+        if (sessionId) {
+          this.removeConnection(sessionId);
+        }
+        this.wsToSessionId.delete(ws);
+      },
     });
   }
 
@@ -285,26 +286,21 @@ export class PrimaryBrowserConnectionManager
           log.debug(
             `Session ${sessionId} reconnecting, replacing old connection`,
           );
-          // Close the old WebSocket if still open
-          if (
-            existingConnection.ws &&
-            existingConnection.ws.readyState === existingConnection.ws.OPEN
-          ) {
-            console.warn(
-              "Closing old WebSocket for session that is still open",
-              sessionId,
-            );
-            existingConnection.ws.close();
+          // Close the old transport if still open
+          if (existingConnection.transport) {
+            existingConnection.transport.close();
           }
-          // Clean up old ws mapping
+          // Clean up old ws mapping if exists
           if (existingConnection.ws) {
             this.wsToSessionId.delete(existingConnection.ws);
           }
         }
 
+        const transport = new WebSocketServerTransport(ws);
         const connection: BrowserConnection = {
           sessionId,
-          ws,
+          transport,
+          ws, // Keep for backward compatibility
           url: message.payload.url,
           title: message.payload.title,
           userAgent: message.payload.userAgent,
@@ -366,7 +362,7 @@ export class PrimaryBrowserConnectionManager
     timeoutMs = 10000,
   ): Promise<any> {
     const connection = this.connections.get(sessionId);
-    if (!connection || !connection.connected || !connection.ws) {
+    if (!connection || !connection.connected || !connection.transport) {
       throw new Error(`Browser session ${sessionId} not found or disconnected`);
     }
 
@@ -391,7 +387,7 @@ export class PrimaryBrowserConnectionManager
       this.pendingCommands.set(fullCommand.id, { resolve, reject, timeout });
 
       try {
-        connection.ws?.send(JSON.stringify(fullCommand));
+        connection.transport.send(fullCommand);
       } catch (error) {
         clearTimeout(timeout);
         this.pendingCommands.delete(fullCommand.id);

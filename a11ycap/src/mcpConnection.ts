@@ -1,5 +1,6 @@
 /**
- * MCP WebSocket connection for browser-server communication
+ * MCP connection for browser-server communication
+ * Supports multiple transport types (WebSocket, Chrome Extension, etc.)
  */
 
 import { toolHandlers } from './tools/index.js';
@@ -9,6 +10,12 @@ import type {
   HeartbeatMessage,
   PageInfoMessage,
 } from './types/messages.js';
+import {
+  type Transport,
+  TransportFactory,
+  type TransportConfig,
+  TransportState,
+} from './transport/index.js';
 
 // All tools are now handled by the modular tool system
 
@@ -50,30 +57,25 @@ function getTabSessionId(): string {
 }
 
 /**
- * WebSocket connection for MCP server communication
+ * MCP connection for server communication
+ * Supports multiple transport types via Transport abstraction
  */
-export class MCPWebSocketClient {
-  private ws: WebSocket | null = null;
-  private reconnectAttempts = 0;
-  private readonly maxReconnectAttempts = Number.POSITIVE_INFINITY;
-  private readonly reconnectInterval = 2000; // 2 seconds
-  private readonly wsUrl: string;
+export class MCPConnection {
+  private transport: Transport;
   readonly sessionId: string;
+  private heartbeatInterval?: number;
 
-  constructor(wsUrl: string) {
-    this.wsUrl = wsUrl;
+  constructor(config: TransportConfig) {
     this.sessionId = getTabSessionId();
+    this.transport = TransportFactory.create(config);
+    this.setupTransport();
   }
 
-  connect(): void {
+  private setupTransport(): void {
     if (typeof window === 'undefined') return;
 
-    try {
-      this.ws = new WebSocket(this.wsUrl);
-
-      this.ws.onopen = () => {
-        this.reconnectAttempts = 0;
-
+    this.transport.setHandlers({
+      onOpen: () => {
         // Send page info to server with session ID at top level
         let isReconnect = false;
         try {
@@ -101,30 +103,28 @@ export class MCPWebSocketClient {
         } catch {
           // Ignore storage errors
         }
-      };
+      },
 
-      this.ws.onclose = () => {
-        if (this.reconnectAttempts < this.maxReconnectAttempts) {
-          this.reconnectAttempts++;
-          setTimeout(() => this.connect(), this.reconnectInterval);
-        }
-      };
+      onClose: () => {
+        // Transport handles reconnection internally
+      },
 
-      this.ws.onerror = () => {
-        // Silently handle errors - onclose will handle reconnection
-      };
+      onError: (error) => {
+        // Silently handle errors - transport handles reconnection
+        console.debug('MCP transport error:', error);
+      },
 
-      this.ws.onmessage = this.handleMessage.bind(this);
-    } catch (error) {
-      // Silently handle WebSocket creation errors
-    }
+      onMessage: (message) => {
+        this.handleMessage(message);
+      },
+    });
   }
 
   send(
     message: PageInfoMessage | HeartbeatMessage | CommandResponseMessage
   ): void {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify(message));
+    if (this.transport.getState() === TransportState.OPEN) {
+      this.transport.send(message);
     }
   }
 
@@ -145,9 +145,8 @@ export class MCPWebSocketClient {
     this.send(response);
   }
 
-  private async handleMessage(event: MessageEvent): Promise<void> {
+  private async handleMessage(rawMessage: BrowserCommand): Promise<void> {
     try {
-      const rawMessage = JSON.parse(event.data) as BrowserCommand;
 
       // Server sends commands with type 'command', actual command type in commandType
       if (rawMessage.type === 'command') {
@@ -199,8 +198,8 @@ export class MCPWebSocketClient {
   }
 
   startHeartbeat(): void {
-    setInterval(() => {
-      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+    this.heartbeatInterval = window.setInterval(() => {
+      if (this.transport.getState() === TransportState.OPEN) {
         const heartbeat: HeartbeatMessage = {
           sessionId: this.sessionId,
           type: 'heartbeat',
@@ -214,18 +213,28 @@ export class MCPWebSocketClient {
       }
     }, 30000);
   }
+
+  close(): void {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = undefined;
+    }
+    this.transport.close();
+  }
 }
 
+// Legacy export for backward compatibility
+export const MCPWebSocketClient = MCPConnection;
+
 /**
- * Initialize MCP WebSocket connection if wsUrl is provided
+ * Initialize MCP connection with WebSocket URL (backward compatibility)
  */
 export function initializeMCPConnection(
   wsUrl: string
-): MCPWebSocketClient | null {
+): MCPConnection | null {
   if (typeof window === 'undefined') return null;
 
-  const client = new MCPWebSocketClient(wsUrl);
-  client.connect();
+  const client = new MCPConnection({ wsUrl });
   client.startHeartbeat();
 
   // Log a single consolidated message
