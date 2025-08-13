@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test.describe('Event Buffer Persistence', () => {
   test.beforeEach(async ({ page }) => {
@@ -7,7 +7,9 @@ test.describe('Event Buffer Persistence', () => {
     await page.waitForSelector('#root');
   });
 
-  test('should save events to sessionStorage automatically', async ({ page }) => {
+  test('should save events to sessionStorage automatically', async ({
+    page,
+  }) => {
     // Clear any existing events
     await page.evaluate(() => {
       return window.A11yCap.clearEvents();
@@ -22,10 +24,11 @@ test.describe('Event Buffer Persistence', () => {
       // Check buffer state
       const state = sessionStorage.getItem('a11ycap_buffer_state');
       if (!state) return { hasEvents: false, eventCount: 0, sampleEvent: null };
-      
+
       const bufferState = JSON.parse(state);
-      if (bufferState.size === 0) return { hasEvents: false, eventCount: 0, sampleEvent: null };
-      
+      if (bufferState.size === 0)
+        return { hasEvents: false, eventCount: 0, sampleEvent: null };
+
       // Get a sample event
       const firstEventKey = `a11ycap_event_${bufferState.oldestIndex}`;
       const sampleEventStr = sessionStorage.getItem(firstEventKey);
@@ -35,11 +38,11 @@ test.describe('Event Buffer Persistence', () => {
           sampleEvent = JSON.parse(sampleEventStr);
         } catch {}
       }
-      
+
       return {
         hasEvents: bufferState.size > 0,
         eventCount: bufferState.size,
-        sampleEvent
+        sampleEvent,
       };
     });
 
@@ -50,7 +53,9 @@ test.describe('Event Buffer Persistence', () => {
     expect(sampleEvent.url).toContain('localhost:14652');
   });
 
-  test('should restore events from sessionStorage on page reload', async ({ page }) => {
+  test('should restore events from sessionStorage on page reload', async ({
+    page,
+  }) => {
     // Clear events and generate some
     await page.evaluate(() => {
       window.A11yCap.clearEvents();
@@ -64,7 +69,7 @@ test.describe('Event Buffer Persistence', () => {
       return window.A11yCap.toolHandlers.get_user_interactions.execute({
         id: 'test',
         type: 'get_user_interactions',
-        payload: { limit: 100 }
+        payload: { limit: 100 },
       });
     });
 
@@ -79,7 +84,7 @@ test.describe('Event Buffer Persistence', () => {
       return window.A11yCap.toolHandlers.get_user_interactions.execute({
         id: 'test',
         type: 'get_user_interactions',
-        payload: { limit: 100 }
+        payload: { limit: 100 },
       });
     });
 
@@ -92,7 +97,7 @@ test.describe('Event Buffer Persistence', () => {
   });
 
   test('should persist events across navigation', async ({ page }) => {
-    // Clear events and generate some  
+    // Clear events and generate some
     await page.evaluate(() => {
       window.A11yCap.clearEvents();
     });
@@ -103,7 +108,7 @@ test.describe('Event Buffer Persistence', () => {
     // Navigate to a different URL and back
     await page.goto('http://localhost:14652/#test');
     await page.waitForLoadState('networkidle');
-    
+
     await page.goto('http://localhost:14652');
     await page.waitForSelector('#root');
 
@@ -112,7 +117,7 @@ test.describe('Event Buffer Persistence', () => {
       return window.A11yCap.toolHandlers.get_user_interactions.execute({
         id: 'test',
         type: 'get_user_interactions',
-        payload: { limit: 100 }
+        payload: { limit: 100 },
       });
     });
 
@@ -123,7 +128,9 @@ test.describe('Event Buffer Persistence', () => {
     expect(events).toContain('Click on button#test-button');
   });
 
-  test('should handle sessionStorage corruption gracefully', async ({ page }) => {
+  test('should handle sessionStorage corruption gracefully', async ({
+    page,
+  }) => {
     // Corrupt the sessionStorage data
     await page.evaluate(() => {
       sessionStorage.setItem('a11ycap_event_buffer', 'invalid json');
@@ -138,7 +145,7 @@ test.describe('Event Buffer Persistence', () => {
       return window.A11yCap.toolHandlers.get_user_interactions.execute({
         id: 'test',
         type: 'get_user_interactions',
-        payload: { limit: 100 }
+        payload: { limit: 100 },
       });
     });
 
@@ -148,10 +155,12 @@ test.describe('Event Buffer Persistence', () => {
     expect(events).not.toContain('invalid json');
   });
 
-  test('should clear sessionStorage when clearEvents is called', async ({ page }) => {
+  test('should clear sessionStorage when clearEvents is called', async ({
+    page,
+  }) => {
     // Generate some events first
     await page.click('#test-button');
-    
+
     // Verify storage has content
     const stateBefore = await page.evaluate(() => {
       const state = sessionStorage.getItem('a11ycap_buffer_state');
@@ -177,12 +186,11 @@ test.describe('Event Buffer Persistence', () => {
       return window.A11yCap.toolHandlers.get_user_interactions.execute({
         id: 'test',
         type: 'get_user_interactions',
-        payload: { limit: 100 }
+        payload: { limit: 100 },
       });
     });
     expect(events).toBe('No user interactions recorded');
   });
-
 
   test('should limit events stored in sessionStorage', async ({ page }) => {
     // Clear events first
@@ -201,51 +209,56 @@ test.describe('Event Buffer Persistence', () => {
           target: { tagName: 'button', id: `button-${i}` },
           coordinates: { x: i, y: i },
           button: 0,
-          metaKeys: { ctrl: false, alt: false, shift: false, meta: false }
+          metaKeys: { ctrl: false, alt: false, shift: false, meta: false },
         });
       }
     });
 
     // Check storage size is limited
-    const { bufferSize, clickEventCount, maxButtonId } = await page.evaluate(() => {
-      const state = sessionStorage.getItem('a11ycap_buffer_state');
-      if (!state) return { bufferSize: 0, clickEventCount: 0, maxButtonId: -1 };
-      
-      const bufferState = JSON.parse(state);
-      let clickEventCount = 0;
-      let maxButtonId = -1;
-      
-      // Iterate through events to check click events
-      for (let i = 0; i < bufferState.size; i++) {
-        const index = (bufferState.oldestIndex + i) % 500; // MAX_BUFFER_SIZE
-        const eventKey = `a11ycap_event_${index}`;
-        const eventStr = sessionStorage.getItem(eventKey);
-        if (eventStr) {
-          try {
-            const event = JSON.parse(eventStr);
-            if (event.type === 'click') {
-              clickEventCount++;
-              if (event.target && event.target.id && event.target.id.startsWith('button-')) {
-                const buttonNum = parseInt(event.target.id.split('-')[1]);
-                if (!isNaN(buttonNum)) {
-                  maxButtonId = Math.max(maxButtonId, buttonNum);
+    const { bufferSize, clickEventCount, maxButtonId } = await page.evaluate(
+      () => {
+        const state = sessionStorage.getItem('a11ycap_buffer_state');
+        if (!state)
+          return { bufferSize: 0, clickEventCount: 0, maxButtonId: -1 };
+
+        const bufferState = JSON.parse(state);
+        let clickEventCount = 0;
+        let maxButtonId = -1;
+
+        // Iterate through events to check click events
+        for (let i = 0; i < bufferState.size; i++) {
+          const index = (bufferState.oldestIndex + i) % 500; // MAX_BUFFER_SIZE
+          const eventKey = `a11ycap_event_${index}`;
+          const eventStr = sessionStorage.getItem(eventKey);
+          if (eventStr) {
+            try {
+              const event = JSON.parse(eventStr);
+              if (event.type === 'click') {
+                clickEventCount++;
+                if (event.target?.id?.startsWith('button-')) {
+                  const buttonNum = Number.parseInt(
+                    event.target.id.split('-')[1]
+                  );
+                  if (!Number.isNaN(buttonNum)) {
+                    maxButtonId = Math.max(maxButtonId, buttonNum);
+                  }
                 }
               }
-            }
-          } catch {}
+            } catch {}
+          }
         }
+
+        return {
+          bufferSize: bufferState.size,
+          clickEventCount,
+          maxButtonId,
+        };
       }
-      
-      return {
-        bufferSize: bufferState.size,
-        clickEventCount,
-        maxButtonId
-      };
-    });
-    
+    );
+
     expect(bufferSize).toBeLessThanOrEqual(500); // MAX_BUFFER_SIZE
     expect(clickEventCount).toBeGreaterThan(0);
-    
+
     if (maxButtonId >= 0) {
       expect(maxButtonId).toBeGreaterThan(450); // Should have events from the later part of the sequence
     }

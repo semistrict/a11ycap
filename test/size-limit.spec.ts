@@ -1,15 +1,17 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test.describe('Size Limited Snapshots', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to our React test page via HTTP server  
+    // Navigate to our React test page via HTTP server
     await page.goto('http://localhost:14652/');
 
     // Wait for the library to load
     await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
   });
 
-  test('should return full snapshot when no size limit specified', async ({ page }) => {
+  test('should return full snapshot when no size limit specified', async ({
+    page,
+  }) => {
     const fullSnapshot = await page.evaluate(async () => {
       return await window.A11yCap.snapshotForAI(document.body);
     });
@@ -21,15 +23,19 @@ test.describe('Size Limited Snapshots', () => {
     console.log('Full snapshot:', fullSnapshot);
   });
 
-  test('should limit snapshot size with max_bytes parameter', async ({ page }) => {
+  test('should limit snapshot size with max_bytes parameter', async ({
+    page,
+  }) => {
     const limitedSnapshot = await page.evaluate(async () => {
-      return await window.A11yCap.snapshotForAI(document.body, { max_bytes: 200 });
+      return await window.A11yCap.snapshotForAI(document.body, {
+        max_bytes: 200,
+      });
     });
 
     // Content before warning should be limited in size
     const contentBeforeWarning = limitedSnapshot.split('\n\n[WARNING:')[0];
     expect(contentBeforeWarning.length).toBeLessThanOrEqual(200);
-    
+
     // Should still contain the root and some top-level elements
     expect(limitedSnapshot).toContain('React Test Page');
     console.log('Limited snapshot (200 bytes):', limitedSnapshot);
@@ -38,10 +44,16 @@ test.describe('Size Limited Snapshots', () => {
   test('should use breadth-first expansion', async ({ page }) => {
     const result = await page.evaluate(async () => {
       // Get snapshots with different size limits
-      const small = await window.A11yCap.snapshotForAI(document.body, { max_bytes: 150 });
-      const medium = await window.A11yCap.snapshotForAI(document.body, { max_bytes: 300 });
-      const large = await window.A11yCap.snapshotForAI(document.body, { max_bytes: 500 });
-      
+      const small = await window.A11yCap.snapshotForAI(document.body, {
+        max_bytes: 150,
+      });
+      const medium = await window.A11yCap.snapshotForAI(document.body, {
+        max_bytes: 300,
+      });
+      const large = await window.A11yCap.snapshotForAI(document.body, {
+        max_bytes: 500,
+      });
+
       return { small, medium, large };
     });
 
@@ -53,7 +65,7 @@ test.describe('Size Limited Snapshots', () => {
     const smallContent = result.small.split('\n\n[WARNING:')[0];
     const mediumContent = result.medium.split('\n\n[WARNING:')[0];
     const largeContent = result.large.split('\n\n[WARNING:')[0];
-    
+
     expect(smallContent.length).toBeLessThanOrEqual(150);
     expect(mediumContent.length).toBeLessThanOrEqual(300);
     expect(largeContent.length).toBeLessThanOrEqual(500);
@@ -71,11 +83,13 @@ test.describe('Size Limited Snapshots', () => {
 
   test('should handle very small size limits', async ({ page }) => {
     const tinySnapshot = await page.evaluate(async () => {
-      return await window.A11yCap.snapshotForAI(document.body, { max_bytes: 50 });
+      return await window.A11yCap.snapshotForAI(document.body, {
+        max_bytes: 50,
+      });
     });
 
     console.log('Tiny snapshot (50 bytes):', tinySnapshot);
-    
+
     // The content before the warning should be <= 50 bytes
     const contentBeforeWarning = tinySnapshot.split('\n\n[WARNING:')[0];
     expect(contentBeforeWarning.length).toBeLessThanOrEqual(50);
@@ -88,11 +102,13 @@ test.describe('Size Limited Snapshots', () => {
   test('should handle size limit smaller than root node', async ({ page }) => {
     const result = await page.evaluate(async () => {
       // Try with a very small limit that might be smaller than even the root
-      return await window.A11yCap.snapshotForAI(document.body, { max_bytes: 10 });
+      return await window.A11yCap.snapshotForAI(document.body, {
+        max_bytes: 10,
+      });
     });
 
     console.log('Ultra tiny snapshot (10 bytes):', result);
-    
+
     // The content before the warning should be <= 10 bytes
     const contentBeforeWarning = result.split('\n\n[WARNING:')[0];
     expect(contentBeforeWarning.length).toBeLessThanOrEqual(10);
@@ -103,15 +119,15 @@ test.describe('Size Limited Snapshots', () => {
 
   test('should work with different modes and size limits', async ({ page }) => {
     const results = await page.evaluate(async () => {
-      const aiMode = await window.A11yCap.snapshot(document.body, { 
-        mode: 'ai', 
-        max_bytes: 200 
+      const aiMode = await window.A11yCap.snapshot(document.body, {
+        mode: 'ai',
+        max_bytes: 200,
       });
-      const expectMode = await window.A11yCap.snapshot(document.body, { 
-        mode: 'expect', 
-        max_bytes: 200 
+      const expectMode = await window.A11yCap.snapshot(document.body, {
+        mode: 'expect',
+        max_bytes: 200,
       });
-      
+
       return { aiMode, expectMode };
     });
 
@@ -121,7 +137,7 @@ test.describe('Size Limited Snapshots', () => {
     // Extract content before warning for size checking
     const aiContent = results.aiMode.split('\n\n[WARNING:')[0];
     const expectContent = results.expectMode.split('\n\n[WARNING:')[0];
-    
+
     expect(aiContent.length).toBeLessThanOrEqual(200);
     expect(expectContent.length).toBeLessThanOrEqual(200);
 
@@ -130,26 +146,30 @@ test.describe('Size Limited Snapshots', () => {
     expect(results.expectMode).not.toMatch(/\[ref=e\d+\]/);
   });
 
-  test('should preserve structure integrity within size limit', async ({ page }) => {
+  test('should preserve structure integrity within size limit', async ({
+    page,
+  }) => {
     // Target the dedicated size test container instead of the entire body
     const snapshot = await page.evaluate(async () => {
       const testElement = document.getElementById('size-test-container');
-      return await window.A11yCap.snapshotForAI(testElement || document.body, { max_bytes: 300 });
+      return await window.A11yCap.snapshotForAI(testElement || document.body, {
+        max_bytes: 300,
+      });
     });
 
     console.log('Structure test snapshot:', snapshot);
 
     // Extract the content before the warning (if any)
     const contentBeforeWarning = snapshot.split('\n\n[WARNING:')[0];
-    
+
     // Should not have broken lines or malformed structure
     expect(contentBeforeWarning).not.toMatch(/- $|^\s*-\s*$/m); // No empty list items
-    
+
     // Count opening and closing brackets to ensure they're balanced
     const openBrackets = (contentBeforeWarning.match(/\[/g) || []).length;
     const closeBrackets = (contentBeforeWarning.match(/\]/g) || []).length;
     expect(openBrackets).toBe(closeBrackets);
-    
+
     // The actual content should respect the size limit
     expect(contentBeforeWarning.length).toBeLessThanOrEqual(300);
   });

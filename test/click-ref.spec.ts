@@ -7,7 +7,10 @@ test.describe('Click Ref Functionality', () => {
 
     // Take a snapshot to generate refs
     const snapshot = await page.evaluate(() => {
-      return window.A11yCap.snapshot(document.body, { mode: 'ai', enableReact: true });
+      return window.A11yCap.snapshot(document.body, {
+        mode: 'ai',
+        enableReact: true,
+      });
     });
 
     console.log('Initial snapshot:', snapshot);
@@ -23,7 +26,7 @@ test.describe('Click Ref Functionality', () => {
     const initialText = await page.evaluate(() => {
       return document.getElementById('test-button')?.textContent;
     });
-    
+
     console.log('Initial button text:', initialText);
 
     // Use clickRef function to click the button
@@ -37,7 +40,7 @@ test.describe('Click Ref Functionality', () => {
     const newText = await page.evaluate(() => {
       return document.getElementById('test-button')?.textContent;
     });
-    
+
     console.log('New button text:', newText);
 
     // The counter should have incremented
@@ -59,23 +62,23 @@ test.describe('Click Ref Functionality', () => {
       // Find the button ref from the snapshot
       const buttons = document.querySelectorAll('button');
       let buttonRef = '';
-      
+
       for (const button of buttons) {
         if ((button as any)._ariaRef?.ref) {
           buttonRef = (button as any)._ariaRef.ref;
           break;
         }
       }
-      
+
       if (!buttonRef) return null;
-      
+
       // Use findElementByRef to locate it
       const found = window.A11yCap.findElementByRef(buttonRef);
       return {
         found: !!found,
         isButton: found?.tagName === 'BUTTON',
         hasId: found?.id === 'test-button',
-        ref: buttonRef
+        ref: buttonRef,
       };
     });
 
@@ -83,7 +86,7 @@ test.describe('Click Ref Functionality', () => {
     expect(foundElement!.found).toBe(true);
     expect(foundElement!.isButton).toBe(true);
     expect(foundElement!.hasId).toBe(true);
-    
+
     console.log('Found element with ref:', foundElement!.ref);
   });
 

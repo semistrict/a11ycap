@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test.describe('snapshotForAI', () => {
   test('should generate basic snapshot for simple button', async ({ page }) => {
-    // Navigate to our React test page via HTTP server  
+    // Navigate to our React test page via HTTP server
     await page.goto('http://localhost:14652/');
 
     // Wait for the library to load
@@ -151,7 +151,7 @@ test.describe('snapshotForAI', () => {
 
 test.describe('snapshot (non-AI modes)', () => {
   test('should generate expect mode snapshot', async ({ page }) => {
-    // Navigate to our React test page via HTTP server  
+    // Navigate to our React test page via HTTP server
     await page.goto('http://localhost:14652/');
 
     // Wait for the library to load

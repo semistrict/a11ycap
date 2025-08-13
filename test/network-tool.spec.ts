@@ -14,7 +14,7 @@ test.describe('Network Tool Tests', () => {
 
     // Make a network request
     await page.click('#fetch-button');
-    
+
     // Wait for the network request to complete
     await page.waitForTimeout(2000);
 
@@ -23,35 +23,46 @@ test.describe('Network Tool Tests', () => {
       try {
         // Get all performance entries
         const entries = performance.getEntries();
-        
+
         // Filter for network requests (resource entries)
         let networkRequests = entries
-          .filter(entry => entry.entryType === 'resource' || entry.entryType === 'navigation')
-          .map(entry => ({
+          .filter(
+            (entry) =>
+              entry.entryType === 'resource' || entry.entryType === 'navigation'
+          )
+          .map((entry) => ({
             name: entry.name,
             entryType: entry.entryType,
             startTime: Math.round(entry.startTime),
             duration: Math.round(entry.duration),
             // Add resource-specific properties if available
-            ...(('initiatorType' in entry) && { initiatorType: (entry as any).initiatorType }),
-            ...(('transferSize' in entry) && { transferSize: (entry as any).transferSize }),
+            ...('initiatorType' in entry && {
+              initiatorType: (entry as any).initiatorType,
+            }),
+            ...('transferSize' in entry && {
+              transferSize: (entry as any).transferSize,
+            }),
           }));
 
         // Filter out data URLs
-        networkRequests = networkRequests.filter(req => !req.name.startsWith('data:'));
+        networkRequests = networkRequests.filter(
+          (req) => !req.name.startsWith('data:')
+        );
 
         // Sort by start time (most recent first) and limit to 10
         networkRequests = networkRequests
           .sort((a, b) => b.startTime - a.startTime)
           .slice(0, 10);
 
-        return { 
+        return {
           requests: networkRequests,
           totalCount: networkRequests.length,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         };
       } catch (error) {
-        throw new Error(`Failed to retrieve network requests: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw new Error(
+          `Failed to retrieve network requests: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
       }
     });
 
@@ -64,17 +75,19 @@ test.describe('Network Tool Tests', () => {
     expect(networkData.requests.length).toBeGreaterThan(0);
 
     // Check for httpbin.org request (it might not always be captured due to timing)
-    const httpbinRequest = networkData.requests.find((req: any) => 
-      req.name && req.name.includes('httpbin.org/json')
+    const httpbinRequest = networkData.requests.find((req: any) =>
+      req.name?.includes('httpbin.org/json')
     );
-    
+
     // If we found the httpbin request, verify its properties
     if (httpbinRequest) {
       expect(httpbinRequest.entryType).toBe('resource');
     } else {
       // At least verify we captured some requests
-      console.log('httpbin.org request not captured, available requests:', 
-        networkData.requests.map((r: any) => r.name));
+      console.log(
+        'httpbin.org request not captured, available requests:',
+        networkData.requests.map((r: any) => r.name)
+      );
     }
   });
 
@@ -91,30 +104,39 @@ test.describe('Network Tool Tests', () => {
     // Get fetch requests only (simulating resourceType filter)
     const fetchData = await page.evaluate(() => {
       const entries = performance.getEntries();
-      let networkRequests = entries
-        .filter(entry => entry.entryType === 'resource' || entry.entryType === 'navigation')
-        .filter(entry => {
-          const initiatorType = ('initiatorType' in entry) ? (entry as any).initiatorType : entry.entryType;
+      const networkRequests = entries
+        .filter(
+          (entry) =>
+            entry.entryType === 'resource' || entry.entryType === 'navigation'
+        )
+        .filter((entry) => {
+          const initiatorType =
+            'initiatorType' in entry
+              ? (entry as any).initiatorType
+              : entry.entryType;
           return initiatorType === 'fetch' || entry.entryType === 'fetch';
         })
-        .map(entry => ({
+        .map((entry) => ({
           name: entry.name,
           entryType: entry.entryType,
-          initiatorType: ('initiatorType' in entry) ? (entry as any).initiatorType : undefined,
+          initiatorType:
+            'initiatorType' in entry ? (entry as any).initiatorType : undefined,
         }))
-        .filter(req => !req.name.startsWith('data:'))
+        .filter((req) => !req.name.startsWith('data:'))
         .slice(0, 50);
 
       return { requests: networkRequests };
     });
 
     expect(fetchData.requests).toBeDefined();
-    
+
     // All returned requests should be fetch type if any exist
     if (fetchData.requests.length > 0) {
-      fetchData.requests.forEach((req: any) => {
-        expect(['fetch', 'navigation'].includes(req.initiatorType || req.entryType)).toBe(true);
-      });
+      for (const req of fetchData.requests) {
+        expect(
+          ['fetch', 'navigation'].includes(req.initiatorType || req.entryType)
+        ).toBe(true);
+      }
     }
   });
 
@@ -126,7 +148,7 @@ test.describe('Network Tool Tests', () => {
 
     // Make multiple network requests
     await page.click('#multiple-fetch-button');
-    
+
     // Wait for all requests to complete
     await page.waitForTimeout(3000);
 
@@ -134,12 +156,15 @@ test.describe('Network Tool Tests', () => {
     const networkData = await page.evaluate(() => {
       const entries = performance.getEntries();
       const networkRequests = entries
-        .filter(entry => entry.entryType === 'resource' || entry.entryType === 'navigation')
-        .map(entry => ({
+        .filter(
+          (entry) =>
+            entry.entryType === 'resource' || entry.entryType === 'navigation'
+        )
+        .map((entry) => ({
           name: entry.name,
           entryType: entry.entryType,
         }))
-        .filter(req => !req.name.startsWith('data:'))
+        .filter((req) => !req.name.startsWith('data:'))
         .slice(0, 20);
 
       return { requests: networkRequests };
@@ -149,8 +174,8 @@ test.describe('Network Tool Tests', () => {
     expect(networkData.requests.length).toBeGreaterThan(0);
 
     // Should have multiple httpbin requests
-    const httpbinRequests = networkData.requests.filter((req: any) => 
-      req.name && req.name.includes('httpbin.org')
+    const httpbinRequests = networkData.requests.filter((req: any) =>
+      req.name?.includes('httpbin.org')
     );
     expect(httpbinRequests.length).toBeGreaterThanOrEqual(1);
   });
@@ -164,9 +189,12 @@ test.describe('Network Tool Tests', () => {
     const limitedData = await page.evaluate(() => {
       const entries = performance.getEntries();
       const networkRequests = entries
-        .filter(entry => entry.entryType === 'resource' || entry.entryType === 'navigation')
-        .map(entry => ({ name: entry.name }))
-        .filter(req => !req.name.startsWith('data:'))
+        .filter(
+          (entry) =>
+            entry.entryType === 'resource' || entry.entryType === 'navigation'
+        )
+        .map((entry) => ({ name: entry.name }))
+        .filter((req) => !req.name.startsWith('data:'))
         .slice(0, 5);
 
       return { requests: networkRequests };
@@ -181,19 +209,22 @@ test.describe('Network Tool Tests', () => {
     const networkData = await page.evaluate(() => {
       const entries = performance.getEntries();
       const networkRequests = entries
-        .filter(entry => entry.entryType === 'resource' || entry.entryType === 'navigation')
-        .map(entry => ({ name: entry.name }))
-        .filter(req => !req.name.startsWith('data:'))
+        .filter(
+          (entry) =>
+            entry.entryType === 'resource' || entry.entryType === 'navigation'
+        )
+        .map((entry) => ({ name: entry.name }))
+        .filter((req) => !req.name.startsWith('data:'))
         .slice(0, 50);
 
       return { requests: networkRequests };
     });
 
     expect(networkData.requests).toBeDefined();
-    
+
     // Should not include any data: URLs
-    const dataUrlRequests = networkData.requests.filter((req: any) => 
-      req.name && req.name.startsWith('data:')
+    const dataUrlRequests = networkData.requests.filter((req: any) =>
+      req.name?.startsWith('data:')
     );
     expect(dataUrlRequests.length).toBe(0);
   });
@@ -202,7 +233,8 @@ test.describe('Network Tool Tests', () => {
     // Create a data URL image to trigger a data request
     await page.evaluate(() => {
       const img = document.createElement('img');
-      img.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+      img.src =
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
       document.body.appendChild(img);
     });
 
@@ -212,8 +244,11 @@ test.describe('Network Tool Tests', () => {
     const networkData = await page.evaluate(() => {
       const entries = performance.getEntries();
       const networkRequests = entries
-        .filter(entry => entry.entryType === 'resource' || entry.entryType === 'navigation')
-        .map(entry => ({ name: entry.name }));
+        .filter(
+          (entry) =>
+            entry.entryType === 'resource' || entry.entryType === 'navigation'
+        )
+        .map((entry) => ({ name: entry.name }));
       // Don't filter out data URLs this time
 
       return { requests: networkRequests };
@@ -231,33 +266,36 @@ test.describe('Network Tool Tests', () => {
     const networkData = await page.evaluate(() => {
       const entries = performance.getEntries();
       const networkRequests = entries
-        .filter(entry => entry.entryType === 'resource' || entry.entryType === 'navigation')
-        .map(entry => ({
+        .filter(
+          (entry) =>
+            entry.entryType === 'resource' || entry.entryType === 'navigation'
+        )
+        .map((entry) => ({
           name: entry.name,
           entryType: entry.entryType,
           startTime: Math.round(entry.startTime),
           duration: Math.round(entry.duration),
         }))
-        .filter(req => !req.name.startsWith('data:'))
+        .filter((req) => !req.name.startsWith('data:'))
         .slice(0, 10);
 
       return { requests: networkRequests };
     });
 
     expect(networkData.requests).toBeDefined();
-    
+
     if (networkData.requests.length > 0) {
       const request = networkData.requests[0];
-      
+
       // Should have basic properties
       expect(request).toHaveProperty('name');
       expect(request).toHaveProperty('entryType');
       expect(request).toHaveProperty('startTime');
       expect(request).toHaveProperty('duration');
-      
+
       // Name should be a string
       expect(typeof request.name).toBe('string');
-      
+
       // Times should be numbers
       expect(typeof request.startTime).toBe('number');
       expect(typeof request.duration).toBe('number');

@@ -1,8 +1,8 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test.describe('Snapshot by Ref', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to our React test page via HTTP server  
+    // Navigate to our React test page via HTTP server
     await page.goto('http://localhost:14652/');
 
     // Wait for the library to load
@@ -85,29 +85,42 @@ test.describe('Snapshot by Ref', () => {
     console.log('Full snapshot with form:', fullSnapshot);
 
     // Find the form/container ref
-    const containerRefMatch = fullSnapshot.match(/generic.*?\[ref=(e\d+)\].*form/i);
+    const containerRefMatch = fullSnapshot.match(
+      /generic.*?\[ref=(e\d+)\].*form/i
+    );
     if (!containerRefMatch) {
       // Look for any container element with nested content
-      const anyContainerMatch = fullSnapshot.match(/generic.*?\[ref=(e\d+)\](?:\s*\[[^\]]+\])?:/);
+      const anyContainerMatch = fullSnapshot.match(
+        /generic.*?\[ref=(e\d+)\](?:\s*\[[^\]]+\])?:/
+      );
       expect(anyContainerMatch).toBeTruthy();
-      
+
       const containerRef = anyContainerMatch![1];
       console.log('Found container ref:', containerRef);
 
       // Take a limited size snapshot of that container
-      const limitedContainerSnapshot = await page.evaluate(async (args) => {
-        const element = window.A11yCap.findElementByRef(args.ref);
-        if (!element) return null;
-        return await window.A11yCap.snapshotForAI(element, { max_bytes: args.maxBytes });
-      }, { ref: containerRef, maxBytes: 150 });
+      const limitedContainerSnapshot = await page.evaluate(
+        async (args) => {
+          const element = window.A11yCap.findElementByRef(args.ref);
+          if (!element) return null;
+          return await window.A11yCap.snapshotForAI(element, {
+            max_bytes: args.maxBytes,
+          });
+        },
+        { ref: containerRef, maxBytes: 150 }
+      );
 
       console.log('Limited container snapshot:', limitedContainerSnapshot);
 
       if (limitedContainerSnapshot) {
         // When truncated, a warning message is appended, so total length will exceed max_bytes
-        if (limitedContainerSnapshot.includes('[WARNING: Snapshot was truncated')) {
+        if (
+          limitedContainerSnapshot.includes('[WARNING: Snapshot was truncated')
+        ) {
           // The actual content is truncated to 150 bytes, but warning is added
-          expect(limitedContainerSnapshot).toContain('[WARNING: Snapshot was truncated');
+          expect(limitedContainerSnapshot).toContain(
+            '[WARNING: Snapshot was truncated'
+          );
           expect(limitedContainerSnapshot.length).toBeGreaterThan(150); // Due to warning
         } else {
           // If not truncated, should be within limit
@@ -127,7 +140,9 @@ test.describe('Snapshot by Ref', () => {
     expect(result).toBeNull();
   });
 
-  test('should work with different modes when snapshotting by ref', async ({ page }) => {
+  test('should work with different modes when snapshotting by ref', async ({
+    page,
+  }) => {
     // Get a button ref first
     const fullSnapshot = await page.evaluate(async () => {
       return await window.A11yCap.snapshotForAI(document.body);
@@ -143,8 +158,10 @@ test.describe('Snapshot by Ref', () => {
       if (!element) return null;
 
       const aiMode = await window.A11yCap.snapshot(element, { mode: 'ai' });
-      const expectMode = await window.A11yCap.snapshot(element, { mode: 'expect' });
-      
+      const expectMode = await window.A11yCap.snapshot(element, {
+        mode: 'expect',
+      });
+
       return { aiMode, expectMode };
     }, buttonRef);
 
@@ -152,11 +169,11 @@ test.describe('Snapshot by Ref', () => {
     console.log('Expect mode button snapshot:', results!.expectMode);
 
     expect(results).toBeTruthy();
-    
+
     // AI mode should have refs, expect mode should not
     expect(results!.aiMode).toMatch(/\[ref=e\d+\]/);
     expect(results!.expectMode).not.toMatch(/\[ref=e\d+\]/);
-    
+
     // Both should contain the button text
     expect(results!.aiMode).toContain('Click me');
     expect(results!.expectMode).toContain('Click me');
@@ -175,9 +192,10 @@ test.describe('Snapshot by Ref', () => {
     console.log('Full snapshot with nested elements:', fullSnapshot);
 
     // Find any nested element ref (look for textbox or any input)
-    const nestedRefMatch = fullSnapshot.match(/textbox.*?\[ref=(e\d+)\]/) || 
-                          fullSnapshot.match(/generic.*?\[ref=(e\d+)\].*textbox/);
-    
+    const nestedRefMatch =
+      fullSnapshot.match(/textbox.*?\[ref=(e\d+)\]/) ||
+      fullSnapshot.match(/generic.*?\[ref=(e\d+)\].*textbox/);
+
     if (nestedRefMatch) {
       const nestedRef = nestedRefMatch[1];
       console.log('Found nested element ref:', nestedRef);

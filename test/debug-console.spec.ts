@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test.describe('Debug console logs setup', () => {
   test('should show what is available in window.A11yCap', async ({ page }) => {
@@ -9,12 +9,21 @@ test.describe('Debug console logs setup', () => {
     const a11yCapKeys = await page.evaluate(() => {
       return {
         exists: typeof window.A11yCap !== 'undefined',
-        keys: typeof window.A11yCap !== 'undefined' ? Object.keys(window.A11yCap) : [],
-        toolHandlers: typeof window.A11yCap !== 'undefined' && window.A11yCap.toolHandlers ? Object.keys(window.A11yCap.toolHandlers) : null,
+        keys:
+          typeof window.A11yCap !== 'undefined'
+            ? Object.keys(window.A11yCap)
+            : [],
+        toolHandlers:
+          typeof window.A11yCap !== 'undefined' && window.A11yCap.toolHandlers
+            ? Object.keys(window.A11yCap.toolHandlers)
+            : null,
         consoleOriginal: typeof console.log === 'function',
-        consoleModified: console.log.toString().includes('bufferConsoleMessage') || console.log.toString().length > 100,
+        consoleModified:
+          console.log.toString().includes('bufferConsoleMessage') ||
+          console.log.toString().length > 100,
         consoleToString: console.log.toString(),
-        hasOriginalConsole: typeof (window as any).__a11ycap_original_console !== 'undefined'
+        hasOriginalConsole:
+          typeof (window as any).__a11ycap_original_console !== 'undefined',
       };
     });
 
@@ -35,14 +44,14 @@ test.describe('Debug console logs setup', () => {
           hasAddEvent: typeof addEvent === 'function',
           hasGetEvents: typeof getEvents === 'function',
           hasGetBufferStats: typeof getBufferStats === 'function',
-          error: null
+          error: null,
         };
       } catch (error) {
         return {
           hasAddEvent: false,
           hasGetEvents: false,
           hasGetBufferStats: false,
-          error: error.message
+          error: error.message,
         };
       }
     });
@@ -63,7 +72,7 @@ test.describe('Debug console logs setup', () => {
           level: 'log',
           args: ['Manual test message'],
           timestamp: Date.now(),
-          url: window.location.href
+          url: window.location.href,
         };
 
         // Try to add it to buffer - we need to import the functions
@@ -71,12 +80,12 @@ test.describe('Debug console logs setup', () => {
         return {
           windowKeys: Object.keys(window),
           a11yCapAvailable: typeof (window as any).A11yCap !== 'undefined',
-          testEvent
+          testEvent,
         };
       } catch (error) {
         return {
           error: error.message,
-          stack: error.stack
+          stack: error.stack,
         };
       }
     });
