@@ -94,7 +94,9 @@ test.describe('Selector Snapshot Functionality', () => {
       });
     });
 
-    expect(result.length).toBeLessThanOrEqual(700); // Allow some buffer for warnings
+    // Strip off warning message and compare with actual max_bytes
+    const resultWithoutWarning = result.split('[WARNING:')[0];
+    expect(resultWithoutWarning.length).toBeLessThanOrEqual(500); // Should respect max_bytes limit
     expect(result).toContain('Element 1 (div)');
     // Should be truncated before capturing all divs
   });

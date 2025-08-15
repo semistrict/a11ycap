@@ -264,7 +264,7 @@ function renderAriaTreeWithSizeLimit(
       truncated = truncated.slice(0, lastOpenBracket).trimEnd();
     }
 
-    return `${truncated}\n\n[WARNING: Snapshot was truncated due to size limit. Even the root element exceeded the limit. To get a focused snapshot of a specific element, use take_snapshot with the 'ref' parameter, e.g., take_snapshot(ref="e5") to snapshot just that element and its children.]`;
+    return `${truncated}\n\n[WARNING: Snapshot was truncated due to size limit. Even the root element exceeded the limit. To get a focused snapshot of a specific element, use take_snapshot with the 'ref' parameter, e.g., take_snapshot(ref="e5") to snapshot just that element and its children, or use 'selector' to target specific elements, e.g., take_snapshot(selector=".button").]`;
   }
 
   // Breadth-first expansion
@@ -307,7 +307,7 @@ function renderAriaTreeWithSizeLimit(
   // Add truncation warning if the snapshot was limited
   if (wasTruncated) {
     lastValidResult +=
-      '\n\n[WARNING: Snapshot was truncated due to size limit. Some elements may be missing. To get a focused snapshot of a specific element, use take_snapshot with the \'ref\' parameter, e.g., take_snapshot(ref="e5") to snapshot just that element and its children.]';
+      '\n\n[WARNING: Snapshot was truncated due to size limit. Some elements may be missing. To get a focused snapshot of a specific element, use take_snapshot with the \'ref\' parameter, e.g., take_snapshot(ref="e5") to snapshot just that element and its children, or use \'selector\' to target specific elements, e.g., take_snapshot(selector=".button").]';
   }
 
   return lastValidResult;

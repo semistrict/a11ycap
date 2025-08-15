@@ -194,10 +194,10 @@ async function executeTakeSnapshot(message: TakeSnapshotMessage): Promise<any> {
         if (lastOpenBracket > lastCloseBracket) {
           // We have an unclosed bracket, truncate before it
           const finalTruncated = truncated.slice(0, lastOpenBracket).trimEnd();
-          return `${finalTruncated}\n\n[WARNING: Snapshot was truncated due to size limit. To get a focused snapshot of a specific element, use take_snapshot with the 'refs' parameter, e.g., take_snapshot(refs=["e5"]) to snapshot just that element and its children.]`;
+          return `${finalTruncated}\n\n[WARNING: Snapshot was truncated due to size limit. To get a focused snapshot of a specific element, use take_snapshot with the 'refs' parameter, e.g., take_snapshot(refs=["e5"]) to snapshot just that element and its children, or use 'selector' to target specific elements, e.g., take_snapshot(selector=".button").]`;
         }
 
-        return `${truncated}\n\n[WARNING: Snapshot was truncated due to size limit. To get a focused snapshot of a specific element, use take_snapshot with the 'refs' parameter, e.g., take_snapshot(refs=["e5"]) to snapshot just that element and its children.]`;
+        return `${truncated}\n\n[WARNING: Snapshot was truncated due to size limit. To get a focused snapshot of a specific element, use take_snapshot with the 'refs' parameter, e.g., take_snapshot(refs=["e5"]) to snapshot just that element and its children, or use 'selector' to target specific elements, e.g., take_snapshot(selector=".button").]`;
       }
     } catch (error) {
       const errorMsg = `[ERROR: Failed to snapshot element ${i + 1}: ${error instanceof Error ? error.message : 'Unknown error'}]\n`;
