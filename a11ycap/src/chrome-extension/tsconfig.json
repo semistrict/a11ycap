@@ -9,7 +9,7 @@
     "allowJs": false,
     "strict": true,
     "noEmit": false,
-    "declaration": true,
+    "declaration": false,
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
@@ -20,20 +20,18 @@
     "noImplicitReturns": false,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": false,
+    "outDir": "./dist",
     "baseUrl": ".",
     "paths": {
-      "@isomorphic/*": ["src/isomorphic/*"]
-    }
+      "@isomorphic/*": ["../isomorphic/*"]
+    },
+    "types": ["chrome"]
   },
   "include": [
-    "src/**/*",
-    "test/**/*",
-    "playwright.config.ts",
-    "vite.config.ts"
+    "*.ts"
   ],
   "exclude": [
     "node_modules",
-    "dist",
-    "src/chrome-extension/**/*"
+    "dist"
   ]
 }

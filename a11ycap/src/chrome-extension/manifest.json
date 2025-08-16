@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "a11ycap Browser Agent",
+  "version": "1.0.0",
+  "description": "Accessibility snapshot and web automation bridge for AI agents",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content-script.js"],
+      "run_at": "document_start",
+      "all_frames": false
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["a11ycap.js", "a11ycap.js.map"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+}
