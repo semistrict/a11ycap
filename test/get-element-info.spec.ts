@@ -52,6 +52,25 @@ test.describe('Get Element Info Tool', () => {
     expect(result.events).toBeDefined();
     expect(result.content).toBeDefined();
     expect(result.data).toBeDefined();
+    
+    // Verify new sections added in this update
+    expect(result.layout).toBeDefined();
+    expect(result.layout.constraints).toBeDefined();
+    expect(result.layout.boxModel).toBeDefined();
+    expect(result.layout.positioning).toBeDefined();
+    expect(result.performance).toBeDefined();
+    
+    // Verify layout constraints structure
+    expect(result.layout.constraints.width).toBeDefined();
+    expect(result.layout.constraints.height).toBeDefined();
+    expect(typeof result.layout.constraints.width.reasoning).toBe('string');
+    expect(typeof result.layout.constraints.height.reasoning).toBe('string');
+    
+    // Verify box model calculations
+    expect(result.layout.boxModel.contentBox).toBeDefined();
+    expect(result.layout.boxModel.paddingBox).toBeDefined();
+    expect(result.layout.boxModel.borderBox).toBeDefined();
+    expect(result.layout.boxModel.marginBox).toBeDefined();
 
     // Verify React information is included
     expect(result.react).toBeDefined();
@@ -271,5 +290,137 @@ test.describe('Get Element Info Tool', () => {
     expect(result.siblings).toBeDefined();
     expect(result.siblings.total).toBeGreaterThan(0);
     expect(result.siblings.position).toBeGreaterThan(0);
+  });
+
+  test('should provide detailed animation state when available', async ({ page }) => {
+    // Add an element with CSS animation for testing
+    await page.evaluate(() => {
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes testAnimation {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        .animate-test {
+          animation: testAnimation 1s ease-in-out;
+          transition: transform 0.3s ease;
+        }
+      `;
+      document.head.appendChild(style);
+      
+      const animatedDiv = document.createElement('div');
+      animatedDiv.className = 'animate-test';
+      animatedDiv.textContent = 'Animated element';
+      document.body.appendChild(animatedDiv);
+    });
+
+    // Take snapshot to get the animated element
+    const snapshot = await page.evaluate(() => {
+      return window.A11yCap.snapshotForAI(document.body);
+    });
+    
+    const divMatch = snapshot.match(/div.*"Animated element".*\[ref=([e\d]+)\]/);
+    if (divMatch) {
+      const divRef = divMatch[1];
+
+      const result = await page.evaluate(async (ref) => {
+        const toolHandler = window.A11yCap.toolHandlers['get_element_info'];
+        return await toolHandler.execute({
+          id: 'test-animation-state',
+          type: 'get_element_info',
+          payload: {
+            element: 'Animated div',
+            ref: ref
+          }
+        });
+      }, divRef);
+
+      // Verify performance section includes animation details
+      expect(result.performance).toBeDefined();
+      expect(result.performance.hasAnimations).toBe(true);
+      expect(result.performance.hasTransitions).toBe(true);
+      
+      // Check for animation details if Web Animations API is available
+      if (result.performance.animations) {
+        expect(Array.isArray(result.performance.animations)).toBe(true);
+      }
+      
+      if (result.performance.transitions) {
+        expect(result.performance.transitions.property).toBeDefined();
+        expect(result.performance.transitions.duration).toBeDefined();
+      }
+      
+      if (result.performance.performanceImpact) {
+        expect(typeof result.performance.performanceImpact.gpuAccelerated).toBe('boolean');
+        expect(typeof result.performance.performanceImpact.causesRepaints).toBe('boolean');
+        expect(typeof result.performance.performanceImpact.causesReflows).toBe('boolean');
+      }
+    }
+  });
+
+  test('should analyze layout constraints for different element types', async ({ page }) => {
+    // Add elements with specific layout constraints
+    await page.evaluate(() => {
+      const style = document.createElement('style');
+      style.textContent = `
+        .constraint-test {
+          max-width: 200px;
+          width: 100%;
+          padding: 10px;
+          border: 2px solid red;
+          margin: 5px;
+        }
+        .parent-container {
+          width: 300px;
+          height: 200px;
+        }
+      `;
+      document.head.appendChild(style);
+      
+      const container = document.createElement('div');
+      container.className = 'parent-container';
+      
+      const constrainedDiv = document.createElement('div');
+      constrainedDiv.className = 'constraint-test';
+      constrainedDiv.textContent = 'Constrained element';
+      
+      container.appendChild(constrainedDiv);
+      document.body.appendChild(container);
+    });
+
+    const snapshot = await page.evaluate(() => {
+      return window.A11yCap.snapshotForAI(document.body);
+    });
+    
+    const constrainedMatch = snapshot.match(/div.*"Constrained element".*\[ref=([e\d]+)\]/);
+    if (constrainedMatch) {
+      const constrainedRef = constrainedMatch[1];
+
+      const result = await page.evaluate(async (ref) => {
+        const toolHandler = window.A11yCap.toolHandlers['get_element_info'];
+        return await toolHandler.execute({
+          id: 'test-layout-constraints',
+          type: 'get_element_info',
+          payload: {
+            element: 'Constrained div',
+            ref: ref
+          }
+        });
+      }, constrainedRef);
+
+      // Verify layout analysis is comprehensive
+      expect(result.layout).toBeDefined();
+      expect(result.layout.constraints.width.constraint).toBeDefined();
+      expect(result.layout.constraints.height.constraint).toBeDefined();
+      expect(result.layout.constraints.width.reasoning).toContain('width');
+      
+      // Verify box model calculations account for padding, border, margin
+      expect(result.layout.boxModel.paddingImpact.width).toBe(20); // 10px * 2
+      expect(result.layout.boxModel.borderImpact.width).toBe(4); // 2px * 2
+      expect(result.layout.boxModel.marginImpact.width).toBe(10); // 5px * 2
+      
+      // Verify positioning information
+      expect(result.layout.positioning.positionType).toBeDefined();
+    }
   });
 });

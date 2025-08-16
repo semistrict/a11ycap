@@ -9,146 +9,8 @@ import {
 } from './common.js';
 
 /*
- * TODO: Additional properties that could be useful to return in future versions:
- *
- * ## DOM Hierarchy & Relationships
- * parent?: {
- *   tagName: string;
- *   id?: string;
- *   className?: string;
- *   role?: string;
- * };
- * children: {
- *   count: number;
- *   tagNames: string[];
- *   interactableCount: number;
- * };
- * siblings: {
- *   total: number;
- *   position: number; // 1-based index among siblings
- *   prev?: { tagName: string; id?: string; };
- *   next?: { tagName: string; id?: string; };
- * };
- *
- * ## Enhanced Accessibility
- * aria: {
- *   // ... existing properties
- *   computedRole?: string; // Actual computed role vs explicit role
- *   computedName?: string; // Full computed accessible name
- *   landmarks?: string[]; // If element is/contains landmarks
- *   headingLevel?: number; // For heading elements
- *   tabIndex?: number;
- *   keyboardNavigable: boolean;
- * };
- *
- * ## Visual & Layout Context
- * visual: {
- *   isInViewport: boolean;
- *   percentVisible: number; // 0-100% of element visible
- *   zIndex: number;
- *   stackingContext: boolean;
- *   hasScrollbars: boolean;
- *   scrollable: boolean;
- *   overflow: { x: string; y: string; };
- *   clipPath?: string;
- *   transform?: string;
- *   opacity: number;
- * };
- *
- * ## Form & Input Specific
- * form?: {
- *   formElement?: string; // ID of parent form
- *   validationMessage?: string;
- *   validity?: {
- *     valid: boolean;
- *     valueMissing: boolean;
- *     typeMismatch: boolean;
- *     patternMismatch: boolean;
- *     tooLong: boolean;
- *     tooShort: boolean;
- *     rangeUnderflow: boolean;
- *     rangeOverflow: boolean;
- *     stepMismatch: boolean;
- *   };
- *   autocomplete?: string;
- *   pattern?: string;
- *   minLength?: number;
- *   maxLength?: number;
- *   min?: string;
- *   max?: string;
- *   step?: string;
- *   placeholder?: string;
- *   accept?: string; // for file inputs
- * };
- *
- * ## Event Listeners & Interactivity
- * events: {
- *   hasClickHandler: boolean;
- *   hasKeyboardHandlers: boolean;
- *   hasMouseHandlers: boolean;
- *   hasFocusHandlers: boolean;
- *   listenerTypes: string[]; // ['click', 'keydown', etc.]
- * };
- *
- * ## Content & Text Analysis
- * content: {
- *   hasText: boolean;
- *   hasImages: boolean;
- *   hasLinks: boolean;
- *   wordCount: number;
- *   languageHints?: string; // lang attribute or detected
- *   contentEditable: boolean;
- *   userSelect: string;
- * };
- *
- * ## Performance & Timing
- * performance?: {
- *   renderTime?: number;
- *   lastModified?: number; // when element or attributes last changed
- *   animating: boolean;
- *   hasTransitions: boolean;
- *   hasAnimations: boolean;
- * };
- *
- * ## Shadow DOM & Web Components
- * shadow?: {
- *   hasShadowRoot: boolean;
- *   shadowMode?: 'open' | 'closed';
- *   isSlotted: boolean;
- *   slotName?: string;
- *   customElement: boolean;
- *   componentName?: string;
- * };
- *
- * ## Data Attributes & Custom Props
- * data: {
- *   dataAttributes: Record<string, string>; // all data-* attributes
- *   customAttributes: Record<string, string>; // non-standard attributes
- *   microdata?: {
- *     itemScope?: boolean;
- *     itemType?: string;
- *     itemProp?: string;
- *     itemId?: string;
- *   };
- * };
- *
- * ## Browser Compatibility Context
- * browser?: {
- *   userAgent: string;
- *   features: {
- *     supportsGrid: boolean;
- *     supportsFlex: boolean;
- *     supportsCustomElements: boolean;
- *     // other relevant feature detections
- *   };
- * };
- *
- * ## Most Valuable Additions (prioritized):
- * 1. Visual context (viewport visibility, z-index, scrollable)
- * 2. Form validation state (validity, validation messages)
- * 3. Event listeners (what interactions are possible)
- * 4. DOM relationships (parent/children context)
- * 5. Computed accessibility (computed role/name vs explicit)
+ * This tool provides comprehensive element information including all major properties
+ * needed for debugging, accessibility analysis, and automated testing.
  */
 
 const getElementInfoSchema = multiElementToolSchema
@@ -356,6 +218,31 @@ export interface ElementInfo {
     animating: boolean;
     hasTransitions: boolean;
     hasAnimations: boolean;
+    animations?: {
+      type: string; // 'CSSAnimation', 'CSSTransition', 'Animation'
+      animationName?: string;
+      playState: string; // 'running', 'paused', 'finished', 'idle'
+      currentTime?: number;
+      duration?: number;
+      progress?: number; // 0-1
+      iterationCount?: number;
+      direction?: string;
+      fill?: string;
+      startTime?: number;
+      pending: boolean;
+    }[];
+    transitions?: {
+      property: string;
+      duration: string;
+      timing: string;
+      delay: string;
+    };
+    performanceImpact?: {
+      gpuAccelerated: boolean;
+      causesRepaints: boolean;
+      causesReflows: boolean;
+      estimatedFPS?: number;
+    };
   };
   shadow?: {
     hasShadowRoot: boolean;
@@ -381,6 +268,47 @@ export interface ElementInfo {
       supportsGrid: boolean;
       supportsFlex: boolean;
       supportsCustomElements: boolean;
+    };
+  };
+  layout?: {
+    constraints: {
+      width: {
+        constraint: 'parent' | 'css-rule' | 'viewport' | 'content' | 'natural';
+        limitedBy: {
+          actualWidth: number;
+          naturalWidth?: number;
+          maxWidth?: string;
+          parentWidth?: number;
+          viewportWidth: number;
+        };
+        reasoning: string;
+      };
+      height: {
+        constraint: 'parent' | 'css-rule' | 'viewport' | 'content' | 'natural';
+        limitedBy: {
+          actualHeight: number;
+          naturalHeight?: number;
+          maxHeight?: string;
+          parentHeight?: number;
+          viewportHeight: number;
+        };
+        reasoning: string;
+      };
+    };
+    boxModel: {
+      contentBox: { width: number; height: number };
+      paddingBox: { width: number; height: number };
+      borderBox: { width: number; height: number };
+      marginBox: { width: number; height: number };
+      paddingImpact: { width: number; height: number };
+      borderImpact: { width: number; height: number };
+      marginImpact: { width: number; height: number };
+    };
+    positioning: {
+      positionType: string;
+      offsetParent?: string;
+      containingBlock?: string;
+      stackingContextRoot?: string;
     };
   };
   react?: {
@@ -743,7 +671,7 @@ function isKeyboardNavigable(element: Element): boolean {
 
   // Naturally focusable elements
   const tagName = element.tagName.toLowerCase();
-  const naturallyFocusable = ['a', 'button', 'input', 'select', 'textarea'];
+  const naturallyFocusable = ['button', 'input', 'select', 'textarea'];
 
   if (naturallyFocusable.includes(tagName)) {
     // Check if disabled
@@ -1103,30 +1031,99 @@ function getPerformanceInfo(
       style.transition !== 'none' && style.transition !== '';
     const hasAnimations = style.animation !== 'none' && style.animation !== '';
 
-    // Check if currently animating (basic heuristic)
-    const animating =
-      hasAnimations ||
-      (hasTransitions && element.matches(':hover, :focus, :active'));
+    // Get detailed animation information using Web Animations API
+    const animations = (element as any).getAnimations?.() || [];
+    const animationDetails = animations.map((anim: any) => {
+      const timing = anim.effect?.getTiming() || {};
+      return {
+        type: anim.constructor.name,
+        animationName: anim.animationName || undefined,
+        playState: anim.playState,
+        currentTime: anim.currentTime,
+        duration: timing.duration !== 'auto' ? timing.duration : undefined,
+        progress:
+          anim.currentTime && timing.duration && timing.duration !== 'auto'
+            ? Math.min(1, Math.max(0, anim.currentTime / timing.duration))
+            : undefined,
+        iterationCount: timing.iterations,
+        direction: timing.direction,
+        fill: timing.fill,
+        startTime: anim.startTime,
+        pending: anim.pending,
+      };
+    });
 
-    return {
-      renderTime: performance.now(), // Current timestamp as proxy
-      lastModified: Date.now(), // Current timestamp as proxy
+    // Get transition details
+    const transitions = hasTransitions
+      ? {
+          property: style.transitionProperty,
+          duration: style.transitionDuration,
+          timing: style.transitionTimingFunction,
+          delay: style.transitionDelay,
+        }
+      : undefined;
+
+    // Analyze performance impact
+    const performanceImpact = {
+      gpuAccelerated:
+        style.transform !== 'none' ||
+        style.opacity !== '1' ||
+        style.filter !== 'none',
+      causesRepaints:
+        style.color !== '' ||
+        style.backgroundColor !== '' ||
+        style.boxShadow !== 'none',
+      causesReflows:
+        style.width !== 'auto' ||
+        style.height !== 'auto' ||
+        style.padding !== '0px' ||
+        style.margin !== '0px',
+      estimatedFPS:
+        animations.length > 0 ? (animations.length > 3 ? 30 : 60) : undefined,
+    };
+
+    // Check if currently animating
+    const animating = animations.some(
+      (anim: any) => anim.playState === 'running'
+    );
+
+    const result: ElementInfo['performance'] = {
+      renderTime: performance.now(),
+      lastModified: Date.now(),
       animating,
       hasTransitions,
       hasAnimations,
+      animations: animationDetails.length > 0 ? animationDetails : undefined,
+      transitions,
+      performanceImpact,
     };
+
+    return result;
   } catch (error) {
-    return undefined;
+    // Fallback to basic info if Web Animations API not available
+    const style = getComputedStyle(element);
+    const hasTransitions =
+      style.transition !== 'none' && style.transition !== '';
+    const hasAnimations = style.animation !== 'none' && style.animation !== '';
+
+    return {
+      renderTime: performance.now(),
+      lastModified: Date.now(),
+      animating:
+        hasAnimations ||
+        (hasTransitions && element.matches(':hover, :focus, :active')),
+      hasTransitions,
+      hasAnimations,
+    };
   }
 }
 
 function getShadowDOMInfo(element: Element): ElementInfo['shadow'] | undefined {
-  const hasShadowRoot =
-    !!(element as any).shadowRoot || !!(element as any).attachShadow;
   const shadowRoot = (element as any).shadowRoot;
+  const hasShadowRoot = !!shadowRoot;
 
   // Check if element is slotted
-  const isSlotted = element.assignedSlot !== undefined;
+  const isSlotted = (element as any).assignedSlot != null;
   const slotName = element.getAttribute('slot') || undefined;
 
   // Check if custom element
@@ -1253,6 +1250,238 @@ function getBrowserInfo(): ElementInfo['browser'] | undefined {
   }
 }
 
+function getLayoutConstraints(
+  element: Element
+): ElementInfo['layout'] | undefined {
+  try {
+    const rect = element.getBoundingClientRect();
+    const style = getComputedStyle(element);
+    const parent = element.parentElement;
+    const parentRect = parent?.getBoundingClientRect();
+
+    // Analyze width constraints
+    const naturalWidth = (element as HTMLImageElement).naturalWidth;
+    const viewportWidth = window.innerWidth;
+    const parentWidth = parentRect?.width;
+
+    let widthConstraint:
+      | 'parent'
+      | 'css-rule'
+      | 'viewport'
+      | 'content'
+      | 'natural' = 'content';
+    let widthReasoning = 'Element uses its natural content width';
+
+    // Check various width constraints
+    if (style.maxWidth && style.maxWidth !== 'none') {
+      const maxWidthPx = Number.parseFloat(style.maxWidth);
+      if (rect.width <= maxWidthPx + 1) {
+        widthConstraint = 'css-rule';
+        widthReasoning = `Limited by max-width: ${style.maxWidth}`;
+      }
+    }
+
+    if (style.width && style.width !== 'auto') {
+      widthConstraint = 'css-rule';
+      widthReasoning = `Set by width: ${style.width}`;
+    }
+
+    if (parentWidth && rect.width >= parentWidth - 5) {
+      widthConstraint = 'parent';
+      widthReasoning = `Limited by parent container width (${Math.round(parentWidth)}px)`;
+    }
+
+    if (naturalWidth && rect.width >= naturalWidth - 1) {
+      widthConstraint = 'natural';
+      widthReasoning = `Limited by natural/intrinsic width (${naturalWidth}px)`;
+    }
+
+    // Analyze height constraints
+    const naturalHeight = (element as HTMLImageElement).naturalHeight;
+    const viewportHeight = window.innerHeight;
+    const parentHeight = parentRect?.height;
+
+    let heightConstraint:
+      | 'parent'
+      | 'css-rule'
+      | 'viewport'
+      | 'content'
+      | 'natural' = 'content';
+    let heightReasoning = 'Element uses its natural content height';
+
+    // Check various height constraints
+    if (style.maxHeight && style.maxHeight !== 'none') {
+      const maxHeightPx = Number.parseFloat(style.maxHeight);
+      if (rect.height <= maxHeightPx + 1) {
+        heightConstraint = 'css-rule';
+        heightReasoning = `Limited by max-height: ${style.maxHeight}`;
+      }
+    }
+
+    if (style.height && style.height !== 'auto') {
+      heightConstraint = 'css-rule';
+      heightReasoning = `Set by height: ${style.height}`;
+    }
+
+    if (parentHeight && rect.height >= parentHeight - 5) {
+      heightConstraint = 'parent';
+      heightReasoning = `Limited by parent container height (${Math.round(parentHeight)}px)`;
+    }
+
+    if (naturalHeight && rect.height >= naturalHeight - 1) {
+      heightConstraint = 'natural';
+      heightReasoning = `Limited by natural/intrinsic height (${naturalHeight}px)`;
+    }
+
+    // Calculate box model details
+    const paddingLeft = Number.parseFloat(style.paddingLeft) || 0;
+    const paddingRight = Number.parseFloat(style.paddingRight) || 0;
+    const paddingTop = Number.parseFloat(style.paddingTop) || 0;
+    const paddingBottom = Number.parseFloat(style.paddingBottom) || 0;
+
+    const borderLeft = Number.parseFloat(style.borderLeftWidth) || 0;
+    const borderRight = Number.parseFloat(style.borderRightWidth) || 0;
+    const borderTop = Number.parseFloat(style.borderTopWidth) || 0;
+    const borderBottom = Number.parseFloat(style.borderBottomWidth) || 0;
+
+    const marginLeft = Number.parseFloat(style.marginLeft) || 0;
+    const marginRight = Number.parseFloat(style.marginRight) || 0;
+    const marginTop = Number.parseFloat(style.marginTop) || 0;
+    const marginBottom = Number.parseFloat(style.marginBottom) || 0;
+
+    const paddingWidth = paddingLeft + paddingRight;
+    const paddingHeight = paddingTop + paddingBottom;
+    const borderWidth = borderLeft + borderRight;
+    const borderHeight = borderTop + borderBottom;
+    const marginWidth = marginLeft + marginRight;
+    const marginHeight = marginTop + marginBottom;
+
+    // Get positioning information
+    const offsetParent = (element as HTMLElement).offsetParent;
+    const containingBlock = getContainingBlock(element);
+
+    return {
+      constraints: {
+        width: {
+          constraint: widthConstraint,
+          limitedBy: {
+            actualWidth: rect.width,
+            naturalWidth,
+            maxWidth: style.maxWidth !== 'none' ? style.maxWidth : undefined,
+            parentWidth,
+            viewportWidth,
+          },
+          reasoning: widthReasoning,
+        },
+        height: {
+          constraint: heightConstraint,
+          limitedBy: {
+            actualHeight: rect.height,
+            naturalHeight,
+            maxHeight: style.maxHeight !== 'none' ? style.maxHeight : undefined,
+            parentHeight,
+            viewportHeight,
+          },
+          reasoning: heightReasoning,
+        },
+      },
+      boxModel: {
+        contentBox: {
+          width: rect.width - paddingWidth - borderWidth,
+          height: rect.height - paddingHeight - borderHeight,
+        },
+        paddingBox: {
+          width: rect.width - borderWidth,
+          height: rect.height - borderHeight,
+        },
+        borderBox: {
+          width: rect.width,
+          height: rect.height,
+        },
+        marginBox: {
+          width: rect.width + marginWidth,
+          height: rect.height + marginHeight,
+        },
+        paddingImpact: { width: paddingWidth, height: paddingHeight },
+        borderImpact: { width: borderWidth, height: borderHeight },
+        marginImpact: { width: marginWidth, height: marginHeight },
+      },
+      positioning: {
+        positionType: style.position,
+        offsetParent:
+          offsetParent?.tagName.toLowerCase() +
+          (offsetParent?.id ? `#${offsetParent.id}` : ''),
+        containingBlock:
+          containingBlock?.tagName.toLowerCase() +
+          (containingBlock?.id ? `#${containingBlock.id}` : ''),
+        stackingContextRoot:
+          findStackingContextRoot(element)?.tagName.toLowerCase(),
+      },
+    };
+  } catch (error) {
+    return undefined;
+  }
+}
+
+function getContainingBlock(element: Element): Element | null {
+  const style = getComputedStyle(element);
+  let current = element.parentElement;
+
+  while (current) {
+    const currentStyle = getComputedStyle(current);
+
+    // Static positioning uses closest block container
+    if (style.position === 'static' || style.position === 'relative') {
+      if (
+        ['block', 'inline-block', 'table-cell'].includes(currentStyle.display)
+      ) {
+        return current;
+      }
+    }
+
+    // Absolute positioning uses closest positioned ancestor
+    if (style.position === 'absolute') {
+      if (currentStyle.position !== 'static') {
+        return current;
+      }
+    }
+
+    // Fixed positioning uses viewport (return document element)
+    if (style.position === 'fixed') {
+      return document.documentElement;
+    }
+
+    current = current.parentElement;
+  }
+
+  return document.documentElement;
+}
+
+function findStackingContextRoot(element: Element): Element | null {
+  let current = element.parentElement;
+
+  while (current) {
+    const style = getComputedStyle(current);
+
+    // Check for stacking context conditions
+    if (
+      style.position === 'fixed' ||
+      style.position === 'sticky' ||
+      (style.position !== 'static' && style.zIndex !== 'auto') ||
+      Number.parseFloat(style.opacity) < 1 ||
+      style.transform !== 'none' ||
+      style.filter !== 'none' ||
+      style.isolation === 'isolate'
+    ) {
+      return current;
+    }
+
+    current = current.parentElement;
+  }
+
+  return document.documentElement;
+}
+
 function getKeyComputedStyles(element: Element): ElementInfo['computed'] {
   const style = getElementComputedStyle(element);
   if (!style) return {};
@@ -1332,6 +1561,7 @@ export function generateElementInfo(
     shadow: getShadowDOMInfo(element),
     data: getDataInfo(element),
     browser: getBrowserInfo(),
+    layout: getLayoutConstraints(element),
   };
 
   // Add React information if available
@@ -1343,15 +1573,48 @@ export function generateElementInfo(
         props: reactInfo.relevantProps,
         hooks: undefined, // Not available in ReactInfo interface
         source: reactInfo.debugSource
-          ? {
-              fileName: reactInfo.debugSource.split(':')[0],
-              lineNumber: reactInfo.debugSource.split(':')[1]
-                ? Number.parseInt(reactInfo.debugSource.split(':')[1])
-                : undefined,
-              columnNumber: reactInfo.debugSource.split(':')[2]
-                ? Number.parseInt(reactInfo.debugSource.split(':')[2])
-                : undefined,
-            }
+          ? (() => {
+              const debugSource = reactInfo.debugSource;
+              const lastColon = debugSource.lastIndexOf(':');
+              const secondLastColon =
+                lastColon > 0
+                  ? debugSource.lastIndexOf(':', lastColon - 1)
+                  : -1;
+
+              let fileName: string;
+              let lineNumber: number | undefined;
+              let columnNumber: number | undefined;
+
+              if (secondLastColon >= 0) {
+                // Both line and column numbers present
+                fileName = debugSource.substring(0, secondLastColon);
+                const lineStr = debugSource.substring(
+                  secondLastColon + 1,
+                  lastColon
+                );
+                const columnStr = debugSource.substring(lastColon + 1);
+
+                const parsedLine = Number.parseInt(lineStr, 10);
+                const parsedColumn = Number.parseInt(columnStr, 10);
+
+                lineNumber = Number.isNaN(parsedLine) ? undefined : parsedLine;
+                columnNumber = Number.isNaN(parsedColumn)
+                  ? undefined
+                  : parsedColumn;
+              } else if (lastColon >= 0) {
+                // Only line number present
+                fileName = debugSource.substring(0, lastColon);
+                const lineStr = debugSource.substring(lastColon + 1);
+
+                const parsedLine = Number.parseInt(lineStr, 10);
+                lineNumber = Number.isNaN(parsedLine) ? undefined : parsedLine;
+              } else {
+                // No colons found, treat entire string as fileName
+                fileName = debugSource;
+              }
+
+              return { fileName, lineNumber, columnNumber };
+            })()
           : undefined,
       };
     }
