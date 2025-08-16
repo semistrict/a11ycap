@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { getEvents } from '../eventBuffer.js';
 import type { ToolHandler } from './base.js';
+import { getElementByRefOrThrow } from './common.js';
+import { type ElementInfo, generateElementInfo } from './getElementInfo.js';
 
 const getPickedElementsSchema = z.object({
   limit: z
@@ -79,21 +81,49 @@ async function executeGetPickedElements(
   const limit = message.payload.limit || 50;
   pickedElements = pickedElements.slice(-limit); // Get most recent
 
-  // Return summary information
-  const summary = pickedElements.map((event: any) => ({
-    timestamp: new Date(event.timestamp).toISOString(),
-    ref: event.element?.ref || 'unknown',
-    tagName: event.element?.tagName || 'unknown',
-    textContent: event.element?.textContent || '',
-    selector: event.element?.selector || 'unknown',
-    snapshot: event.element?.snapshot || '',
-  }));
+  // Get detailed element information for each picked element
+  const detailedElements = pickedElements.map((event: any) => {
+    try {
+      const ref = event.element?.ref;
+      if (!ref) {
+        // No ref, return as much data as possible from the event
+        return {
+          timestamp: new Date(event.timestamp).toISOString(),
+          ref: 'unknown',
+          tagName: event.element?.tagName || 'unknown',
+          textContent: event.element?.textContent || '',
+          selector: event.element?.selector || undefined,
+          snapshot: event.element?.snapshot || undefined,
+          error: 'Element was picked without a ref',
+        };
+      }
+
+      const element = getElementByRefOrThrow(ref);
+      const elementInfo = generateElementInfo(element, ref);
+
+      return {
+        timestamp: new Date(event.timestamp).toISOString(),
+        ...elementInfo,
+      };
+    } catch (error) {
+      // Element might not exist anymore, return as much data as possible from event
+      return {
+        timestamp: new Date(event.timestamp).toISOString(),
+        ref: event.element?.ref || 'unknown',
+        tagName: event.element?.tagName || 'unknown',
+        textContent: event.element?.textContent || '',
+        selector: event.element?.selector || undefined,
+        snapshot: event.element?.snapshot || undefined,
+        error: 'Element no longer available in DOM',
+      };
+    }
+  });
 
   return {
     pageUUID: currentPageUUID,
     currentUrl: typeof window !== 'undefined' ? window.location.href : '',
-    totalPicked: pickedElements.length,
-    elements: summary,
+    totalPicked: detailedElements.length,
+    elements: detailedElements,
   };
 }
 

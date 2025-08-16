@@ -36,11 +36,11 @@ const takeSnapshotSchema = z.object({
     .describe(
       'Bounding box to capture all elements within (coordinates relative to viewport)'
     ),
-  max_bytes: z
+  max_chars: z
     .number()
     .default(4096)
     .describe(
-      'Maximum size in bytes for the snapshot (uses breadth-first expansion)'
+      'Maximum size in characters for the snapshot (uses breadth-first expansion)'
     ),
 });
 
@@ -142,14 +142,14 @@ async function executeTakeSnapshot(message: TakeSnapshotMessage): Promise<any> {
   // Generate snapshots for all elements and combine with size limit
   const snapshots: string[] = [];
   let totalLength = 0;
-  const maxBytes = message.payload.max_bytes || 4096;
+  const maxChars = message.payload.max_chars || 4096;
 
   for (let i = 0; i < elements.length; i++) {
     const element = elements[i];
     try {
       const snapshot = await window.A11yCap.snapshotForAI(element, {
         ...message.payload,
-        max_bytes: undefined, // Remove individual limit, we'll apply global limit
+        max_chars: undefined, // Remove individual limit, we'll apply global limit
       });
 
       let headerLabel = '';
@@ -171,7 +171,7 @@ async function executeTakeSnapshot(message: TakeSnapshotMessage): Promise<any> {
 
       // Check if adding this snapshot would exceed the limit
       const newLength = totalLength + snapshotWithHeader.length;
-      if (newLength > maxBytes && snapshots.length > 0) {
+      if (newLength > maxChars && snapshots.length > 0) {
         // If we already have some snapshots and this would exceed limit, stop here
         snapshots.push(
           `\n[WARNING: Additional elements truncated due to size limit. Captured ${snapshots.length} of ${elements.length} elements.]`
@@ -183,9 +183,9 @@ async function executeTakeSnapshot(message: TakeSnapshotMessage): Promise<any> {
       totalLength = newLength;
 
       // If this single snapshot exceeds the limit, truncate it
-      if (totalLength > maxBytes) {
+      if (totalLength > maxChars) {
         const combined = snapshots.join('\n');
-        const truncated = combined.slice(0, maxBytes);
+        const truncated = combined.slice(0, maxChars);
 
         // Ensure we don't cut off in the middle of a bracket expression
         const lastOpenBracket = truncated.lastIndexOf('[');
@@ -194,14 +194,14 @@ async function executeTakeSnapshot(message: TakeSnapshotMessage): Promise<any> {
         if (lastOpenBracket > lastCloseBracket) {
           // We have an unclosed bracket, truncate before it
           const finalTruncated = truncated.slice(0, lastOpenBracket).trimEnd();
-          return `${finalTruncated}\n\n[WARNING: Snapshot was truncated due to size limit. To get a focused snapshot of a specific element, use take_snapshot with the 'refs' parameter, e.g., take_snapshot(refs=["e5"]) to snapshot just that element and its children.]`;
+          return `${finalTruncated}\n\n[WARNING: Snapshot was truncated due to size limit. To get a focused snapshot of a specific element, use take_snapshot with the 'refs' parameter, e.g., take_snapshot(refs=["e5"]) to snapshot just that element and its children, or use 'selector' to target specific elements, e.g., take_snapshot(selector=".button").]`;
         }
 
-        return `${truncated}\n\n[WARNING: Snapshot was truncated due to size limit. To get a focused snapshot of a specific element, use take_snapshot with the 'refs' parameter, e.g., take_snapshot(refs=["e5"]) to snapshot just that element and its children.]`;
+        return `${truncated}\n\n[WARNING: Snapshot was truncated due to size limit. To get a focused snapshot of a specific element, use take_snapshot with the 'refs' parameter, e.g., take_snapshot(refs=["e5"]) to snapshot just that element and its children, or use 'selector' to target specific elements, e.g., take_snapshot(selector=".button").]`;
       }
     } catch (error) {
       const errorMsg = `[ERROR: Failed to snapshot element ${i + 1}: ${error instanceof Error ? error.message : 'Unknown error'}]\n`;
-      if (totalLength + errorMsg.length <= maxBytes) {
+      if (totalLength + errorMsg.length <= maxChars) {
         snapshots.push(errorMsg);
         totalLength += errorMsg.length;
       }

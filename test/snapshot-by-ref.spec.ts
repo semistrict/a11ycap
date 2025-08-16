@@ -104,7 +104,7 @@ test.describe('Snapshot by Ref', () => {
           const element = window.A11yCap.findElementByRef(args.ref);
           if (!element) return null;
           return await window.A11yCap.snapshotForAI(element, {
-            max_bytes: args.maxBytes,
+            max_chars: args.maxBytes,
           });
         },
         { ref: containerRef, maxBytes: 150 }
@@ -113,11 +113,11 @@ test.describe('Snapshot by Ref', () => {
       console.log('Limited container snapshot:', limitedContainerSnapshot);
 
       if (limitedContainerSnapshot) {
-        // When truncated, a warning message is appended, so total length will exceed max_bytes
+        // When truncated, a warning message is appended, so total length will exceed max_chars
         if (
           limitedContainerSnapshot.includes('[WARNING: Snapshot was truncated')
         ) {
-          // The actual content is truncated to 150 bytes, but warning is added
+          // The actual content is truncated to 150 chars, but warning is added
           expect(limitedContainerSnapshot).toContain(
             '[WARNING: Snapshot was truncated'
           );

@@ -484,7 +484,7 @@ export class ElementPicker {
       for (const pickedElement of elements) {
         try {
           const snapshot = await snapshotForAI(pickedElement.element, {
-            max_bytes: 1024,
+            max_chars: 1024,
           });
           pickedElement.snapshot = snapshot;
         } catch (error) {

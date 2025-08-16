@@ -77,12 +77,15 @@ This will enable browser automation tools like taking accessibility snapshots, c
           }
 
           // Get tab info from stored connection data (sent by browser on connect)
-          const tabInfo = connections.map((conn) => ({
-            sessionId: conn.sessionId || "unknown",
-            url: conn.url || "unknown",
-            title: conn.title || "No title available",
-            lastSeen: conn.lastSeen.toISOString(),
-          }));
+          // Filter out connections without proper sessionIds
+          const tabInfo = connections
+            .filter((conn) => conn.sessionId && conn.sessionId !== "unknown")
+            .map((conn) => ({
+              sessionId: conn.sessionId,
+              url: conn.url || "unknown",
+              title: conn.title || "No title available",
+              lastSeen: conn.lastSeen.toISOString(),
+            }));
 
           const tabList = tabInfo
             .map(

@@ -23,12 +23,12 @@ test.describe('Size Limited Snapshots', () => {
     console.log('Full snapshot:', fullSnapshot);
   });
 
-  test('should limit snapshot size with max_bytes parameter', async ({
+  test('should limit snapshot size with max_chars parameter', async ({
     page,
   }) => {
     const limitedSnapshot = await page.evaluate(async () => {
       return await window.A11yCap.snapshotForAI(document.body, {
-        max_bytes: 200,
+        max_chars: 200,
       });
     });
 
@@ -38,20 +38,20 @@ test.describe('Size Limited Snapshots', () => {
 
     // Should still contain the root and some top-level elements
     expect(limitedSnapshot).toContain('React Test Page');
-    console.log('Limited snapshot (200 bytes):', limitedSnapshot);
+    console.log('Limited snapshot (200 chars):', limitedSnapshot);
   });
 
   test('should use breadth-first expansion', async ({ page }) => {
     const result = await page.evaluate(async () => {
       // Get snapshots with different size limits
       const small = await window.A11yCap.snapshotForAI(document.body, {
-        max_bytes: 150,
+        max_chars: 150,
       });
       const medium = await window.A11yCap.snapshotForAI(document.body, {
-        max_bytes: 300,
+        max_chars: 300,
       });
       const large = await window.A11yCap.snapshotForAI(document.body, {
-        max_bytes: 500,
+        max_chars: 500,
       });
 
       return { small, medium, large };
@@ -84,13 +84,13 @@ test.describe('Size Limited Snapshots', () => {
   test('should handle very small size limits', async ({ page }) => {
     const tinySnapshot = await page.evaluate(async () => {
       return await window.A11yCap.snapshotForAI(document.body, {
-        max_bytes: 50,
+        max_chars: 50,
       });
     });
 
-    console.log('Tiny snapshot (50 bytes):', tinySnapshot);
+    console.log('Tiny snapshot (50 chars):', tinySnapshot);
 
-    // The content before the warning should be <= 50 bytes
+    // The content before the warning should be <= 50 chars
     const contentBeforeWarning = tinySnapshot.split('\n\n[WARNING:')[0];
     expect(contentBeforeWarning.length).toBeLessThanOrEqual(50);
     // Should be truncated but still valid
@@ -103,13 +103,13 @@ test.describe('Size Limited Snapshots', () => {
     const result = await page.evaluate(async () => {
       // Try with a very small limit that might be smaller than even the root
       return await window.A11yCap.snapshotForAI(document.body, {
-        max_bytes: 10,
+        max_chars: 10,
       });
     });
 
-    console.log('Ultra tiny snapshot (10 bytes):', result);
+    console.log('Ultra tiny snapshot (10 chars):', result);
 
-    // The content before the warning should be <= 10 bytes
+    // The content before the warning should be <= 10 chars
     const contentBeforeWarning = result.split('\n\n[WARNING:')[0];
     expect(contentBeforeWarning.length).toBeLessThanOrEqual(10);
     expect(contentBeforeWarning.length).toBeGreaterThan(0);
@@ -121,11 +121,11 @@ test.describe('Size Limited Snapshots', () => {
     const results = await page.evaluate(async () => {
       const aiMode = await window.A11yCap.snapshot(document.body, {
         mode: 'ai',
-        max_bytes: 200,
+        max_chars: 200,
       });
       const expectMode = await window.A11yCap.snapshot(document.body, {
         mode: 'expect',
-        max_bytes: 200,
+        max_chars: 200,
       });
 
       return { aiMode, expectMode };
@@ -153,7 +153,7 @@ test.describe('Size Limited Snapshots', () => {
     const snapshot = await page.evaluate(async () => {
       const testElement = document.getElementById('size-test-container');
       return await window.A11yCap.snapshotForAI(testElement || document.body, {
-        max_bytes: 300,
+        max_chars: 300,
       });
     });
 

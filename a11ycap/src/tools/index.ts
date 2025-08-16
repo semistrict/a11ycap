@@ -39,18 +39,28 @@ export {
   getPickedElementsTool,
   getPickedElementsDefinition,
 } from './getPickedElements.js';
+export {
+  getElementInfoTool,
+  getElementInfoDefinition,
+} from './getElementInfo.js';
+export {
+  mutateElementTool,
+  mutateElementDefinition,
+} from './mutateElement.js';
 export type { ToolDefinition, ToolHandler, BaseToolMessage } from './base.js';
 
 import { captureElementImageTool } from './captureElementImage.js';
 import { clickElementTool } from './clickElement.js';
 import { executeJsTool } from './executeJs.js';
 import { getConsoleLogsTool } from './getConsoleLogs.js';
+import { getElementInfoTool } from './getElementInfo.js';
 import { getNetworkRequestsTool } from './getNetworkRequests.js';
 import { getPickedElementsTool } from './getPickedElements.js';
 import { getReadabilityTool } from './getReadability.js';
 import { getUserInteractionsTool } from './getUserInteractions.js';
 import { hoverElementTool } from './hoverElement.js';
 import { listTabsTool } from './listTabs.js';
+import { mutateElementTool } from './mutateElement.js';
 import { pressKeyTool } from './pressKey.js';
 import { pressKeyGlobalTool } from './pressKeyGlobal.js';
 import { selectOptionTool } from './selectOption.js';
@@ -68,6 +78,8 @@ export const allTools = [
   getUserInteractionsTool,
   captureElementImageTool,
   getPickedElementsTool,
+  getElementInfoTool,
+  mutateElementTool,
   listTabsTool,
   executeJsTool,
   typeTextTool,

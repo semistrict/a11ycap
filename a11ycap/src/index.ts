@@ -190,7 +190,7 @@ export async function snapshot(
     mode?: 'ai' | 'expect' | 'codegen' | 'autoexpect';
     enableReact?: boolean;
     refPrefix?: string;
-    max_bytes?: number;
+    max_chars?: number;
   } = {}
 ): Promise<string> {
   if (!element || element.nodeType !== Node.ELEMENT_NODE) {
@@ -213,13 +213,13 @@ export async function snapshot(
       refPrefix: options.refPrefix,
     });
 
-    // If max_bytes is specified, use breadth-first rendering with size limit
-    if (options.max_bytes) {
+    // If max_chars is specified, use breadth-first rendering with size limit
+    if (options.max_chars) {
       return renderAriaTreeWithSizeLimit(tree, {
         mode,
         enableReact: options.enableReact,
         refPrefix: options.refPrefix,
-        max_bytes: options.max_bytes,
+        max_chars: options.max_chars,
       });
     }
 
@@ -243,16 +243,16 @@ function renderAriaTreeWithSizeLimit(
     mode: 'ai' | 'expect' | 'codegen' | 'autoexpect';
     enableReact?: boolean;
     refPrefix?: string;
-    max_bytes: number;
+    max_chars: number;
   }
 ): string {
   // Start with just the root node
   let currentTree = { ...tree, children: [] };
   let lastValidResult = renderAriaTree(currentTree, options);
 
-  if (lastValidResult.length > options.max_bytes) {
+  if (lastValidResult.length > options.max_chars) {
     // Even root node exceeds limit, return truncated version with warning
-    let truncated = lastValidResult.slice(0, options.max_bytes);
+    let truncated = lastValidResult.slice(0, options.max_chars);
 
     // Ensure we don't cut off in the middle of a bracket expression
     // Find the last complete bracket pair or cut before any incomplete one
@@ -264,7 +264,7 @@ function renderAriaTreeWithSizeLimit(
       truncated = truncated.slice(0, lastOpenBracket).trimEnd();
     }
 
-    return `${truncated}\n\n[WARNING: Snapshot was truncated due to size limit. Even the root element exceeded the limit. To get a focused snapshot of a specific element, use take_snapshot with the 'ref' parameter, e.g., take_snapshot(ref="e5") to snapshot just that element and its children.]`;
+    return `${truncated}\n\n[WARNING: Snapshot was truncated due to size limit. Even the root element exceeded the limit. To get a focused snapshot of a specific element, use take_snapshot with the 'refs' parameter, e.g., take_snapshot(refs=["e5"]) to snapshot just that element and its children, or use 'selector' to target specific elements, e.g., take_snapshot(selector=".button").]`;
   }
 
   // Breadth-first expansion
@@ -288,7 +288,7 @@ function renderAriaTreeWithSizeLimit(
 
     const testResult = renderAriaTree(testTree, options);
 
-    if (testResult.length <= options.max_bytes) {
+    if (testResult.length <= options.max_chars) {
       // This child fits, keep it and add its children to queue
       currentTree = testTree;
       lastValidResult = testResult;
@@ -307,7 +307,7 @@ function renderAriaTreeWithSizeLimit(
   // Add truncation warning if the snapshot was limited
   if (wasTruncated) {
     lastValidResult +=
-      '\n\n[WARNING: Snapshot was truncated due to size limit. Some elements may be missing. To get a focused snapshot of a specific element, use take_snapshot with the \'ref\' parameter, e.g., take_snapshot(ref="e5") to snapshot just that element and its children.]';
+      '\n\n[WARNING: Snapshot was truncated due to size limit. Some elements may be missing. To get a focused snapshot of a specific element, use take_snapshot with the \'refs\' parameter, e.g., take_snapshot(refs=["e5"]) to snapshot just that element and its children, or use \'selector\' to target specific elements, e.g., take_snapshot(selector=".button").]';
   }
 
   return lastValidResult;
@@ -335,7 +335,7 @@ export async function snapshotForAI(
   options: {
     enableReact?: boolean;
     refPrefix?: string;
-    max_bytes?: number;
+    max_chars?: number;
   } = {}
 ): Promise<string> {
   // The snapshot function already handles overlay hiding/restoring
