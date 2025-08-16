@@ -29,7 +29,7 @@ export const elementTargetingSchema = z.object({
     })
     .optional()
     .describe(
-      'Bounding box to capture all elements within (coordinates relative to viewport)'
+      'Bounding box to capture elements fully contained within (coordinates relative to viewport)'
     ),
 });
 

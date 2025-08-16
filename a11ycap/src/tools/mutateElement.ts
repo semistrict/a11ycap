@@ -277,7 +277,7 @@ async function executeMutateElement(
 
   // If only one element, return single result for consistency
   if (elements.length === 1) {
-    const ref = message.payload.refs?.[0] || `element_${Date.now()}`;
+    const ref = message.payload.refs?.[0] || 'element_0';
     return mutateSingleElement(elements[0], ref, message.payload);
   }
 
@@ -285,7 +285,7 @@ async function executeMutateElement(
   const results: MutationResult[] = [];
   for (let i = 0; i < elements.length; i++) {
     const element = elements[i];
-    const ref = message.payload.refs?.[i] || `element_${Date.now()}_${i}`;
+    const ref = message.payload.refs?.[i] || `element_${i}`;
     const result = mutateSingleElement(element, ref, message.payload);
     results.push(result);
   }

@@ -16,7 +16,7 @@ test.describe('Selector Snapshot Functionality', () => {
           selector: 'button',
           mode: 'ai',
           enableReact: true,
-          max_bytes: 8192,
+          max_chars: 8192,
         },
       });
     });
@@ -38,7 +38,7 @@ test.describe('Selector Snapshot Functionality', () => {
           selector: 'h1',
           mode: 'ai',
           enableReact: true,
-          max_bytes: 4096,
+          max_chars: 4096,
         },
       });
     });
@@ -54,7 +54,7 @@ test.describe('Selector Snapshot Functionality', () => {
         payload: {
           selector: 'invalid[selector[',
           mode: 'ai',
-          max_bytes: 4096,
+          max_chars: 4096,
         },
       });
     });
@@ -70,7 +70,7 @@ test.describe('Selector Snapshot Functionality', () => {
         payload: {
           selector: '.nonexistent-class',
           mode: 'ai',
-          max_bytes: 4096,
+          max_chars: 4096,
         },
       });
     });
@@ -89,14 +89,14 @@ test.describe('Selector Snapshot Functionality', () => {
           selector: 'div',
           mode: 'ai',
           enableReact: true,
-          max_bytes: 500, // Very small limit to trigger truncation
+          max_chars: 500, // Very small limit to trigger truncation
         },
       });
     });
 
-    // Strip off warning message and compare with actual max_bytes
+    // Strip off warning message and compare with actual max_chars
     const resultWithoutWarning = result.split('[WARNING:')[0];
-    expect(resultWithoutWarning.length).toBeLessThanOrEqual(500); // Should respect max_bytes limit
+    expect(resultWithoutWarning.length).toBeLessThanOrEqual(500); // Should respect max_chars limit
     expect(result).toContain('Element 1 (div)');
     // Should be truncated before capturing all divs
   });
@@ -112,7 +112,7 @@ test.describe('Selector Snapshot Functionality', () => {
           selector: 'h1',
           mode: 'ai',
           enableReact: true,
-          max_bytes: 4096,
+          max_chars: 4096,
         },
       });
     });
@@ -139,7 +139,7 @@ test.describe('Selector Snapshot Functionality', () => {
           selector: 'button', // Should be ignored
           mode: 'ai',
           enableReact: true,
-          max_bytes: 4096,
+          max_chars: 4096,
         },
       });
     });
@@ -164,7 +164,7 @@ test.describe('Selector Snapshot Functionality', () => {
           refs: ['e5', 'e7'], // Multiple refs
           mode: 'ai',
           enableReact: true,
-          max_bytes: 8192,
+          max_chars: 8192,
         },
       });
     });
@@ -197,7 +197,7 @@ test.describe('Selector Snapshot Functionality', () => {
           refs: ['e5', 'nonexistent'], // One valid, one missing
           mode: 'ai',
           enableReact: true,
-          max_bytes: 8192,
+          max_chars: 8192,
         },
       });
     });
@@ -220,7 +220,7 @@ test.describe('Selector Snapshot Functionality', () => {
         payload: {
           refs: ['nonexistent1', 'nonexistent2'], // All missing
           mode: 'ai',
-          max_bytes: 4096,
+          max_chars: 4096,
         },
       });
     });
@@ -239,7 +239,7 @@ test.describe('Selector Snapshot Functionality', () => {
           selector: 'button, input[type="text"]',
           mode: 'ai',
           enableReact: true,
-          max_bytes: 8192,
+          max_chars: 8192,
         },
       });
     });
@@ -265,7 +265,7 @@ test.describe('Selector Snapshot Functionality', () => {
           },
           mode: 'ai',
           enableReact: true,
-          max_bytes: 8192,
+          max_chars: 8192,
         },
       });
     });
@@ -290,7 +290,7 @@ test.describe('Selector Snapshot Functionality', () => {
             height: 100,
           },
           mode: 'ai',
-          max_bytes: 4096,
+          max_chars: 4096,
         },
       });
     });
@@ -329,7 +329,7 @@ test.describe('Selector Snapshot Functionality', () => {
           },
           mode: 'ai',
           enableReact: true,
-          max_bytes: 4096,
+          max_chars: 4096,
         },
       });
     }, buttonInfo);
@@ -370,7 +370,7 @@ test.describe('Selector Snapshot Functionality', () => {
           },
           mode: 'ai',
           enableReact: true,
-          max_bytes: 4096,
+          max_chars: 4096,
         },
       });
     }, headingInfo);

@@ -388,7 +388,7 @@ function getDOMHierarchy(element: Element): {
     ? {
         tagName: parentElement.tagName.toLowerCase(),
         id: parentElement.id || undefined,
-        className: parentElement.className || undefined,
+        className: parentElement.getAttribute('class') || undefined,
         role: parentElement.getAttribute('role') || undefined,
       }
     : undefined;
@@ -1528,7 +1528,7 @@ export function generateElementInfo(
     ref,
     tagName: element.tagName.toLowerCase(),
     id: element.id || undefined,
-    className: element.className || undefined,
+    className: element.getAttribute('class') || undefined,
     textContent: element.textContent?.trim() || undefined,
     innerText: htmlElement.innerText?.trim() || undefined,
     value: inputElement.value || undefined,
@@ -1640,14 +1640,13 @@ async function executeGetElementInfo(
   // If only one element, return single object for consistency
   if (elements.length === 1) {
     // Generate ref for elements found via selector/boundingBox
-    const ref = message.payload.refs?.[0] || `element_${Date.now()}`;
+    const ref = message.payload.refs?.[0] || 'element_0';
     return generateElementInfo(elements[0], ref);
   }
 
   // Multiple elements, return array
   return elements.map((element, index) => {
-    const ref =
-      message.payload.refs?.[index] || `element_${Date.now()}_${index}`;
+    const ref = message.payload.refs?.[index] || `element_${index}`;
     return generateElementInfo(element, ref);
   });
 }
