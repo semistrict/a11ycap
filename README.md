@@ -6,7 +6,7 @@ AI-focused accessibility snapshot library and MCP server for web automation. Inj
 
 ### Browser Injection (Recommended)
 
-Inject a11ycap into any webpage by pasting this script in the browser console:
+After installing the MCP server, inject a11ycap into any webpage by pasting this script in the browser console:
 
 ```javascript
 (async()=>{const s=document.createElement('script');s.src='http://localhost:12456/a11ycap.js';document.head.appendChild(s);await new Promise(r=>s.onload=r);await window.A11yCap.initializeMCPConnection('ws://localhost:12456/browser-ws');console.log('✅ Connected to a11ycap MCP server')})()
