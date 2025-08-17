@@ -295,9 +295,16 @@ async function executeDoctor(
 
   // Configure axe options using effective payload (with preset applied)
   const axeOptions: axe.RunOptions = {
-    runOnly: effectivePayload.tags,
     rules: {},
   };
+
+  // Set runOnly only when tags are provided and non-empty
+  if (effectivePayload.tags && effectivePayload.tags.length > 0) {
+    axeOptions.runOnly = {
+      type: 'tag',
+      values: effectivePayload.tags,
+    };
+  }
 
   // Add locale if specified
   if (effectivePayload.locale) {

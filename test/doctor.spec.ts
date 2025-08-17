@@ -396,6 +396,29 @@ test.describe('Doctor Tool - Accessibility Analysis', () => {
     expect(result.summary.elementsAnalyzed).toBeGreaterThanOrEqual(0);
   });
 
+  test('should work with configuration presets', async ({ page }) => {
+    const result = await page.evaluate(async () => {
+      const toolHandler = window.A11yCap.toolHandlers['doctor'];
+      return await toolHandler.execute({
+        id: 'test-preset',
+        type: 'doctor',
+        payload: {
+          preset: 'wcag-aa'
+        }
+      });
+    });
+
+    // Should return valid structure with preset applied
+    expect(result.violations).toBeDefined();
+    expect(result.passes).toBeDefined();
+    expect(result.incomplete).toBeDefined();
+    expect(result.bestPractices).toBeDefined();
+    expect(result.summary).toBeDefined();
+    
+    // Should have analysis scope as page since no element targeting specified
+    expect(result.summary.analysisScope).toBe('page');
+  });
+
   test('should validate violation structure', async ({ page }) => {
     const result = await page.evaluate(async () => {
       const toolHandler = window.A11yCap.toolHandlers['doctor'];
