@@ -43,6 +43,7 @@ class MultiInstanceTest {
         ...process.env,
         PORT: this.port.toString(),
         NODE_ENV: "test",
+        NODE_V8_COVERAGE: process.env.NODE_V8_COVERAGE, // Ensure coverage is inherited
       },
       stderr: "pipe",
     });
