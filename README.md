@@ -1,272 +1,164 @@
 # a11ycap
 
-AI-focused accessibility snapshot library and MCP server for web automation. Extracted from Playwright's accessibility snapshot functionality with enhanced features for AI agents and browser automation.
+AI-focused accessibility snapshot library and MCP server for web automation. Inject into any webpage to enable AI agents to see and interact with page content through accessibility snapshots.
 
-## Features
+## 🚀 Quick Start
 
-- 🤖 **AI-Optimized Snapshots** - Generate accessibility trees optimized for AI/LLM consumption
-- 🔍 **Element Interaction** - Click and interact with elements using snapshot references
-- ⚛️ **React DevTools Integration** - Extract React component information in snapshots
-- 🎯 **MCP Protocol Support** - Model Context Protocol server for AI agent integration
-- 📏 **Size-Limited Snapshots** - Breadth-first rendering with configurable size limits
-- 🎨 **Visual Element Picker** - Interactive element selection overlay
+### Browser Injection (Recommended)
 
-## Project Structure
-
-This is a monorepo managed with pnpm workspaces:
-
-- **`a11ycap/`** - Core accessibility snapshot library (browser-compatible)
-- **`a11ycap-mcp/`** - MCP server for web agent integration
-- **`testpagecra/`** - React test application for development
-- **`babel-plugin-a11ycap/`** - Babel plugin for enhanced debug information
-
-## Installation
-
-### Prerequisites
-
-- Node.js 18+
-- pnpm 8+
-
-### Setup
-
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/a11ycap.git
-cd a11ycap
-
-# Install dependencies
-pnpm install
-
-# Build all packages
-pnpm build
-```
-
-## Usage
-
-### Browser Library
-
-The core library can be used directly in browsers:
-
-```javascript
-// Take an AI-optimized accessibility snapshot
-const snapshot = await window.A11yCap.snapshotForAI(document.body, {
-  enableReact: true,  // Include React component info
-  max_bytes: 4096     // Limit snapshot size
-});
-
-// Click an element by its snapshot reference
-window.A11yCap.clickRef('e5');  // Clicks element with ref="e5"
-
-// Find element by reference
-const element = window.A11yCap.findElementByRef('e5');
-
-// Use the visual element picker
-const picker = window.A11yCap.getElementPicker();
-const selected = await picker.pick();
-console.log('Selected:', selected);
-```
-
-### MCP Server
-
-The MCP server enables AI agents to control browsers:
-
-#### Installation with Claude Code
-
-```bash
-# Add to Claude Code
-claude mcp add -s user -t stdio a11ycap npx a11ycap-mcp
-```
-
-#### Local Development
-
-```bash
-# Link the package globally for local testing
-cd a11ycap-mcp
-npm link
-
-# Now you can run it like the published version
-a11ycap-mcp
-
-# Or via npx
-npx a11ycap-mcp
-
-# To unlink when done testing
-npm unlink -g a11ycap-mcp
-```
-
-#### Direct Execution
-
-```bash
-# Start the MCP server directly
-pnpm --filter a11ycap-mcp start
-
-# The server runs on stdio and provides a WebSocket server on port 12456
-```
-
-To connect a browser, paste this in the browser console:
+Inject a11ycap into any webpage by pasting this script in the browser console:
 
 ```javascript
 (async()=>{const s=document.createElement('script');s.src='http://localhost:12456/a11ycap.js';document.head.appendChild(s);await new Promise(r=>s.onload=r);await window.A11yCap.initializeMCPConnection('ws://localhost:12456/browser-ws');console.log('✅ Connected to a11ycap MCP server')})()
 ```
 
-### Available MCP Tools
+This gives AI agents immediate access to:
+- 🔍 **Take accessibility snapshots** of any page
+- 🖱️ **Click and interact** with page elements
+- ⌨️ **Type text and navigate** through forms
+- 🤖 **Execute JavaScript** for complex interactions
+- 📊 **Analyze accessibility** with comprehensive WCAG auditing
 
-Once connected, AI agents can use these tools:
+### MCP Server Setup
 
-- `take_snapshot` - Capture accessibility snapshot of the page
-- `click_element` - Click an element by reference
-- `type_text` - Type text into an input field
-- `press_key` - Press keyboard keys
-- `hover_element` - Hover over elements
-- `select_option` - Select dropdown options
-- `wait_for` - Wait for conditions
-- `execute_js` - Execute JavaScript code (must be IIFE)
-- `get_network_requests` - Get network activity
-- `get_readability` - Extract readable article content using Mozilla Readability
-- `list_tabs` - List connected browser tabs
-- `show_element_picker` - Show visual element picker
-
-## Development
-
-### Building
+Install and start the MCP server for AI agent integration:
 
 ```bash
-# Build all packages
-pnpm build
+# Add to Claude Code
+claude mcp add -s user -t stdio a11ycap npx a11ycap-mcp
 
-# Build specific package
-pnpm --filter a11ycap build
-pnpm --filter a11ycap-mcp build
+# Or run directly
+npx a11ycap-mcp
 ```
 
-### Testing
+The server provides a WebSocket endpoint on port 12456 for browser connections.
 
-```bash
-# Run all tests (Playwright)
-pnpm test
+## 🛠️ Available Tools
 
-# Run tests in headed mode (visible browser)
-pnpm test:headed
+Once connected, AI agents have access to these powerful tools:
 
-# Run specific test
-pnpm --filter a11ycap build && playwright test test/snapshotForAI.spec.ts
-```
+### 📸 Analysis & Inspection
+- **`take_snapshot`** - Capture AI-optimized accessibility snapshots
+- **`doctor`** - Comprehensive WCAG accessibility analysis with axe-core
+- **`get_element_info`** - Detailed element information and properties
+- **`get_readability`** - Extract clean article content using Mozilla Readability
+- **`list_tabs`** - List all connected browser tabs
 
-### Linting
+### 🖱️ User Interaction
+- **`click_element`** - Click elements using snapshot references
+- **`type_text`** - Type text into input fields
+- **`press_key`** - Press individual keyboard keys
+- **`press_key_global`** - Press keys globally (document-level)
+- **`hover_element`** - Hover over elements
+- **`select_option`** - Select dropdown options
 
-```bash
-# Lint all packages
-pnpm lint
+### 🔧 Advanced Tools
+- **`execute_js`** - Execute JavaScript code (IIFE format required)
+- **`wait_for`** - Wait for text appearance/disappearance or CSS selectors
+- **`show_element_picker`** - Visual element selection overlay
+- **`get_picked_elements`** - Retrieve visually selected elements
+- **`mutate_element`** - Modify element attributes, styles, and content
 
-# Fix lint issues
-pnpm --filter a11ycap run lint:fix
-```
+### 📊 Monitoring & Debugging
+- **`get_network_requests`** - Monitor network activity via Performance API
+- **`get_console_logs`** - Retrieve browser console messages
+- **`get_user_interactions`** - Get recorded user interaction events
+- **`capture_element_image`** - Take PNG screenshots of specific elements
 
-### Development Server
+## ✨ Key Features
 
-```bash
-# Start test React app (for manual testing)
-cd testpagecra && PORT=14652 BROWSER=none pnpm start
+### 🤖 AI-Optimized Snapshots
+Generate accessibility trees specifically designed for AI/LLM consumption with React component information and size-limited rendering.
 
-# Run MCP server in dev mode
-pnpm --filter a11ycap-mcp dev
-```
+### 🎯 Element Targeting
+Multiple ways to target elements:
+- **Element refs** - From accessibility snapshots (e.g., "e5", "e7")
+- **CSS selectors** - Standard CSS selectors
+- **Bounding boxes** - Target elements within viewport areas
+- **Visual picker** - Interactive element selection
 
-## API Reference
-
-### Core Functions
-
-#### `snapshotForAI(element, options)`
-Generate an AI-optimized accessibility snapshot.
-
-**Parameters:**
-- `element` - DOM element to snapshot
-- `options` - Configuration object:
-  - `enableReact` - Include React component information
-  - `refPrefix` - Prefix for element references (default: 'e')
-  - `max_bytes` - Maximum snapshot size in bytes
-
-**Returns:** Promise<string> - Formatted accessibility tree
-
-#### `clickRef(ref, element?)`
-Click an element by its snapshot reference.
-
-**Parameters:**
-- `ref` - Element reference from snapshot (e.g., 'e5')
-- `element` - Root element to search within (default: document.body)
-
-**Returns:** boolean - Success status
-
-#### `findElementByRef(ref, element?)`
-Find a DOM element by its snapshot reference.
-
-**Parameters:**
-- `ref` - Element reference from snapshot
-- `element` - Root element to search within
-
-**Returns:** Element | null
-
-### Snapshot Modes
-
-The library supports multiple snapshot modes:
-
-- `'ai'` - Optimized for AI/LLM consumption (default for `snapshotForAI`)
-- `'expect'` - For test assertions
-- `'codegen'` - For code generation
-- `'autoexpect'` - Automatic expectation mode
-
-## Architecture
-
-### Accessibility Tree Generation
-
-The library generates accessibility trees by:
-1. Traversing the DOM tree
-2. Computing ARIA roles and properties
-3. Extracting text content and labels
-4. Adding React component information (when available)
-5. Assigning unique references to interactive elements
-
-### Size-Limited Rendering
-
-When `max_bytes` is specified, the library uses breadth-first expansion:
-1. Start with root node only
-2. Add children level by level
-3. Stop when size limit is reached
-4. Include truncation warning if needed
-
-### React Integration
-
-The library integrates with React DevTools to extract:
+### ⚛️ React DevTools Integration
+Extract React component information including:
 - Component names and props
-- Component source locations (with babel plugin)
-- Component hierarchy information
+- Component source locations
+- Component hierarchy
+- State information
 
-### MCP Protocol
+### 🔍 Comprehensive Accessibility Analysis
+The **doctor tool** provides:
+- **WCAG 2.1 AA/AAA compliance** checking with axe-core
+- **Severity filtering** (critical, serious, moderate, minor)
+- **Configuration presets** (wcag-aa, wcag-aaa, section508, best-practice)
+- **Smart recommendations** based on violation patterns
+- **User impact analysis** (screen reader, keyboard, low vision users)
 
-The MCP server implements:
-- Stdio transport for MCP communication
-- WebSocket server for browser connections
-- Primary/secondary server architecture
-- Tool definitions for browser automation
+## 🌐 Usage Examples
 
-## Browser Compatibility
+### Basic Snapshot
+```javascript
+// Take an accessibility snapshot
+const snapshot = await window.A11yCap.snapshotForAI(document.body);
+console.log(snapshot);
+```
+
+### Element Interaction
+```javascript
+// Click an element by reference from snapshot
+window.A11yCap.clickRef('e5');
+
+// Find element by reference
+const element = window.A11yCap.findElementByRef('e5');
+```
+
+### Accessibility Analysis
+```javascript
+// Comprehensive WCAG analysis
+const toolHandler = window.A11yCap.toolHandlers['doctor'];
+const analysis = await toolHandler.execute({
+  id: 'accessibility-audit',
+  type: 'doctor',
+  payload: {
+    preset: 'wcag-aa',  // Use WCAG AA preset
+    includeElementInfo: true
+  }
+});
+```
+
+### Visual Element Picker
+```javascript
+// Interactive element selection
+const picker = window.A11yCap.getElementPicker();
+const selected = await picker.pick();
+console.log('Selected elements:', selected);
+```
+
+## 🏗️ Project Structure
+
+- **`a11ycap/`** - Core browser-compatible library
+- **`a11ycap-mcp/`** - MCP server for AI agent integration
+- **`testpagecra/`** - React test application
+- **`babel-plugin-a11ycap/`** - Babel plugin for debug info
+
+## 🔧 Installation
+
+```bash
+# Install globally
+npm install -g a11ycap-mcp
+
+# Or use npx
+npx a11ycap-mcp
+```
+
+## 🌍 Browser Compatibility
 
 - Modern browsers (Chrome, Firefox, Safari, Edge)
+- ES2015+ features required
 - No IE 11 support
-- Requires ES2015+ features
 
-## Contributing
+## 📄 License
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Ensure tests pass (`pnpm test`)
-5. Submit a pull request
+MIT License - see [LICENSE](LICENSE) file for details.
 
-## License
-
-Licensed under Apache-2.0 (a11ycap) and MIT (a11ycap-mcp).
-
-## Credits
+## 🙏 Credits
 
 Based on Playwright's accessibility snapshot functionality by Microsoft Corporation.

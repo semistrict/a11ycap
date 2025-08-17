@@ -47,10 +47,12 @@ export {
   mutateElementTool,
   mutateElementDefinition,
 } from './mutateElement.js';
+export { doctorTool, doctorDefinition } from './doctor.js';
 export type { ToolDefinition, ToolHandler, BaseToolMessage } from './base.js';
 
 import { captureElementImageTool } from './captureElementImage.js';
 import { clickElementTool } from './clickElement.js';
+import { doctorTool } from './doctor.js';
 import { executeJsTool } from './executeJs.js';
 import { getConsoleLogsTool } from './getConsoleLogs.js';
 import { getElementInfoTool } from './getElementInfo.js';
@@ -72,6 +74,7 @@ import { waitForTool } from './waitFor.js';
 export const allTools = [
   takeSnapshotTool,
   clickElementTool,
+  doctorTool,
   getNetworkRequestsTool,
   getReadabilityTool,
   getConsoleLogsTool,

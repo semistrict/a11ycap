@@ -1,0 +1,57 @@
+MIT License
+
+Copyright (c) 2025 AUTHORS
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+==============================================================================
+THIRD-PARTY SOFTWARE NOTICES AND INFORMATION
+==============================================================================
+
+This project includes code derived from or inspired by the following projects:
+
+1. Playwright
+   Copyright (c) Microsoft Corporation
+   Licensed under the Apache License 2.0
+   Source: https://github.com/microsoft/playwright
+   
+   The accessibility snapshot functionality in this project is based on 
+   Playwright's accessibility snapshot implementation.
+
+2. CSS Tokenizer (cssTokenizer.ts)
+   Licensed under CC0 1.0 Universal (Public Domain)
+   Source: https://github.com/tabatkins/parse-css
+   
+   No attribution required for CC0 licensed code, but included for completeness.
+
+3. Axe-core
+   Copyright (c) 2015-2024 Deque Systems, Inc.
+   Licensed under the Mozilla Public License 2.0
+   Source: https://github.com/dequelabs/axe-core
+   
+   Used for comprehensive accessibility analysis and WCAG compliance checking.
+
+4. Mozilla Readability
+   Copyright (c) Mozilla Foundation
+   Licensed under the Apache License 2.0
+   Source: https://github.com/mozilla/readability
+   
+   Used for extracting clean article content from web pages.
+
+All third-party software is used in accordance with their respective licenses.

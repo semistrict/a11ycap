@@ -20,6 +20,9 @@ importers:
       '@mozilla/readability':
         specifier: ^0.6.0
         version: 0.6.0
+      axe-core:
+        specifier: ^4.10.3
+        version: 4.10.3
       html-to-image:
         specifier: ^1.11.13
         version: 1.11.13

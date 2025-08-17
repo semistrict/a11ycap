@@ -2,6 +2,7 @@
   "name": "a11ycap-workspace",
   "version": "1.0.0",
   "private": true,
+  "license": "MIT",
   "scripts": {
     "build": "pnpm -r build",
     "test": "pnpm --filter a11ycap build && pnpm --filter a11ycap-mcp build && playwright test --max-failures=1 && pnpm --filter a11ycap-mcp test",
