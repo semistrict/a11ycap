@@ -7,12 +7,18 @@
     "build": "pnpm -r build",
     "test": "pnpm --filter a11ycap build && pnpm --filter a11ycap-mcp build && playwright test --max-failures=1 && pnpm --filter a11ycap-mcp test",
     "test:headed": "pnpm --filter a11ycap build && playwright test --headed",
+    "test:coverage": "pnpm test:coverage:all",
+    "test:coverage:all": "pnpm --filter a11ycap-mcp test:coverage && pnpm test:coverage:playwright && pnpm test:coverage:report",
+    "test:coverage:playwright": "echo 'Note: Playwright tests do not have code coverage instrumentation yet'",
+    "test:coverage:report": "echo 'Coverage reports generated:\\n- Vitest: a11ycap-mcp/coverage\\n- HTML: a11ycap-mcp/coverage/index.html'",
     "lint": "pnpm -r lint",
     "clean": "pnpm -r clean",
     "dup": "jscpd a11ycap/src a11ycap-mcp/src babel-plugin-a11ycap --config .jscpd.json"
   },
   "devDependencies": {
+    "@istanbuljs/nyc-config-typescript": "^1.0.2",
     "@playwright/test": "^1.48.0",
-    "jscpd": "^3.5.10"
+    "jscpd": "^3.5.10",
+    "nyc": "^17.1.0"
   }
 }

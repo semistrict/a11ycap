@@ -5,3 +5,19 @@ test-results.json
 .never-stop-count
 reports/
 .users_cache.json
+
+# Coverage reports
+coverage/
+.nyc_output/
+*.lcov
+playwright-report/
+
+# NYC config artifacts
+.nycrc.json
+a11ycap-mcp/.nyc_output/
+a11ycap-mcp/coverage/
+a11ycap-mcp/.nycrc.json
+a11ycap-mcp/merge-coverage.js
+
+# Vitest coverage
+vitest.config.ts.timestamp-*

@@ -22,6 +22,7 @@ describe("Debug MCP Server Startup", () => {
         ...process.env,
         PORT: "12458",
         NODE_ENV: "test",
+        NODE_V8_COVERAGE: process.env.NODE_V8_COVERAGE, // Ensure coverage is inherited
       },
       stderr: "inherit", // Show server errors in test output
     });
