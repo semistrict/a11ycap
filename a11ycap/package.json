@@ -26,7 +26,7 @@
     "playwright"
   ],
   "author": "Ramon Nogueira <https://github.com/semistrict>",
-  "license": "Apache-2.0",
+  "license": "MIT",
   "dependencies": {
     "@mozilla/readability": "^0.6.0",
     "axe-core": "^4.10.3",
