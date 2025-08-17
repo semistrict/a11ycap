@@ -20,6 +20,9 @@ importers:
       '@mozilla/readability':
         specifier: ^0.6.0
         version: 0.6.0
+      axe-core:
+        specifier: ^4.10.3
+        version: 4.10.3
       html-to-image:
         specifier: ^1.11.13
         version: 1.11.13
@@ -36,6 +39,9 @@ importers:
       '@playwright/test':
         specifier: ^1.48.0
         version: 1.54.2
+      '@types/axe-core':
+        specifier: ^3.0.6
+        version: 3.0.6
       '@types/react':
         specifier: ^19.1.9
         version: 19.1.9
@@ -1825,6 +1831,10 @@ packages:
 
   '@types/aria-query@5.0.4':
     resolution: {integrity: sha512-rfT93uj5s0PRL7EzccGMs3brplhcrghnDoV26NqKhCAS1hVo+WdNsPvE/yb6ilfr5hi2MEk6d5EWJTKdxg8jVw==}
+
+  '@types/axe-core@3.0.6':
+    resolution: {integrity: sha512-ylZS0Xj8zg8zhYDEdetfU3/M4LUN93lY31G9OA5PiCBkIudggiisq+CCYNwc05ghlYs+vGSTNEHmgDoPZk1Wuw==}
+    deprecated: This is a stub types definition. axe-core provides its own type definitions, so you do not need this installed.
 
   '@types/babel__core@7.20.5':
     resolution: {integrity: sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA==}
@@ -8534,6 +8544,10 @@ snapshots:
   '@tsconfig/node16@1.0.4': {}
 
   '@types/aria-query@5.0.4': {}
+
+  '@types/axe-core@3.0.6':
+    dependencies:
+      axe-core: 4.10.3
 
   '@types/babel__core@7.20.5':
     dependencies:
