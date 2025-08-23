@@ -29,7 +29,32 @@ const getUserInteractionsSchema = z.object({
 
 export const getUserInteractionsDefinition = {
   name: 'get_user_interactions',
-  description: 'Retrieve recorded user interaction events from the buffer',
+  description: `Retrieve recorded user interaction events from the buffer. Shows chronological history of user actions on the page.
+
+IMPORTANT: User interactions must be recorded first. The user can start recording by:
+1. Press **ESC three times** to open the A11yCap Tools menu
+2. Click "🔴 Interaction Recorder" 
+3. The recorder will automatically start capturing interactions
+4. User can then perform actions (click, type, navigate) which will be recorded
+
+Example output after user clicks, types, and navigates:
+\`\`\`
+User Interactions (5 events):
+[2023-08-23T15:30:45.123Z] Click on BUTTON[e2] at (150, 200)
+[2023-08-23T15:30:46.456Z] Type in INPUT#email (email): "user@example.com"
+[2023-08-23T15:30:47.789Z] Key press Tab on INPUT#email
+[2023-08-23T15:30:48.012Z] Focus INPUT#password
+[2023-08-23T15:30:50.345Z] Navigation (pushstate) to https://example.com/dashboard
+\`\`\`
+
+Interaction types captured:
+- **click**: Element clicks with coordinates and modifier keys
+- **input/change**: Text input with target element and values
+- **keydown**: Keyboard events with keys and modifiers  
+- **focus/blur**: Element focus changes
+- **navigation**: Page navigation (back/forward, pushstate, etc.)
+
+Each event includes timestamp, target element (with refs when available), and relevant interaction data. Perfect for understanding user behavior patterns, debugging UI interactions, and analyzing user workflows.`,
   inputSchema: getUserInteractionsSchema.shape, // Will have sessionId added by MCP server
 };
 

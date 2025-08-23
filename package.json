@@ -12,7 +12,8 @@
     "clean": "pnpm -r clean",
     "dup": "jscpd a11ycap/src a11ycap-mcp/src babel-plugin-a11ycap --config .jscpd.json",
     "dev": "pnpm --filter a11ycap build && pnpm --filter testpagecra start",
-    "dev:open": "pnpm --filter a11ycap build && pnpm --filter testpagecra start:open"
+    "dev:open": "pnpm --filter a11ycap build && pnpm --filter testpagecra start:open",
+    "generate-tools-doc": "pnpm --filter a11ycap build && node scripts/generate-tools-doc.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.48.0",

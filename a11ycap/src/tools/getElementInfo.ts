@@ -27,8 +27,49 @@ const getElementInfoSchema = multiElementToolSchema
 
 export const getElementInfoDefinition = {
   name: 'get_element_info',
-  description:
-    'Get comprehensive information about one or more elements without including sub-elements',
+  description: `Get comprehensive information about one or more elements without including sub-elements. Returns detailed data for debugging, accessibility analysis, and automated testing.
+
+For each element, returns extensive information including:
+
+**Basic Properties:**
+- ref: Element reference for other tools
+- tagName, id, className: Basic HTML identifiers
+- textContent, innerText, value: Content information
+
+**Accessibility (ARIA):**
+- All ARIA attributes (role, label, expanded, checked, etc.)
+- Computed accessibility name and role
+- Keyboard navigation status
+- Heading levels and landmarks
+
+**Visual Styling:**
+- Computed CSS properties (display, position, colors, fonts, etc.)
+- Geometry (x, y, width, height, bounding box)
+- Visibility status and viewport intersection
+- Z-index and stacking context information
+
+**Element State:**
+- Interactive states (focused, disabled, checked, selected)
+- Form validation status and properties
+- Event listeners attached to element
+
+**Contextual Information:**
+- Parent element details (tagName, id, className, role)
+- Children summary (count, types, interactive elements)
+- Sibling position and adjacent elements
+
+**Specialized Data:**
+- Image info: dimensions, scaling, loading status, alt text
+- Form info: validation, autocomplete, input constraints
+- React info: component name, props, hooks, source location (when available)
+- Performance: animations, transitions, render timing
+
+**Content Analysis:**
+- Text content analysis and word counts
+- Embedded content detection (images, links)
+- Content editability and selection properties
+
+This tool is ideal for debugging layout issues, accessibility problems, or understanding element behavior for automation.`,
   inputSchema: getElementInfoSchema.shape,
 };
 

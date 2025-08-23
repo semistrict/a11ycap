@@ -18,8 +18,26 @@ const getPickedElementsSchema = z.object({
 
 export const getPickedElementsDefinition = {
   name: 'get_picked_elements',
-  description:
-    'Retrieve elements that were picked using the triple-ESC element picker for the current page',
+  description: `Retrieve elements that were picked using the visual element picker. Returns full element information for previously selected elements.
+
+IMPORTANT: Elements must be picked first using the Element Picker. The user can pick elements by:
+1. Press **ESC three times** to open the A11yCap Tools menu
+2. Click "🎯 Element Picker" 
+3. The picker overlay will activate - user can click on any elements on the page
+4. Multiple elements can be selected by clicking different parts of the page
+5. Press ESC to exit the picker when done
+
+This tool returns the same detailed ElementInfo data as get_element_info, but only for elements that were previously picked by the user through the visual interface. Each picked element includes:
+
+- Basic properties (tagName, id, className, text content)
+- Complete accessibility information (ARIA attributes, computed names, roles)
+- Visual styling and geometry data
+- Element state and form properties
+- Parent/child/sibling relationships
+- React component information (when available)
+- Event handlers and interaction capabilities
+
+Perfect for getting detailed information about specific elements the user has visually identified and selected, without needing to know refs or write CSS selectors.`,
   inputSchema: getPickedElementsSchema.shape,
 };
 
