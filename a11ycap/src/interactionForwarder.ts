@@ -11,6 +11,43 @@ import {
   addEvent,
 } from './eventBuffer.js';
 
+// Global recording state
+let isRecording = false;
+let recordingStartTime: number | null = null;
+
+/**
+ * Start recording interactions
+ */
+export function startRecording(): void {
+  isRecording = true;
+  recordingStartTime = Date.now();
+  console.log('[a11ycap] Started recording interactions');
+}
+
+/**
+ * Stop recording interactions
+ */
+export function stopRecording(): void {
+  isRecording = false;
+  recordingStartTime = null;
+  console.log('[a11ycap] Stopped recording interactions');
+}
+
+/**
+ * Check if recording is active
+ */
+export function isRecordingActive(): boolean {
+  return isRecording;
+}
+
+/**
+ * Get recording duration in milliseconds
+ */
+export function getRecordingDuration(): number | null {
+  if (!isRecording || !recordingStartTime) return null;
+  return Date.now() - recordingStartTime;
+}
+
 /**
  * Generate page UUID from URL hash (same logic as in index.ts)
  */
@@ -58,6 +95,36 @@ function extractMetaKeys(event: KeyboardEvent | MouseEvent) {
 }
 
 /**
+ * Check if an element is part of our internal UI (shadow DOM)
+ * This prevents recording interactions with our own menu/recorder interface
+ */
+function isInternalUIElement(element: Element): boolean {
+  // Check if the element itself or any ancestor has our UI class
+  let current: Element | null = element;
+  
+  while (current) {
+    // Check if this element has our UI class
+    if (current.classList.contains('a11ycap-ui')) {
+      return true;
+    }
+    
+    // Move up to parent element
+    current = current.parentElement;
+  }
+  
+  // Check if the element is inside a shadow root with our UI class
+  const root = element.getRootNode();
+  if (root instanceof ShadowRoot) {
+    const host = root.host;
+    if (host && host.classList.contains('a11ycap-ui')) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+/**
  * Install user interaction listeners to buffer events locally
  */
 export function installInteractionForwarders(): void {
@@ -76,7 +143,11 @@ export function installInteractionForwarders(): void {
     'click',
     (event) => {
       try {
+        if (!isRecording) return;
         if (!(event.target instanceof Element)) return;
+        
+        // Skip interactions with our own UI elements
+        if (isInternalUIElement(event.target)) return;
 
         const clickEvent: ClickEvent = {
           type: 'click',
@@ -105,6 +176,7 @@ export function installInteractionForwarders(): void {
     'input',
     (event) => {
       try {
+        if (!isRecording) return;
         if (
           !(
             event.target instanceof HTMLInputElement ||
@@ -113,6 +185,9 @@ export function installInteractionForwarders(): void {
         ) {
           return;
         }
+        
+        // Skip interactions with our own UI elements
+        if (isInternalUIElement(event.target)) return;
 
         const element = event.target;
         const previousValue = inputPreviousValues.get(element) || '';
@@ -150,7 +225,11 @@ export function installInteractionForwarders(): void {
     'change',
     (event) => {
       try {
+        if (!isRecording) return;
         if (!(event.target instanceof HTMLElement)) return;
+        
+        // Skip interactions with our own UI elements
+        if (isInternalUIElement(event.target)) return;
 
         const element = event.target as
           | HTMLInputElement
@@ -195,7 +274,11 @@ export function installInteractionForwarders(): void {
     'keydown',
     (event) => {
       try {
+        if (!isRecording) return;
         if (!(event.target instanceof Element)) return;
+        
+        // Skip interactions with our own UI elements
+        if (isInternalUIElement(event.target)) return;
 
         const keyEvent: KeyEvent = {
           type: 'keydown',
@@ -221,7 +304,11 @@ export function installInteractionForwarders(): void {
     'focus',
     (event) => {
       try {
+        if (!isRecording) return;
         if (!(event.target instanceof Element)) return;
+        
+        // Skip interactions with our own UI elements
+        if (isInternalUIElement(event.target)) return;
 
         const focusEvent: FocusEvent = {
           type: 'focus',
@@ -243,7 +330,11 @@ export function installInteractionForwarders(): void {
     'blur',
     (event) => {
       try {
+        if (!isRecording) return;
         if (!(event.target instanceof Element)) return;
+        
+        // Skip interactions with our own UI elements
+        if (isInternalUIElement(event.target)) return;
 
         const blurEvent: FocusEvent = {
           type: 'blur',
@@ -268,6 +359,7 @@ export function installInteractionForwarders(): void {
     to?: string
   ) => {
     try {
+      if (!isRecording) return;
       const navigationEvent: NavigationEvent = {
         type: 'navigation',
         timestamp: Date.now(),

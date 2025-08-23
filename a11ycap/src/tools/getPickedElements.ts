@@ -1,7 +1,5 @@
 import { z } from 'zod';
-import { getEvents } from '../eventBuffer.js';
 import type { ToolHandler } from './base.js';
-import { getElementByRefOrThrow } from './common.js';
 import { type ElementInfo, generateElementInfo } from './getElementInfo.js';
 
 const getPickedElementsSchema = z.object({
@@ -54,77 +52,22 @@ async function executeGetPickedElements(
   }
 
   const currentPageUUID = generatePageUUID();
-  const allEventStrings = getEvents();
 
-  // Parse and filter for element_picked events for the current page
-  let pickedElements = allEventStrings
-    .filter((eventStr: string) => {
-      try {
-        const event = JSON.parse(eventStr);
-        return (
-          event.type === 'element_picked' && event.pageUUID === currentPageUUID
-        );
-      } catch {
-        return false;
-      }
-    })
-    .map((eventStr: string) => JSON.parse(eventStr));
+  // Get all elements with the picked class
+  const pickedElements = Array.from(document.querySelectorAll('.a11ycap-picked'));
 
-  // Filter by timestamp if specified
-  if (message.payload.since) {
-    pickedElements = pickedElements.filter(
-      (event: any) => event.timestamp >= message.payload.since!
-    );
-  }
-
-  // Limit results
+  // Apply limit
   const limit = message.payload.limit || 50;
-  pickedElements = pickedElements.slice(-limit); // Get most recent
+  const limitedElements = pickedElements.slice(0, limit);
 
   // Get detailed element information for each picked element
-  const detailedElements = pickedElements.map((event: any) => {
-    try {
-      const ref = event.element?.ref;
-      if (!ref) {
-        // No ref, return as much data as possible from the event
-        return {
-          timestamp: new Date(event.timestamp).toISOString(),
-          ref: 'unknown',
-          tagName: event.element?.tagName || 'unknown',
-          textContent: event.element?.textContent || '',
-          selector: event.element?.selector || undefined,
-          snapshot: event.element?.snapshot || undefined,
-          error: 'Element was picked without a ref',
-        };
-      }
-
-      const element = getElementByRefOrThrow(ref);
-      const elementInfo = generateElementInfo(element, ref);
-
-      return {
-        timestamp: new Date(event.timestamp).toISOString(),
-        ...elementInfo,
-      };
-    } catch (error) {
-      // Element might not exist anymore, return as much data as possible from event
-      return {
-        timestamp: new Date(event.timestamp).toISOString(),
-        ref: event.element?.ref || 'unknown',
-        tagName: event.element?.tagName || 'unknown',
-        textContent: event.element?.textContent || '',
-        selector: event.element?.selector || undefined,
-        snapshot: event.element?.snapshot || undefined,
-        error: 'Element no longer available in DOM',
-      };
-    }
+  const detailedElements = limitedElements.map((element) => {
+    // Don't provide a fallback ref - let generateElementInfo handle it
+    return generateElementInfo(element as Element);
   });
 
-  return {
-    pageUUID: currentPageUUID,
-    currentUrl: typeof window !== 'undefined' ? window.location.href : '',
-    totalPicked: detailedElements.length,
-    elements: detailedElements,
-  };
+  // Return just the array of ElementInfo objects, same as get_element_info
+  return detailedElements;
 }
 
 export const getPickedElementsTool: ToolHandler<GetPickedElementsMessage> = {

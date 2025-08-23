@@ -1515,8 +1515,10 @@ function getKeyComputedStyles(element: Element): ElementInfo['computed'] {
  */
 export function generateElementInfo(
   element: Element,
-  ref: string
+  ref?: string
 ): ElementInfo {
+  // Use provided ref or get existing ref from element, or use empty string
+  const finalRef = ref || (element as any)._ariaRef?.ref || '';
   const htmlElement = element as HTMLElement;
   const inputElement = element as HTMLInputElement;
   const rect = element.getBoundingClientRect();
@@ -1525,7 +1527,7 @@ export function generateElementInfo(
   const hierarchyInfo = getDOMHierarchy(element);
 
   const elementInfo: ElementInfo = {
-    ref,
+    ref: finalRef,
     tagName: element.tagName.toLowerCase(),
     id: element.id || undefined,
     className: element.getAttribute('class') || undefined,

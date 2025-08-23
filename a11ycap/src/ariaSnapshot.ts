@@ -634,6 +634,11 @@ export function renderAriaTree(
         key += ' [cursor=pointer]';
     }
 
+    // Add [picked] indicator if element has been picked by element picker
+    if (ariaNode.element.classList.contains('a11ycap-picked')) {
+      key += ' [picked]';
+    }
+
     // Add position information if enabled and available
     if (options.includePosition && ariaNode.box?.rect) {
       const rect = ariaNode.box.rect;

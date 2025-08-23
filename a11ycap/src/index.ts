@@ -1,7 +1,9 @@
 // Browser-compatible entry point
 
 import { generateAriaTree, renderAriaTree } from './ariaSnapshot';
-import { ElementPicker, getElementPicker } from './elementPicker';
+import { ElementPicker, getElementPicker } from './elementPickerSimple';
+import { getInteractionRecorder } from './interactionRecorder';
+import { getMainMenu } from './mainMenu';
 import { extractReactInfo } from './reactUtils';
 
 // Re-export the browser-compatible ariaSnapshot functionality
@@ -10,7 +12,11 @@ export type { AriaSnapshot, AriaTreeOptions, AriaNode } from './ariaSnapshot';
 
 // Re-export element picker functionality
 export { getElementPicker, ElementPicker };
-export type { PickedElement } from './elementPicker';
+export type { PickedElement } from './elementPickerSimple';
+
+// Re-export main menu and recorder
+export { getMainMenu } from './mainMenu';
+export { getInteractionRecorder } from './interactionRecorder';
 
 // Re-export MCP connection functionality
 export {
@@ -55,6 +61,10 @@ import { installConsoleForwarders } from './consoleForwarder.js';
 export {
   installInteractionForwarders,
   restoreInteractionForwarders,
+  startRecording,
+  stopRecording,
+  isRecordingActive,
+  getRecordingDuration,
 } from './interactionForwarder.js';
 import { installInteractionForwarders } from './interactionForwarder.js';
 
@@ -81,6 +91,7 @@ let escPressTimer: number | null = null;
 // Install forwarders automatically in browser environment
 if (typeof window !== 'undefined') {
   installConsoleForwarders();
+  // Install interaction forwarders but don't start recording automatically
   installInteractionForwarders();
 
   // Initialize page UUID
@@ -90,7 +101,7 @@ if (typeof window !== 'undefined') {
   (window as any)._a11yCapEscCount = () => escPressCount;
   (window as any)._a11yCapEscTimer = () => escPressTimer;
 
-  // Triple-ESC key listener to enable element picker
+  // Triple-ESC key listener to show main menu
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
       escPressCount++;
@@ -102,34 +113,10 @@ if (typeof window !== 'undefined') {
 
       // Check for triple press
       if (escPressCount === 3) {
-        // Enable element picker only if not already active
-        const picker = getElementPicker();
-        if (!picker.isPickerActive()) {
-          picker.enable({
-            includeSnapshots: true,
-            onElementsPicked: (elements) => {
-              // Save picked elements to event log with page UUID
-              for (const element of elements) {
-                addEvent({
-                  type: 'element_picked',
-                  timestamp: Date.now(),
-                  url: window.location.href,
-                  pageUUID: currentPageUUID,
-                  element: {
-                    ref: element.ref,
-                    selector: element.selector,
-                    textContent:
-                      element.element?.textContent?.slice(0, 100) || '',
-                    tagName: element.element?.tagName.toLowerCase() || '',
-                    snapshot: element.snapshot || '',
-                  },
-                });
-              }
-              console.log(
-                `Picked ${elements.length} elements for page ${currentPageUUID}`
-              );
-            },
-          });
+        // Show main menu
+        const menu = getMainMenu();
+        if (!menu.isMenuActive()) {
+          menu.show();
         }
         escPressCount = 0;
       } else {

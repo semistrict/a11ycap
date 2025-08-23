@@ -10,9 +10,10 @@ test.describe('Event Buffer Persistence', () => {
   test('should save events to sessionStorage automatically', async ({
     page,
   }) => {
-    // Clear any existing events
+    // Clear any existing events and start recording
     await page.evaluate(() => {
-      return window.A11yCap.clearEvents();
+      window.A11yCap.clearEvents();
+      window.A11yCap.startRecording();
     });
 
     // Generate some interaction events
@@ -59,6 +60,7 @@ test.describe('Event Buffer Persistence', () => {
     // Clear events and generate some
     await page.evaluate(() => {
       window.A11yCap.clearEvents();
+      window.A11yCap.startRecording();
     });
 
     await page.click('#test-button');
@@ -100,6 +102,7 @@ test.describe('Event Buffer Persistence', () => {
     // Clear events and generate some
     await page.evaluate(() => {
       window.A11yCap.clearEvents();
+      window.A11yCap.startRecording();
     });
 
     await page.click('#test-button');
@@ -158,7 +161,10 @@ test.describe('Event Buffer Persistence', () => {
   test('should clear sessionStorage when clearEvents is called', async ({
     page,
   }) => {
-    // Generate some events first
+    // Start recording and generate some events first
+    await page.evaluate(() => {
+      window.A11yCap.startRecording();
+    });
     await page.click('#test-button');
 
     // Verify storage has content

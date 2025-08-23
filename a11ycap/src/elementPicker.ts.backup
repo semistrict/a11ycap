@@ -3,14 +3,14 @@
  * Inspired by Playwright's element inspector
  */
 
-import { clearEvents, getBufferStats } from './eventBuffer.js';
+import { type ReactInfo, extractReactInfo } from './reactUtils.js';
 import {
-  getRecordingDuration,
-  isRecordingActive,
   startRecording,
   stopRecording,
+  isRecordingActive,
+  getRecordingDuration,
 } from './interactionForwarder.js';
-import { type ReactInfo, extractReactInfo } from './reactUtils.js';
+import { clearEvents, getBufferStats } from './eventBuffer.js';
 
 export interface PickedElement {
   element: Element;
@@ -605,9 +605,7 @@ export class ElementPicker {
     const durationElement = this.glassPaneShadow.querySelector(
       '.recording-duration'
     ) as HTMLElement;
-    const controls = this.glassPaneShadow.querySelector(
-      '.controls'
-    ) as HTMLElement;
+    const controls = this.glassPaneShadow.querySelector('.controls') as HTMLElement;
 
     if (isRecordingActive()) {
       // Stop recording and re-enable element picker
@@ -619,7 +617,7 @@ export class ElementPicker {
         clearInterval(this.recordingInterval);
         this.recordingInterval = undefined;
       }
-
+      
       // Re-enable element picker mode - make glasspane interactive again
       this.glassPaneElement.style.pointerEvents = 'all';
       this.glassPaneElement.style.backgroundColor = 'transparent';
@@ -655,7 +653,7 @@ export class ElementPicker {
         // Update buffer stats to show new events
         this.updateBufferStats();
       }, 100);
-
+      
       // Minimize picker - disable glasspane but keep controls clickable
       this.glassPaneElement.style.pointerEvents = 'none';
       this.glassPaneElement.style.backgroundColor = 'transparent';
