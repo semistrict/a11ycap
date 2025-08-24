@@ -210,7 +210,7 @@ describe("Multi-instance MCP Server Coordination", () => {
 
   test("should route tool calls through coordination system", async () => {
     // Start both servers
-    const primary = await testHarness.startServer();
+    await testHarness.startServer();
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     const secondary = await testHarness.startServer();

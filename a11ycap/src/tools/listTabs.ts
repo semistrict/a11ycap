@@ -25,7 +25,7 @@ const ListTabsMessageSchema = z.object({
 
 type ListTabsMessage = z.infer<typeof ListTabsMessageSchema>;
 
-async function executeListTabs(message: ListTabsMessage): Promise<any> {
+async function executeListTabs(_message: ListTabsMessage): Promise<any> {
   throw new Error(
     'list_tabs is handled server-side by the MCP server, not in the browser'
   );

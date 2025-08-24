@@ -16,6 +16,7 @@
     "generate-tools-doc": "pnpm --filter a11ycap build && node scripts/generate-tools-doc.js"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.2.2",
     "@playwright/test": "^1.48.0",
     "jscpd": "^3.5.10"
   }

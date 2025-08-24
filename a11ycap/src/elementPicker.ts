@@ -3,6 +3,7 @@
  * Inspired by Playwright's element inspector
  */
 
+import { generateAriaTree, renderAriaTree } from './ariaSnapshot.js';
 import { clearEvents, getBufferStats } from './eventBuffer.js';
 import {
   getRecordingDuration,
@@ -10,7 +11,16 @@ import {
   startRecording,
   stopRecording,
 } from './interactionForwarder.js';
-import { type ReactInfo, extractReactInfo } from './reactUtils.js';
+import { extractReactInfo, type ReactInfo } from './reactUtils.js';
+
+// Simple snapshot function to avoid circular dependency with index.js
+function snapshotForAI(
+  element: Element,
+  _options: { max_chars?: number } = {}
+): string {
+  const tree = generateAriaTree(element, { mode: 'ai', enableReact: true });
+  return renderAriaTree(tree, { mode: 'ai', enableReact: true });
+}
 
 export interface PickedElement {
   element: Element;
@@ -33,12 +43,6 @@ export interface ElementPickerOptions {
   onElementsPicked?: (elements: PickedElement[]) => void;
 }
 
-interface HighlightEntry {
-  element: Element;
-  color: string;
-  tooltipText?: string;
-}
-
 interface RenderedHighlightEntry {
   targetElement: Element;
   color: string;
@@ -55,7 +59,6 @@ export class ElementPicker {
   private glassPaneShadow: ShadowRoot;
   private renderedEntries: RenderedHighlightEntry[] = [];
   private isActive = false;
-  private pickedElements: PickedElement[] = [];
   private resolvePromise?: (elements: PickedElement[]) => void;
   private hoveredElement: Element | null = null;
   private selectedElements = new Set<Element>();
@@ -569,12 +572,9 @@ export class ElementPicker {
 
     // Add snapshots if requested
     if (this.currentOptions?.includeSnapshots) {
-      // Import snapshot function dynamically to avoid circular deps
-      const { snapshotForAI } = await import('./index.js');
-
       for (const pickedElement of elements) {
         try {
-          const snapshot = await snapshotForAI(pickedElement.element, {
+          const snapshot = snapshotForAI(pickedElement.element, {
             max_chars: 1024,
           });
           pickedElement.snapshot = snapshot;

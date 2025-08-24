@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { loadA11yCapScript } from './test-utils.js';
+import { loadA11yCapScript } from './test-utils';
 
 test.describe('Debug Picked Elements Tool', () => {
   test.beforeEach(async ({ page }) => {

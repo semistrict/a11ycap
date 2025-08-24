@@ -3,7 +3,7 @@
  */
 
 import { z } from 'zod';
-import { type InteractionEvent, getEvents } from '../eventBuffer.js';
+import { getEvents } from '../eventBuffer.js';
 import type { ToolHandler } from './base.js';
 
 // Core tool schema without sessionId (which is added by MCP server for routing)

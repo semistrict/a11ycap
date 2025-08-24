@@ -2,7 +2,7 @@
  * Console message buffering using event buffer
  */
 
-import { type ConsoleEvent, addEvent } from './eventBuffer.js';
+import { addEvent, type ConsoleEvent } from './eventBuffer.js';
 
 /**
  * Install console wrappers to buffer messages locally

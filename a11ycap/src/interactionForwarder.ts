@@ -3,12 +3,12 @@
  */
 
 import {
+  addEvent,
   type ClickEvent,
   type FocusEvent,
   type InputEvent,
   type KeyEvent,
   type NavigationEvent,
-  addEvent,
 } from './eventBuffer.js';
 
 // Global recording state

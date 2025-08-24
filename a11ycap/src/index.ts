@@ -2,70 +2,64 @@
 
 import { generateAriaTree, renderAriaTree } from './ariaSnapshot';
 import { ElementPicker, getElementPicker } from './elementPickerSimple';
-import { getInteractionRecorder } from './interactionRecorder';
 import { getMainMenu } from './mainMenu';
 import { extractReactInfo } from './reactUtils';
 
 // Re-export the browser-compatible ariaSnapshot functionality
 export { generateAriaTree, renderAriaTree, extractReactInfo };
-export type { AriaSnapshot, AriaTreeOptions, AriaNode } from './ariaSnapshot';
+export type { AriaNode, AriaSnapshot, AriaTreeOptions } from './ariaSnapshot';
 
 // Re-export element picker functionality
 export { getElementPicker, ElementPicker };
-export type { PickedElement } from './elementPickerSimple';
-
-// Re-export main menu and recorder
-export { getMainMenu } from './mainMenu';
-export { getInteractionRecorder } from './interactionRecorder';
-
-// Re-export MCP connection functionality
-export {
-  MCPWebSocketClient,
-  initializeMCPConnection,
-} from './mcpConnection.js';
-
-// Re-export message types
-export type {
-  BaseMessage,
-  PageInfoMessage,
-  HeartbeatMessage,
-  CommandResponseMessage,
-  BrowserToServerMessage,
-  BrowserCommand,
-  ServerToBrowserMessage,
-} from './types/messages.js';
-
-// Re-export MCP tool definitions
-export { toolDefinitions, type McpToolDefinition } from './mcpTools.js';
-
-// Export tool handlers for browser use
-export { toolHandlers } from './tools/index.js';
-
-// Re-export eventBuffer functionality
-export {
-  addEvent,
-  getEvents,
-  clearEvents,
-  getBufferStats,
-} from './eventBuffer.js';
-import { addEvent } from './eventBuffer.js';
 
 // Re-export console forwarder functionality
 export {
   installConsoleForwarders,
   restoreConsole,
 } from './consoleForwarder.js';
+export type { PickedElement } from './elementPickerSimple';
+// Re-export eventBuffer functionality
+export {
+  addEvent,
+  clearEvents,
+  getBufferStats,
+  getEvents,
+} from './eventBuffer.js';
+export { getInteractionRecorder } from './interactionRecorder';
+// Re-export main menu and recorder
+export { getMainMenu } from './mainMenu';
+// Re-export MCP connection functionality
+export {
+  initializeMCPConnection,
+  MCPWebSocketClient,
+} from './mcpConnection.js';
+// Re-export MCP tool definitions
+export { type McpToolDefinition, toolDefinitions } from './mcpTools.js';
+// Export tool handlers for browser use
+export { toolHandlers } from './tools/index.js';
+// Re-export message types
+export type {
+  BaseMessage,
+  BrowserCommand,
+  BrowserToServerMessage,
+  CommandResponseMessage,
+  HeartbeatMessage,
+  PageInfoMessage,
+  ServerToBrowserMessage,
+} from './types/messages.js';
+
 import { installConsoleForwarders } from './consoleForwarder.js';
 
 // Re-export interaction forwarder functionality
 export {
+  getRecordingDuration,
   installInteractionForwarders,
+  isRecordingActive,
   restoreInteractionForwarders,
   startRecording,
   stopRecording,
-  isRecordingActive,
-  getRecordingDuration,
 } from './interactionForwarder.js';
+
 import { installInteractionForwarders } from './interactionForwarder.js';
 
 // Global page UUID

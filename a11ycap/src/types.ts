@@ -1,5 +1,5 @@
 // Re-export types from the local ariaSnapshot
-export type { AriaTreeOptions, AriaNode, AriaSnapshot } from './ariaSnapshot';
+export type { AriaNode, AriaSnapshot, AriaTreeOptions } from './ariaSnapshot';
 
 export interface SnapshotOptions {
   timeout?: number;

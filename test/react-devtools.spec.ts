@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { setupA11yCapTest } from './test-utils.js';
+import { setupA11yCapTest } from './test-utils';
 
 test.describe('React DevTools Integration', () => {
   test('should find React fiber node for DOM element', async ({ page }) => {

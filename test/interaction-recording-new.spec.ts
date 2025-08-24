@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { setupA11yCapTest } from './test-utils.js';
+import { setupA11yCapTest } from './test-utils';
 
 test.describe('New Interaction Recording UI', () => {
   test.beforeEach(async ({ page }) => {
@@ -100,8 +100,8 @@ test.describe('New Interaction Recording UI', () => {
     await page.fill('input[type="text"]', 'Test input');
 
     // Wait for events to be recorded with polling
-    await page.waitForFunction(() => {
-      const events = window.A11yCap.toolHandlers.get_user_interactions.execute({
+    await page.waitForFunction(async () => {
+      const events = await window.A11yCap.toolHandlers.get_user_interactions.execute({
         id: 'test',
         type: 'get_user_interactions',
         payload: { limit: 100 },
@@ -110,8 +110,8 @@ test.describe('New Interaction Recording UI', () => {
     }, { timeout: 5000 });
 
     // Get recorded events for final assertion
-    const events = await page.evaluate(() => {
-      return window.A11yCap.toolHandlers.get_user_interactions.execute({
+    const events = await page.evaluate(async () => {
+      return await window.A11yCap.toolHandlers.get_user_interactions.execute({
         id: 'test',
         type: 'get_user_interactions',
         payload: { limit: 100 },

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { setupA11yCapTest } from './test-utils.js';
+import { setupA11yCapTest } from './test-utils';
 
 test.describe('Mutate Element Tool', () => {
   test.beforeEach(async ({ page }) => {

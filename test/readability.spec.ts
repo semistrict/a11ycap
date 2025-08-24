@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { setupA11yCapTest } from './test-utils.js';
+import { setupA11yCapTest } from './test-utils';
 
 test.describe('Readability Tool', () => {
   test('should extract readable content from article page', async ({

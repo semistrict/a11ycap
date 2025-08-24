@@ -3,7 +3,35 @@
  * For selecting and inspecting elements on the page
  */
 
-import { type ReactInfo, extractReactInfo } from './reactUtils.js';
+import { generateAriaTree, renderAriaTree } from './ariaSnapshot.js';
+import { extractReactInfo, type ReactInfo } from './reactUtils.js';
+
+// Simple snapshot function to avoid circular dependency with index.js
+function snapshotForAI(
+  element: Element,
+  _options: { max_chars?: number } = {}
+): string {
+  const tree = generateAriaTree(element, { mode: 'ai', enableReact: true });
+  return renderAriaTree(tree, { mode: 'ai', enableReact: true });
+}
+
+function cssEscape(value: string): string {
+  // Prefer native when available
+  if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') {
+    return CSS.escape(value);
+  }
+  // Minimal fallback: escape quotes, backslashes, and control chars
+  return value
+    .split('')
+    .map((c) => {
+      const code = c.charCodeAt(0);
+      if (code <= 0x1f || code === 0x7f || c === '"' || c === '\\') {
+        return `\\${c}`;
+      }
+      return c;
+    })
+    .join('');
+}
 
 export interface PickedElement {
   element: Element;
@@ -26,19 +54,10 @@ export interface ElementPickerOptions {
   onElementsPicked?: (elements: PickedElement[]) => void;
 }
 
-interface RenderedHighlightEntry {
-  targetElement: Element;
-  color: string;
-  highlightElement: HTMLElement;
-  tooltipElement?: HTMLElement;
-  box?: DOMRect;
-}
-
 export class ElementPicker {
   private glassPaneElement: HTMLElement;
   private glassPaneShadow: ShadowRoot;
   private isActive = false;
-  private pickedElements: PickedElement[] = [];
   private hoveredElement: Element | null = null;
   private currentOptions?: ElementPickerOptions;
   private keyHandler?: (e: KeyboardEvent) => void;
@@ -207,10 +226,6 @@ export class ElementPicker {
     this.setupEventHandlers();
   }
 
-  private getModifierKey(): string {
-    return navigator.platform.includes('Mac') ? 'Cmd' : 'Ctrl';
-  }
-
   private setupEventHandlers() {
     // Prevent all events from reaching the page
     const stopEvent = (e: Event) => {
@@ -359,12 +374,30 @@ export class ElementPicker {
       element.getAttribute('data-test-id') ||
       element.getAttribute('data-test');
     if (testId) {
-      return `[data-testid="${testId}"]`;
+      const escapedTestId = cssEscape(testId);
+      const selector = `[data-testid="${escapedTestId}"]`;
+      try {
+        if (document.querySelectorAll(selector).length === 1) {
+          return selector;
+        }
+      } catch {
+        // Invalid selector, continue to next priority
+      }
     }
 
     // Priority 2: ID selector
     const id = element.id;
-    if (id) return `#${id}`;
+    if (id) {
+      const escapedId = cssEscape(id);
+      const selector = `#${escapedId}`;
+      try {
+        if (document.querySelectorAll(selector).length === 1) {
+          return selector;
+        }
+      } catch {
+        // Invalid selector, continue to next priority
+      }
+    }
 
     // Priority 3: aria-label for interactive elements
     const ariaLabel = element.getAttribute('aria-label');
@@ -374,21 +407,30 @@ export class ElementPicker {
         element.tagName.toLowerCase()
       )
     ) {
-      const selector = `${element.tagName.toLowerCase()}[aria-label="${ariaLabel}"]`;
-      if (document.querySelectorAll(selector).length === 1) {
-        return selector;
+      const escapedAriaLabel = cssEscape(ariaLabel);
+      const selector = `${element.tagName.toLowerCase()}[aria-label="${escapedAriaLabel}"]`;
+      try {
+        if (document.querySelectorAll(selector).length === 1) {
+          return selector;
+        }
+      } catch {
+        // Invalid selector, continue to next priority
       }
     }
 
     // Priority 4: Class-based selector
     const className = element.className;
     if (className && typeof className === 'string') {
-      const classes = className.trim().split(/\s+/).join('.');
+      const classes = className.trim().split(/\s+/).map(cssEscape).join('.');
       if (classes) {
         const selector = `${element.tagName.toLowerCase()}.${classes}`;
-        // Check uniqueness
-        if (document.querySelectorAll(selector).length === 1) {
-          return selector;
+        try {
+          // Check uniqueness
+          if (document.querySelectorAll(selector).length === 1) {
+            return selector;
+          }
+        } catch {
+          // Invalid selector, continue to fallback
         }
       }
     }
@@ -445,12 +487,9 @@ export class ElementPicker {
 
     // Add snapshots if requested
     if (this.currentOptions?.includeSnapshots) {
-      // Import snapshot function dynamically to avoid circular deps
-      const { snapshotForAI } = await import('./index.js');
-
       for (const pickedElement of elements) {
         try {
-          const snapshot = await snapshotForAI(pickedElement.element, {
+          const snapshot = snapshotForAI(pickedElement.element, {
             max_chars: 1024,
           });
           pickedElement.snapshot = snapshot;

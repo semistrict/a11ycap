@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { setupA11yCapTest } from './test-utils.js';
+import { setupA11yCapTest } from './test-utils';
 
 test.describe('Network Tool Tests', () => {
   test.beforeEach(async ({ page }) => {

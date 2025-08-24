@@ -15,9 +15,6 @@
       }
     }
   },
-  "organizeImports": {
-    "enabled": true
-  },
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
@@ -29,9 +26,16 @@
       "trailingCommas": "es5"
     }
   },
-  "files": {
-    "include": ["src/**/*.ts", "test/**/*.ts"],
-    "ignoreUnknown": true,
-    "ignore": ["lib/**", "dist/**", "node_modules/**", "**/build/**", "**/coverage/**"]
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
   }
 }

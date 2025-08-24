@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { setupA11yCapTest } from './test-utils.js';
+import { setupA11yCapTest } from './test-utils';
 
 test.describe('Debug console logs setup', () => {
   test('should show what is available in window.A11yCap', async ({ page }) => {

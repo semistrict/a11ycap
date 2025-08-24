@@ -571,7 +571,7 @@ function getAriaProperties(element: Element): ElementInfo['aria'] {
 
     // Keyboard navigable
     aria.keyboardNavigable = isKeyboardNavigable(element);
-  } catch (error) {
+  } catch (_error) {
     // Enhanced accessibility is optional
   }
 
@@ -742,12 +742,9 @@ function isKeyboardNavigable(element: Element): boolean {
 }
 
 function getElementState(element: Element): ElementInfo['state'] {
-  const htmlElement = element as HTMLElement;
   const inputElement = element as HTMLInputElement;
   const selectElement = element as HTMLSelectElement;
   const textareaElement = element as HTMLTextAreaElement;
-  const buttonElement = element as HTMLButtonElement;
-  const fieldsetElement = element as HTMLFieldSetElement;
 
   const elementBox = box(element);
 
@@ -854,7 +851,6 @@ function getFormInfo(element: Element): ElementInfo['form'] | undefined {
   const inputElement = element as HTMLInputElement;
   const selectElement = element as HTMLSelectElement;
   const textareaElement = element as HTMLTextAreaElement;
-  const buttonElement = element as HTMLButtonElement;
 
   // Only return form info for form-related elements
   const formElements = ['input', 'select', 'textarea', 'button'];
@@ -1140,7 +1136,7 @@ function getPerformanceInfo(
     };
 
     return result;
-  } catch (error) {
+  } catch (_error) {
     // Fallback to basic info if Web Animations API not available
     const style = getComputedStyle(element);
     const hasTransitions =
@@ -1286,7 +1282,7 @@ function getBrowserInfo(): ElementInfo['browser'] | undefined {
         supportsCustomElements,
       },
     };
-  } catch (error) {
+  } catch (_error) {
     return undefined;
   }
 }
@@ -1459,7 +1455,7 @@ function getLayoutConstraints(
           findStackingContextRoot(element)?.tagName.toLowerCase(),
       },
     };
-  } catch (error) {
+  } catch (_error) {
     return undefined;
   }
 }
@@ -1661,7 +1657,7 @@ export function generateElementInfo(
           : undefined,
       };
     }
-  } catch (error) {
+  } catch (_error) {
     // React info is optional, continue without it
   }
 

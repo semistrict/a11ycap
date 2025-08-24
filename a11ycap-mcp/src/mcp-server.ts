@@ -5,7 +5,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { SetLevelRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { toolDefinitions } from "a11ycap";
-import { type ZodObject, type ZodRawShape, z } from "zod";
+import { type ZodObject, z } from "zod";
 import { getBrowserConnectionManager } from "./browser-connection-manager.js";
 import { CONSOLE_INJECTION_SCRIPT } from "./constants.js";
 import { setLogLevel } from "./logging.js";

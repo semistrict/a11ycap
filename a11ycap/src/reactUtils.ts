@@ -198,7 +198,7 @@ function getComponentState(fiber: any): string | undefined {
     if (Object.keys(state).length > 0) {
       return JSON.stringify(state);
     }
-  } catch (error) {
+  } catch (_error) {
     // Ignore errors in state extraction
   }
 

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { setupA11yCapTest } from './test-utils.js';
+import { setupA11yCapTest } from './test-utils';
 
 test.describe('Image Properties in Get Element Info', () => {
   test.beforeEach(async ({ page }) => {

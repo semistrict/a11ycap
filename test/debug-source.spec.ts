@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { setupA11yCapTest } from './test-utils.js';
+import { setupA11yCapTest } from './test-utils';
 
 test.describe('Debug Source Information', () => {
   test('should extract debug source info from data attributes', async ({

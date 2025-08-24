@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { ToolHandler } from './base.js';
-import { type ElementInfo, generateElementInfo } from './getElementInfo.js';
+import { generateElementInfo } from './getElementInfo.js';
 
 const getPickedElementsSchema = z.object({
   limit: z
@@ -49,27 +49,12 @@ const GetPickedElementsMessageSchema = z.object({
 
 type GetPickedElementsMessage = z.infer<typeof GetPickedElementsMessageSchema>;
 
-// Generate page UUID from URL hash (same logic as in index.ts)
-function generatePageUUID(): string {
-  if (typeof window === 'undefined') return '';
-  const url = window.location.href;
-  let hash = 0;
-  for (let i = 0; i < url.length; i++) {
-    const char = url.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash = hash & hash; // Convert to 32bit integer
-  }
-  return Math.abs(hash).toString(16);
-}
-
 async function executeGetPickedElements(
   message: GetPickedElementsMessage
 ): Promise<any> {
   if (message.type !== 'get_picked_elements') {
     throw new Error('Invalid message type for getPickedElements handler');
   }
-
-  const currentPageUUID = generatePageUUID();
 
   // Get all elements with the picked class
   const pickedElements = Array.from(
