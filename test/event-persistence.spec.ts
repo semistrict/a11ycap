@@ -1,18 +1,18 @@
 import { expect, test } from '@playwright/test';
+import { setupA11yCapTest } from './test-utils';
 
 test.describe('Event Buffer Persistence', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:14652');
-    // Wait for the page to be ready
-    await page.waitForSelector('#root');
+    await setupA11yCapTest(page);
   });
 
   test('should save events to sessionStorage automatically', async ({
     page,
   }) => {
-    // Clear any existing events
+    // Clear any existing events and start recording
     await page.evaluate(() => {
-      return window.A11yCap.clearEvents();
+      window.A11yCap.clearEvents();
+      window.A11yCap.startRecording();
     });
 
     // Generate some interaction events
@@ -59,6 +59,7 @@ test.describe('Event Buffer Persistence', () => {
     // Clear events and generate some
     await page.evaluate(() => {
       window.A11yCap.clearEvents();
+      window.A11yCap.startRecording();
     });
 
     await page.click('#test-button');
@@ -77,7 +78,7 @@ test.describe('Event Buffer Persistence', () => {
 
     // Reload the page
     await page.reload();
-    await page.waitForSelector('#root');
+    await setupA11yCapTest(page);
 
     // Check if events were restored from sessionStorage
     const eventsAfter = await page.evaluate(() => {
@@ -100,6 +101,7 @@ test.describe('Event Buffer Persistence', () => {
     // Clear events and generate some
     await page.evaluate(() => {
       window.A11yCap.clearEvents();
+      window.A11yCap.startRecording();
     });
 
     await page.click('#test-button');
@@ -109,8 +111,7 @@ test.describe('Event Buffer Persistence', () => {
     await page.goto('http://localhost:14652/#test');
     await page.waitForLoadState('networkidle');
 
-    await page.goto('http://localhost:14652');
-    await page.waitForSelector('#root');
+    await setupA11yCapTest(page);
 
     // Check if events were preserved
     const events = await page.evaluate(() => {
@@ -138,7 +139,7 @@ test.describe('Event Buffer Persistence', () => {
 
     // Reload to trigger loading from corrupted storage
     await page.reload();
-    await page.waitForSelector('#root');
+    await setupA11yCapTest(page);
 
     // Should not crash and should start with empty buffer
     const events = await page.evaluate(() => {
@@ -158,7 +159,10 @@ test.describe('Event Buffer Persistence', () => {
   test('should clear sessionStorage when clearEvents is called', async ({
     page,
   }) => {
-    // Generate some events first
+    // Start recording and generate some events first
+    await page.evaluate(() => {
+      window.A11yCap.startRecording();
+    });
     await page.click('#test-button');
 
     // Verify storage has content

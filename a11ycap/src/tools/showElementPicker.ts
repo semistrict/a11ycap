@@ -4,7 +4,6 @@
  */
 
 import { z } from 'zod';
-import { generateAriaTree } from '../ariaSnapshot.js';
 import { getElementPicker } from '../elementPicker.js';
 import type { ToolDefinition, ToolHandler } from './base.js';
 

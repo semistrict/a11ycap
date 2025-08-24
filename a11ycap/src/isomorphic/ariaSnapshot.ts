@@ -395,7 +395,6 @@ export class KeyParser {
   private _input: string;
   private _pos: number;
   private _length: number;
-  private _options: ParsingOptions;
 
   static parse(
     text: yamlTypes.Scalar<string>,
@@ -403,7 +402,7 @@ export class KeyParser {
     errors: ParsedYamlError[]
   ): AriaTemplateRoleNode | null {
     try {
-      return new KeyParser(text.value, options)._parse();
+      return new KeyParser(text.value)._parse();
     } catch (e) {
       if (e instanceof ParserError) {
         const message =
@@ -429,11 +428,10 @@ export class KeyParser {
     }
   }
 
-  constructor(input: string, options: ParsingOptions) {
+  constructor(input: string) {
     this._input = input;
     this._pos = 0;
     this._length = input.length;
-    this._options = options;
   }
 
   private _peek() {

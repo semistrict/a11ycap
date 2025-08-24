@@ -21,6 +21,7 @@
   },
   "scripts": {
     "start": "REACT_APP_DEBUG=true NODE_ENV=development craco start",
+    "start:open": "BROWSER=open PORT=14652 REACT_APP_DEBUG=true NODE_ENV=development craco start",
     "build": "craco build",
     "test": "craco test",
     "eject": "react-scripts eject"

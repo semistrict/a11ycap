@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { setupA11yCapTest } from './test-utils';
 
 test.describe('Debug console logs setup', () => {
   test('should show what is available in window.A11yCap', async ({ page }) => {
-    await page.goto('http://localhost:14652');
-    await page.waitForLoadState('networkidle');
+    await setupA11yCapTest(page);
 
     // Check what's available in A11yCap
     const a11yCapKeys = await page.evaluate(() => {
@@ -32,8 +32,7 @@ test.describe('Debug console logs setup', () => {
   });
 
   test('should check if eventBuffer functions work', async ({ page }) => {
-    await page.goto('http://localhost:14652');
-    await page.waitForLoadState('networkidle');
+    await setupA11yCapTest(page);
 
     const bufferTest = await page.evaluate(() => {
       // Try to access eventBuffer functions directly
@@ -60,8 +59,7 @@ test.describe('Debug console logs setup', () => {
   });
 
   test('should test manual console buffering', async ({ page }) => {
-    await page.goto('http://localhost:14652');
-    await page.waitForLoadState('networkidle');
+    await setupA11yCapTest(page);
 
     // Manually test event buffer
     const manualTest = await page.evaluate(() => {

@@ -115,7 +115,7 @@ export class MCPWebSocketClient {
       };
 
       this.ws.onmessage = this.handleMessage.bind(this);
-    } catch (error) {
+    } catch (_error) {
       // Silently handle WebSocket creation errors
     }
   }

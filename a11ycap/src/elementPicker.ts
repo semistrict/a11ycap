@@ -3,7 +3,24 @@
  * Inspired by Playwright's element inspector
  */
 
-import { type ReactInfo, extractReactInfo } from './reactUtils.js';
+import { generateAriaTree, renderAriaTree } from './ariaSnapshot.js';
+import { clearEvents, getBufferStats } from './eventBuffer.js';
+import {
+  getRecordingDuration,
+  isRecordingActive,
+  startRecording,
+  stopRecording,
+} from './interactionForwarder.js';
+import { extractReactInfo, type ReactInfo } from './reactUtils.js';
+
+// Simple snapshot function to avoid circular dependency with index.js
+function snapshotForAI(
+  element: Element,
+  _options: { max_chars?: number } = {}
+): string {
+  const tree = generateAriaTree(element, { mode: 'ai', enableReact: true });
+  return renderAriaTree(tree, { mode: 'ai', enableReact: true });
+}
 
 export interface PickedElement {
   element: Element;
@@ -26,12 +43,6 @@ export interface ElementPickerOptions {
   onElementsPicked?: (elements: PickedElement[]) => void;
 }
 
-interface HighlightEntry {
-  element: Element;
-  color: string;
-  tooltipText?: string;
-}
-
 interface RenderedHighlightEntry {
   targetElement: Element;
   color: string;
@@ -48,11 +59,11 @@ export class ElementPicker {
   private glassPaneShadow: ShadowRoot;
   private renderedEntries: RenderedHighlightEntry[] = [];
   private isActive = false;
-  private pickedElements: PickedElement[] = [];
   private resolvePromise?: (elements: PickedElement[]) => void;
   private hoveredElement: Element | null = null;
   private selectedElements = new Set<Element>();
   private currentOptions?: ElementPickerOptions;
+  private recordingInterval?: number;
 
   /** Check if the element picker is currently active */
   public isPickerActive(): boolean {
@@ -123,6 +134,7 @@ export class ElementPicker {
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
         pointer-events: all;
         z-index: 10001;
+        min-width: 200px;
       }
       
       .controls h3 {
@@ -158,10 +170,67 @@ export class ElementPicker {
         background: #2563eb;
       }
       
+      .controls button.record {
+        background: #ef4444;
+        color: white;
+        border-color: #ef4444;
+      }
+      
+      .controls button.record:hover {
+        background: #dc2626;
+      }
+      
+      .controls button.record.recording {
+        background: #10b981;
+        border-color: #10b981;
+        animation: pulse 2s infinite;
+      }
+      
+      .controls button.record.recording:hover {
+        background: #059669;
+      }
+      
+      @keyframes pulse {
+        0%, 100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.7;
+        }
+      }
+      
       .controls .info {
         font-size: 11px;
         color: #6b7280;
         margin-top: 8px;
+      }
+      
+      .controls .divider {
+        height: 1px;
+        background: #e5e7eb;
+        margin: 8px 0;
+      }
+      
+      .recording-stats {
+        font-size: 11px;
+        color: #6b7280;
+        margin: 4px 0;
+      }
+      
+      .recording-stats.active {
+        color: #10b981;
+        font-weight: 500;
+      }
+      
+      .recording-duration {
+        font-size: 11px;
+        color: #6b7280;
+        margin: 4px 0;
+      }
+      
+      .recording-duration.active {
+        color: #10b981;
+        font-weight: 500;
       }
     `;
     this.glassPaneShadow.appendChild(styleElement);
@@ -170,11 +239,17 @@ export class ElementPicker {
     const controls = document.createElement('div');
     controls.className = 'controls';
     controls.innerHTML = `
-      <h3>Element Picker</h3>
+      <h3>🐱 A11yCap</h3>
       <div class="info">Click to select/deselect elements</div>
       <button class="done primary">Done (${this.getModifierKey()}+Enter)</button>
       <button class="cancel">Cancel</button>
       <div class="info selected-count">Selected: 0</div>
+      <div class="divider"></div>
+      <h3>Interaction Recording</h3>
+      <button class="record">Start Recording</button>
+      <button class="clear-buffer">Clear Buffer</button>
+      <div class="recording-stats">Buffer: 0 events</div>
+      <div class="recording-duration" style="display: none;"></div>
     `;
     this.glassPaneShadow.appendChild(controls);
 
@@ -198,12 +273,15 @@ export class ElementPicker {
     // Mouse move for hover effect
     this.glassPaneElement.addEventListener('mousemove', (e) => {
       if (!this.isActive) return;
+      // Don't process hover if recording (picker is minimized)
+      if (isRecordingActive()) return;
       stopEvent(e);
 
       // Temporarily disable pointer events to get element underneath
+      const currentPointerEvents = this.glassPaneElement.style.pointerEvents;
       this.glassPaneElement.style.pointerEvents = 'none';
       const element = document.elementFromPoint(e.clientX, e.clientY);
-      this.glassPaneElement.style.pointerEvents = 'all';
+      this.glassPaneElement.style.pointerEvents = currentPointerEvents;
 
       if (element && element !== this.hoveredElement) {
         this.hoveredElement = element;
@@ -226,6 +304,17 @@ export class ElementPicker {
         this.cancel();
         return;
       }
+      if (target?.classList?.contains('record')) {
+        this.toggleRecording();
+        return;
+      }
+      if (target?.classList?.contains('clear-buffer')) {
+        this.clearBuffer();
+        return;
+      }
+
+      // Don't process element selection if recording (picker is minimized)
+      if (isRecordingActive()) return;
 
       if (this.hoveredElement) {
         if (this.selectedElements.has(this.hoveredElement)) {
@@ -248,7 +337,7 @@ export class ElementPicker {
       }
     });
 
-    // Block all other events
+    // Block all other events only when picker is active
     for (const eventName of [
       'auxclick',
       'dragstart',
@@ -261,7 +350,12 @@ export class ElementPicker {
       'focus',
       'scroll',
     ]) {
-      this.glassPaneElement.addEventListener(eventName, stopEvent);
+      this.glassPaneElement.addEventListener(eventName, (e) => {
+        // Only stop events if picker is active and not recording
+        if (this.isActive && !isRecordingActive()) {
+          stopEvent(e);
+        }
+      });
     }
   }
 
@@ -478,12 +572,9 @@ export class ElementPicker {
 
     // Add snapshots if requested
     if (this.currentOptions?.includeSnapshots) {
-      // Import snapshot function dynamically to avoid circular deps
-      const { snapshotForAI } = await import('./index.js');
-
       for (const pickedElement of elements) {
         try {
-          const snapshot = await snapshotForAI(pickedElement.element, {
+          const snapshot = snapshotForAI(pickedElement.element, {
             max_chars: 1024,
           });
           pickedElement.snapshot = snapshot;
@@ -518,6 +609,98 @@ export class ElementPicker {
     }
   }
 
+  private toggleRecording() {
+    const recordButton = this.glassPaneShadow.querySelector(
+      '.record'
+    ) as HTMLButtonElement;
+    const durationElement = this.glassPaneShadow.querySelector(
+      '.recording-duration'
+    ) as HTMLElement;
+    const controls = this.glassPaneShadow.querySelector(
+      '.controls'
+    ) as HTMLElement;
+
+    if (isRecordingActive()) {
+      // Stop recording and re-enable element picker
+      stopRecording();
+      recordButton.textContent = 'Start Recording';
+      recordButton.classList.remove('recording');
+      durationElement.classList.remove('active');
+      durationElement.style.display = 'none';
+      if (this.recordingInterval) {
+        clearInterval(this.recordingInterval);
+        this.recordingInterval = undefined;
+      }
+
+      // Re-enable element picker mode - make glasspane interactive again
+      this.glassPaneElement.style.pointerEvents = 'all';
+      this.glassPaneElement.style.backgroundColor = 'transparent';
+      // Controls remain clickable
+      if (controls) {
+        controls.style.pointerEvents = 'all';
+      }
+    } else {
+      // Start recording and minimize picker to allow page interaction
+      startRecording();
+      recordButton.textContent = 'Stop Recording';
+      recordButton.classList.add('recording');
+      durationElement.style.display = 'block';
+
+      // Clear any highlights and hover state FIRST before minimizing
+      this.hoveredElement = null;
+      this.selectedElements.clear();
+      this.updateHighlights();
+      this.updateSelectedCount();
+
+      // Update duration display and buffer stats periodically
+      this.recordingInterval = window.setInterval(() => {
+        const duration = getRecordingDuration();
+        if (duration !== null) {
+          const seconds = Math.floor(duration / 1000);
+          const minutes = Math.floor(seconds / 60);
+          const remainingSeconds = seconds % 60;
+          durationElement.textContent = `Recording: ${minutes}:${remainingSeconds
+            .toString()
+            .padStart(2, '0')}`;
+          durationElement.classList.add('active');
+        }
+        // Update buffer stats to show new events
+        this.updateBufferStats();
+      }, 100);
+
+      // Minimize picker - disable glasspane but keep controls clickable
+      this.glassPaneElement.style.pointerEvents = 'none';
+      this.glassPaneElement.style.backgroundColor = 'transparent';
+      // Ensure controls stay clickable
+      if (controls) {
+        controls.style.pointerEvents = 'all';
+      }
+    }
+
+    this.updateBufferStats();
+  }
+
+  private clearBuffer() {
+    clearEvents();
+    this.updateBufferStats();
+    console.log('[a11ycap] Cleared event buffer');
+  }
+
+  private updateBufferStats() {
+    const stats = getBufferStats();
+    const statsElement = this.glassPaneShadow.querySelector(
+      '.recording-stats'
+    ) as HTMLElement;
+    if (statsElement) {
+      statsElement.textContent = `Buffer: ${stats.totalEvents} events`;
+      if (isRecordingActive()) {
+        statsElement.classList.add('active');
+      } else {
+        statsElement.classList.remove('active');
+      }
+    }
+  }
+
   private cleanup() {
     this.isActive = false;
     this.glassPaneElement.style.display = 'none';
@@ -525,6 +708,12 @@ export class ElementPicker {
     this.selectedElements.clear();
     this.hoveredElement = null;
     this.updateHighlights();
+
+    // Clear recording interval if active
+    if (this.recordingInterval) {
+      clearInterval(this.recordingInterval);
+      this.recordingInterval = undefined;
+    }
   }
 
   public enable(options: ElementPickerOptions = {}): void {
@@ -543,6 +732,43 @@ export class ElementPicker {
 
     this.updateHighlights();
     this.updateSelectedCount();
+
+    // Update recording state UI
+    const recordButton = this.glassPaneShadow.querySelector(
+      '.record'
+    ) as HTMLButtonElement;
+    const durationElement = this.glassPaneShadow.querySelector(
+      '.recording-duration'
+    ) as HTMLElement;
+
+    if (recordButton) {
+      if (isRecordingActive()) {
+        recordButton.textContent = 'Stop Recording';
+        recordButton.classList.add('recording');
+        durationElement.style.display = 'block';
+
+        // Start updating duration
+        this.recordingInterval = window.setInterval(() => {
+          const duration = getRecordingDuration();
+          if (duration !== null) {
+            const seconds = Math.floor(duration / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            durationElement.textContent = `Recording: ${minutes}:${remainingSeconds
+              .toString()
+              .padStart(2, '0')}`;
+            durationElement.classList.add('active');
+          }
+        }, 100);
+      } else {
+        recordButton.textContent = 'Start Recording';
+        recordButton.classList.remove('recording');
+        durationElement.classList.remove('active');
+        durationElement.style.display = 'none';
+      }
+    }
+
+    this.updateBufferStats();
   }
 
   public async pick(): Promise<PickedElement[]> {

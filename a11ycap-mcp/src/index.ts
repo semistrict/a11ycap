@@ -5,7 +5,6 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import {
   PrimaryBrowserConnectionManager,
   RemoteBrowserConnectionManager,
-  getBrowserConnectionManager,
   setBrowserConnectionManager,
 } from "./browser-connection-manager.js";
 import { CONSOLE_INJECTION_SCRIPT } from "./constants.js";
@@ -70,7 +69,7 @@ const transport = new StdioServerTransport();
 
 async function main() {
   // Initialize browser connection management FIRST
-  const PORT = process.env.PORT ? Number.parseInt(process.env.PORT) : 12456;
+  const PORT = process.env.PORT ? Number.parseInt(process.env.PORT, 10) : 12456;
   let primaryManager: PrimaryBrowserConnectionManager | null = null;
 
   // Check if primary server already exists

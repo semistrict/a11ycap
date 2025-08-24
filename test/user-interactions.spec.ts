@@ -1,16 +1,20 @@
 import { expect, test } from '@playwright/test';
+import { setupA11yCapTest } from './test-utils';
 
 test.describe('User Interaction Recording', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:14652');
-    // Wait for the page to be ready
-    await page.waitForSelector('#root');
+    await setupA11yCapTest(page);
   });
 
   test('should record click interactions', async ({ page }) => {
     // Clear any existing events
     await page.evaluate(() => {
       return window.A11yCap.clearEvents();
+    });
+
+    // Start recording interactions
+    await page.evaluate(() => {
+      return window.A11yCap.startRecording();
     });
 
     // Click the button to generate interaction events
@@ -39,6 +43,11 @@ test.describe('User Interaction Recording', () => {
       return window.A11yCap.clearEvents();
     });
 
+    // Start recording interactions
+    await page.evaluate(() => {
+      return window.A11yCap.startRecording();
+    });
+
     // Type in the input field
     await page.fill('#key-test-input', 'Hello World');
 
@@ -60,7 +69,18 @@ test.describe('User Interaction Recording', () => {
   });
 
   test('should record navigation events on page load', async ({ page }) => {
-    // Navigation event should be recorded automatically when page loads
+    // Clear existing events and start recording
+    await page.evaluate(() => {
+      window.A11yCap.clearEvents();
+      window.A11yCap.startRecording();
+    });
+
+    // Reload page to trigger navigation event
+    await page.reload();
+
+    // Wait for A11yCap to be available again
+    await setupA11yCapTest(page);
+
     const interactions = await page.evaluate(() => {
       return window.A11yCap.toolHandlers.get_user_interactions.execute({
         id: 'test',
@@ -81,6 +101,11 @@ test.describe('User Interaction Recording', () => {
     // Clear any existing events
     await page.evaluate(() => {
       return window.A11yCap.clearEvents();
+    });
+
+    // Start recording interactions
+    await page.evaluate(() => {
+      return window.A11yCap.startRecording();
     });
 
     // Focus on the input field
@@ -109,6 +134,11 @@ test.describe('User Interaction Recording', () => {
     // Clear any existing events
     await page.evaluate(() => {
       return window.A11yCap.clearEvents();
+    });
+
+    // Start recording interactions
+    await page.evaluate(() => {
+      return window.A11yCap.startRecording();
     });
 
     // Focus input and press keys
@@ -160,6 +190,11 @@ test.describe('User Interaction Recording', () => {
       return window.A11yCap.clearEvents();
     });
 
+    // Start recording interactions
+    await page.evaluate(() => {
+      return window.A11yCap.startRecording();
+    });
+
     // Generate multiple types of interactions
     await page.click('#test-button');
     await page.fill('#key-test-input', 'test');
@@ -200,6 +235,11 @@ test.describe('User Interaction Recording', () => {
     // Clear any existing events
     await page.evaluate(() => {
       return window.A11yCap.clearEvents();
+    });
+
+    // Start recording interactions
+    await page.evaluate(() => {
+      return window.A11yCap.startRecording();
     });
 
     // Generate multiple click events

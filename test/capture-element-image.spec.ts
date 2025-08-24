@@ -1,8 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { setupA11yCapTest } from './test-utils';
 
 test.describe('Capture Element Image Tool', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:14652');
+    await setupA11yCapTest(page);
   });
 
   test('should capture image of an element by ref', async ({ page }) => {

@@ -46,7 +46,25 @@ const takeSnapshotSchema = z.object({
 
 export const takeSnapshotDefinition = {
   name: 'take_snapshot',
-  description: 'Take an accessibility snapshot from a connected browser',
+  description: `Take an accessibility snapshot from a connected browser. This is the RECOMMENDED way to get an overview of the interactivity of a page.
+
+Returns a text representation showing:
+- Interactive elements with clickable references [ref=e1, e2, etc.]
+- Element roles, labels, and ARIA attributes
+- Hierarchical structure with proper indentation
+- React component information (when available)
+
+Example output:
+\`\`\`
+button "Submit Form" [ref=e1]
+  text "Submit"
+form [ref=e2]
+  textbox "Email" [ref=e3]
+  textbox "Password" [ref=e4]
+link "Forgot Password?" [ref=e5]
+\`\`\`
+
+IMPORTANT: If snapshot is truncated due to size limits, DO NOT assume missing elements don't exist - they may have been omitted. Use follow-up calls with 'selector' or 'refs' parameters to get specific elements.`,
   inputSchema: takeSnapshotSchema.shape, // Will have sessionId added by MCP server
 };
 

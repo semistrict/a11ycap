@@ -27,8 +27,49 @@ const getElementInfoSchema = multiElementToolSchema
 
 export const getElementInfoDefinition = {
   name: 'get_element_info',
-  description:
-    'Get comprehensive information about one or more elements without including sub-elements',
+  description: `Get comprehensive information about one or more elements without including sub-elements. Returns detailed data for debugging, accessibility analysis, and automated testing.
+
+For each element, returns extensive information including:
+
+**Basic Properties:**
+- ref: Element reference for other tools
+- tagName, id, className: Basic HTML identifiers
+- textContent, innerText, value: Content information
+
+**Accessibility (ARIA):**
+- All ARIA attributes (role, label, expanded, checked, etc.)
+- Computed accessibility name and role
+- Keyboard navigation status
+- Heading levels and landmarks
+
+**Visual Styling:**
+- Computed CSS properties (display, position, colors, fonts, etc.)
+- Geometry (x, y, width, height, bounding box)
+- Visibility status and viewport intersection
+- Z-index and stacking context information
+
+**Element State:**
+- Interactive states (focused, disabled, checked, selected)
+- Form validation status and properties
+- Event listeners attached to element
+
+**Contextual Information:**
+- Parent element details (tagName, id, className, role)
+- Children summary (count, types, interactive elements)
+- Sibling position and adjacent elements
+
+**Specialized Data:**
+- Image info: dimensions, scaling, loading status, alt text
+- Form info: validation, autocomplete, input constraints
+- React info: component name, props, hooks, source location (when available)
+- Performance: animations, transitions, render timing
+
+**Content Analysis:**
+- Text content analysis and word counts
+- Embedded content detection (images, links)
+- Content editability and selection properties
+
+This tool is ideal for debugging layout issues, accessibility problems, or understanding element behavior for automation.`,
   inputSchema: getElementInfoSchema.shape,
 };
 
@@ -530,7 +571,7 @@ function getAriaProperties(element: Element): ElementInfo['aria'] {
 
     // Keyboard navigable
     aria.keyboardNavigable = isKeyboardNavigable(element);
-  } catch (error) {
+  } catch (_error) {
     // Enhanced accessibility is optional
   }
 
@@ -701,12 +742,9 @@ function isKeyboardNavigable(element: Element): boolean {
 }
 
 function getElementState(element: Element): ElementInfo['state'] {
-  const htmlElement = element as HTMLElement;
   const inputElement = element as HTMLInputElement;
   const selectElement = element as HTMLSelectElement;
   const textareaElement = element as HTMLTextAreaElement;
-  const buttonElement = element as HTMLButtonElement;
-  const fieldsetElement = element as HTMLFieldSetElement;
 
   const elementBox = box(element);
 
@@ -813,7 +851,6 @@ function getFormInfo(element: Element): ElementInfo['form'] | undefined {
   const inputElement = element as HTMLInputElement;
   const selectElement = element as HTMLSelectElement;
   const textareaElement = element as HTMLTextAreaElement;
-  const buttonElement = element as HTMLButtonElement;
 
   // Only return form info for form-related elements
   const formElements = ['input', 'select', 'textarea', 'button'];
@@ -1099,7 +1136,7 @@ function getPerformanceInfo(
     };
 
     return result;
-  } catch (error) {
+  } catch (_error) {
     // Fallback to basic info if Web Animations API not available
     const style = getComputedStyle(element);
     const hasTransitions =
@@ -1245,7 +1282,7 @@ function getBrowserInfo(): ElementInfo['browser'] | undefined {
         supportsCustomElements,
       },
     };
-  } catch (error) {
+  } catch (_error) {
     return undefined;
   }
 }
@@ -1418,7 +1455,7 @@ function getLayoutConstraints(
           findStackingContextRoot(element)?.tagName.toLowerCase(),
       },
     };
-  } catch (error) {
+  } catch (_error) {
     return undefined;
   }
 }
@@ -1515,8 +1552,10 @@ function getKeyComputedStyles(element: Element): ElementInfo['computed'] {
  */
 export function generateElementInfo(
   element: Element,
-  ref: string
+  ref?: string
 ): ElementInfo {
+  // Use provided ref or get existing ref from element, or use empty string
+  const finalRef = ref || (element as any)._ariaRef?.ref || '';
   const htmlElement = element as HTMLElement;
   const inputElement = element as HTMLInputElement;
   const rect = element.getBoundingClientRect();
@@ -1525,7 +1564,7 @@ export function generateElementInfo(
   const hierarchyInfo = getDOMHierarchy(element);
 
   const elementInfo: ElementInfo = {
-    ref,
+    ref: finalRef,
     tagName: element.tagName.toLowerCase(),
     id: element.id || undefined,
     className: element.getAttribute('class') || undefined,
@@ -1618,7 +1657,7 @@ export function generateElementInfo(
           : undefined,
       };
     }
-  } catch (error) {
+  } catch (_error) {
     // React info is optional, continue without it
   }
 

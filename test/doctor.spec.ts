@@ -1,12 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { setupA11yCapTest } from './test-utils';
 
 test.describe('Doctor Tool - Accessibility Analysis', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:14652');
-    await page.waitForLoadState('networkidle');
-    
-    // Wait for the library to be available (axe-core is now bundled with a11ycap)
-    await page.waitForFunction(() => typeof window.A11yCap !== 'undefined');
+    await setupA11yCapTest(page);
   });
 
   test('should perform full page accessibility analysis', async ({ page }) => {

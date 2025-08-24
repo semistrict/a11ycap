@@ -1,9 +1,9 @@
 // Debug script to test React component name extraction
 import { test } from '@playwright/test';
+import { setupA11yCapTest } from './test-utils';
 
 test('debug react component names', async ({ page }) => {
-  await page.goto('http://localhost:14652/');
-  await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
+  await setupA11yCapTest(page, { waitForReactDevTools: true });
   await page.waitForFunction(() => (window as any).reactDevToolsReady, {
     timeout: 5000,
   });

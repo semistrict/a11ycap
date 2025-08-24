@@ -8,17 +8,11 @@
 
 import { randomUUID } from "node:crypto";
 import { createServer } from "node:http";
-import type {
-  BrowserCommand,
-  BrowserToServerMessage,
-  CommandResponseMessage,
-  HeartbeatMessage,
-  PageInfoMessage,
-} from "a11ycap";
+import type { BrowserCommand, BrowserToServerMessage } from "a11ycap";
 import cors from "cors";
 import express from "express";
-import { WebSocketServer } from "ws";
 import type WebSocket from "ws";
+import { WebSocketServer } from "ws";
 import { log } from "./logging.js";
 import { setupLibraryRoutes } from "./routes/library.js";
 
@@ -97,12 +91,12 @@ export class PrimaryBrowserConnectionManager
     setupLibraryRoutes(app);
 
     // Health check endpoint
-    app.get("/health", (req, res) => {
+    app.get("/health", (_req, res) => {
       res.json({ status: "ok", connections: this.connections.size });
     });
 
     // API endpoint to get browser connections
-    app.get("/api/browser-connections", (req, res) => {
+    app.get("/api/browser-connections", (_req, res) => {
       const connections = Array.from(this.connections.values())
         .filter((c) => c.connected)
         .map((c) => ({
@@ -476,7 +470,7 @@ export class RemoteBrowserConnectionManager
 
       // Replace the global browser connection manager with our new primary instance
       setBrowserConnectionManager(newPrimary);
-    } catch (error) {
+    } catch (_error) {
       // Port is still bound, leader is alive - this is expected
       log.debug("Leader election attempt failed, leader still alive");
     }

@@ -1,11 +1,11 @@
 import { expect, test } from '@playwright/test';
+import { setupA11yCapTest } from './test-utils';
 
 test.describe('Debug Source Information', () => {
   test('should extract debug source info from data attributes', async ({
     page,
   }) => {
-    await page.goto('http://localhost:14652/');
-    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
+    await setupA11yCapTest(page);
 
     const debugSourceInfo = await page.evaluate(() => {
       const button = document.getElementById('test-button');

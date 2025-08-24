@@ -1,8 +1,6 @@
 import { z } from 'zod';
-import { getEvents } from '../eventBuffer.js';
 import type { ToolHandler } from './base.js';
-import { getElementByRefOrThrow } from './common.js';
-import { type ElementInfo, generateElementInfo } from './getElementInfo.js';
+import { generateElementInfo } from './getElementInfo.js';
 
 const getPickedElementsSchema = z.object({
   limit: z
@@ -20,8 +18,26 @@ const getPickedElementsSchema = z.object({
 
 export const getPickedElementsDefinition = {
   name: 'get_picked_elements',
-  description:
-    'Retrieve elements that were picked using the triple-ESC element picker for the current page',
+  description: `Retrieve elements that were picked using the visual element picker. Returns full element information for previously selected elements.
+
+IMPORTANT: Elements must be picked first using the Element Picker. The user can pick elements by:
+1. Press **ESC three times** to open the A11yCap Tools menu
+2. Click "🎯 Element Picker" 
+3. The picker overlay will activate - user can click on any elements on the page
+4. Multiple elements can be selected by clicking different parts of the page
+5. Press ESC to exit the picker when done
+
+This tool returns the same detailed ElementInfo data as get_element_info, but only for elements that were previously picked by the user through the visual interface. Each picked element includes:
+
+- Basic properties (tagName, id, className, text content)
+- Complete accessibility information (ARIA attributes, computed names, roles)
+- Visual styling and geometry data
+- Element state and form properties
+- Parent/child/sibling relationships
+- React component information (when available)
+- Event handlers and interaction capabilities
+
+Perfect for getting detailed information about specific elements the user has visually identified and selected, without needing to know refs or write CSS selectors.`,
   inputSchema: getPickedElementsSchema.shape,
 };
 
@@ -33,19 +49,6 @@ const GetPickedElementsMessageSchema = z.object({
 
 type GetPickedElementsMessage = z.infer<typeof GetPickedElementsMessageSchema>;
 
-// Generate page UUID from URL hash (same logic as in index.ts)
-function generatePageUUID(): string {
-  if (typeof window === 'undefined') return '';
-  const url = window.location.href;
-  let hash = 0;
-  for (let i = 0; i < url.length; i++) {
-    const char = url.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash = hash & hash; // Convert to 32bit integer
-  }
-  return Math.abs(hash).toString(16);
-}
-
 async function executeGetPickedElements(
   message: GetPickedElementsMessage
 ): Promise<any> {
@@ -53,78 +56,23 @@ async function executeGetPickedElements(
     throw new Error('Invalid message type for getPickedElements handler');
   }
 
-  const currentPageUUID = generatePageUUID();
-  const allEventStrings = getEvents();
+  // Get all elements with the picked class
+  const pickedElements = Array.from(
+    document.querySelectorAll('.a11ycap-picked')
+  );
 
-  // Parse and filter for element_picked events for the current page
-  let pickedElements = allEventStrings
-    .filter((eventStr: string) => {
-      try {
-        const event = JSON.parse(eventStr);
-        return (
-          event.type === 'element_picked' && event.pageUUID === currentPageUUID
-        );
-      } catch {
-        return false;
-      }
-    })
-    .map((eventStr: string) => JSON.parse(eventStr));
-
-  // Filter by timestamp if specified
-  if (message.payload.since) {
-    pickedElements = pickedElements.filter(
-      (event: any) => event.timestamp >= message.payload.since!
-    );
-  }
-
-  // Limit results
+  // Apply limit
   const limit = message.payload.limit || 50;
-  pickedElements = pickedElements.slice(-limit); // Get most recent
+  const limitedElements = pickedElements.slice(0, limit);
 
   // Get detailed element information for each picked element
-  const detailedElements = pickedElements.map((event: any) => {
-    try {
-      const ref = event.element?.ref;
-      if (!ref) {
-        // No ref, return as much data as possible from the event
-        return {
-          timestamp: new Date(event.timestamp).toISOString(),
-          ref: 'unknown',
-          tagName: event.element?.tagName || 'unknown',
-          textContent: event.element?.textContent || '',
-          selector: event.element?.selector || undefined,
-          snapshot: event.element?.snapshot || undefined,
-          error: 'Element was picked without a ref',
-        };
-      }
-
-      const element = getElementByRefOrThrow(ref);
-      const elementInfo = generateElementInfo(element, ref);
-
-      return {
-        timestamp: new Date(event.timestamp).toISOString(),
-        ...elementInfo,
-      };
-    } catch (error) {
-      // Element might not exist anymore, return as much data as possible from event
-      return {
-        timestamp: new Date(event.timestamp).toISOString(),
-        ref: event.element?.ref || 'unknown',
-        tagName: event.element?.tagName || 'unknown',
-        textContent: event.element?.textContent || '',
-        selector: event.element?.selector || undefined,
-        snapshot: event.element?.snapshot || undefined,
-        error: 'Element no longer available in DOM',
-      };
-    }
+  const detailedElements = limitedElements.map((element) => {
+    // Don't provide a fallback ref - let generateElementInfo handle it
+    return generateElementInfo(element as Element);
   });
 
-  return {
-    pageUUID: currentPageUUID,
-    currentUrl: typeof window !== 'undefined' ? window.location.href : '',
-    totalPicked: detailedElements.length,
-    elements: detailedElements,
-  };
+  // Return just the array of ElementInfo objects, same as get_element_info
+  return detailedElements;
 }
 
 export const getPickedElementsTool: ToolHandler<GetPickedElementsMessage> = {

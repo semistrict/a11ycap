@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { setupA11yCapTest } from './test-utils';
 
 test.describe('Network Tool Tests', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:14652/');
-    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
+    await setupA11yCapTest(page);
   });
 
   test('should capture network requests from fetch API', async ({ page }) => {

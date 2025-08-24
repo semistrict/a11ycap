@@ -6,6 +6,7 @@ import {
   multiElementToolSchema,
   resolveTargetElements,
 } from './common.js';
+import { generateElementInfo } from './getElementInfo.js';
 
 // Import axe-core types
 type AxeResults = axe.AxeResults;
@@ -500,7 +501,7 @@ async function executeDoctor(
 
   // Add element info if requested
   if (effectivePayload.includeElementInfo) {
-    const a11y = ensureA11yCap();
+    ensureA11yCap();
 
     for (const violation of violations) {
       for (const node of violation.nodes) {
@@ -521,9 +522,6 @@ async function executeDoctor(
 
           const element = document.querySelector(targetSelector);
           if (element) {
-            // Import the generateElementInfo function dynamically
-            const { generateElementInfo } = await import('./getElementInfo.js');
-
             // Generate a ref for this element
             const ref = `violation_${violation.id}_${Math.random().toString(36).substr(2, 9)}`;
             (node as any).element = generateElementInfo(element, ref);
@@ -560,7 +558,6 @@ async function executeDoctor(
 
           const element = document.querySelector(targetSelector);
           if (element) {
-            const { generateElementInfo } = await import('./getElementInfo.js');
             const ref = `incomplete_${incomplete.id}_${Math.random().toString(36).substr(2, 9)}`;
             (node as any).element = generateElementInfo(element, ref);
           } else {

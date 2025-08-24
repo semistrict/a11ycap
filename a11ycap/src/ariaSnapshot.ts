@@ -1,15 +1,3 @@
-import {
-  escapeRegExp,
-  longestCommonSubstring,
-  normalizeWhiteSpace,
-} from '@isomorphic/stringUtils';
-
-import { box, getElementComputedStyle, isElementVisible } from './domUtils';
-import type { ReactInfo } from './reactUtils';
-import { extractReactInfo } from './reactUtils';
-import * as roleUtils from './roleUtils';
-import { yamlEscapeKeyIfNeeded, yamlEscapeValueIfNeeded } from './yamlUtils';
-
 import type {
   AriaProps,
   AriaRegex,
@@ -18,7 +6,17 @@ import type {
   AriaTemplateRoleNode,
   AriaTemplateTextNode,
 } from '@isomorphic/ariaSnapshot';
+import {
+  escapeRegExp,
+  longestCommonSubstring,
+  normalizeWhiteSpace,
+} from '@isomorphic/stringUtils';
 import type { Box } from './domUtils';
+import { box, getElementComputedStyle, isElementVisible } from './domUtils';
+import type { ReactInfo } from './reactUtils';
+import { extractReactInfo } from './reactUtils';
+import * as roleUtils from './roleUtils';
+import { yamlEscapeKeyIfNeeded, yamlEscapeValueIfNeeded } from './yamlUtils';
 
 export type AriaNode = AriaProps & {
   role: AriaRole | 'fragment' | 'iframe';
@@ -632,6 +630,11 @@ export function renderAriaTree(
       key += ` [ref=${ariaNode.ref}]`;
       if (options.renderCursorPointer && hasPointerCursor(ariaNode))
         key += ' [cursor=pointer]';
+    }
+
+    // Add [picked] indicator if element has been picked by element picker
+    if (ariaNode.element.classList.contains('a11ycap-picked')) {
+      key += ' [picked]';
     }
 
     // Add position information if enabled and available

@@ -1,12 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { setupA11yCapTest } from './test-utils';
 
 test.describe('Element Picker Tool', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to test app
-    await page.goto('http://localhost:14652/');
-
-    // Wait for A11yCap to be available
-    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
+    await setupA11yCapTest(page);
   });
 
   test('should show element picker overlay', async ({ page }) => {
@@ -18,11 +15,10 @@ test.describe('Element Picker Tool', () => {
 
     expect(pickerExists).toBe(true);
 
-    // Start element picker (non-blocking in test context)
+    // Start element picker
     await page.evaluate(() => {
       const picker = window.A11yCap.getElementPicker();
-      // Store promise globally so we can check it later
-      window.__pickerPromise = picker.pick();
+      picker.enable();
     });
 
     // Wait for overlay to appear
@@ -45,9 +41,9 @@ test.describe('Element Picker Tool', () => {
 
       const controls = glassPane.shadowRoot.querySelector('.controls');
       const doneButton = glassPane.shadowRoot.querySelector('.done');
-      const cancelButton = glassPane.shadowRoot.querySelector('.cancel');
+      const clearButton = glassPane.shadowRoot.querySelector('.clear');
 
-      return !!(controls && doneButton && cancelButton);
+      return !!(controls && doneButton && clearButton);
     });
 
     expect(hasControls).toBe(true);
@@ -60,7 +56,7 @@ test.describe('Element Picker Tool', () => {
     // Start picker
     await page.evaluate(() => {
       const picker = window.A11yCap.getElementPicker();
-      window.__pickerPromise = picker.pick();
+      picker.enable();
     });
 
     await page.waitForTimeout(100);
@@ -84,13 +80,8 @@ test.describe('Element Picker Tool', () => {
 
     // Check selection
     const selectedCount = await page.evaluate(() => {
-      const glassPane = document.querySelector('x-a11ycap-glass');
-      if (!glassPane?.shadowRoot) return 0;
-
-      const selected = glassPane.shadowRoot.querySelectorAll(
-        '.highlight.selected'
-      );
-      return selected.length;
+      const pickedElements = document.querySelectorAll('.a11ycap-picked');
+      return pickedElements.length;
     });
 
     expect(selectedCount).toBe(1);
@@ -108,17 +99,31 @@ test.describe('Element Picker Tool', () => {
 
     // Complete selection
     const result = await page.evaluate(async () => {
-      const glassPane = document.querySelector('x-a11ycap-glass');
-      if (!glassPane?.shadowRoot) return null;
+      return new Promise((resolve) => {
+        // Set up callback to capture results
+        window.__pickerResult = null;
+        const originalPicker = window.A11yCap.getElementPicker();
+        
+        // Override the current options with our callback
+        originalPicker.currentOptions = {
+          ...originalPicker.currentOptions,
+          onElementsPicked: (elements) => {
+            window.__pickerResult = elements;
+            resolve(elements);
+          }
+        };
 
-      const doneButton = glassPane.shadowRoot.querySelector(
-        '.done'
-      ) as HTMLElement;
-      doneButton?.click();
+        const glassPane = document.querySelector('x-a11ycap-glass');
+        if (!glassPane?.shadowRoot) {
+          resolve(null);
+          return;
+        }
 
-      // Wait for promise to resolve
-      const picked = await window.__pickerPromise;
-      return picked;
+        const doneButton = glassPane.shadowRoot.querySelector(
+          '.done'
+        ) as HTMLElement;
+        doneButton?.click();
+      });
     });
 
     expect(result).toHaveLength(1);
@@ -128,22 +133,31 @@ test.describe('Element Picker Tool', () => {
     });
   });
 
-  test.skip('should cancel picker on Escape key', async ({ page }) => {
+  test('should complete picker on Escape key', async ({ page }) => {
     // Start picker
     await page.evaluate(() => {
       const picker = window.A11yCap.getElementPicker();
-      window.__pickerPromise = picker.pick();
+      picker.enable();
     });
 
     await page.waitForTimeout(100);
 
-    // Press Escape
-    await page.keyboard.press('Escape');
-
-    // Check result
+    // Set up callback first, then press Escape
     const result = await page.evaluate(async () => {
-      const picked = await window.__pickerPromise;
-      return picked;
+      return new Promise((resolve) => {
+        const originalPicker = window.A11yCap.getElementPicker();
+        
+        // Override the current options with our callback
+        originalPicker.currentOptions = {
+          ...originalPicker.currentOptions,
+          onElementsPicked: (elements) => {
+            resolve(elements);
+          }
+        };
+
+        // Press Escape programmatically to complete
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      });
     });
 
     expect(result).toHaveLength(0);
@@ -167,7 +181,7 @@ test.describe('Element Picker Tool', () => {
     // Start picker
     await page.evaluate(() => {
       const picker = window.A11yCap.getElementPicker();
-      window.__pickerPromise = picker.pick();
+      picker.enable();
     });
 
     await page.waitForTimeout(100);
@@ -213,16 +227,28 @@ test.describe('Element Picker Tool', () => {
 
     // Complete selection
     const result = await page.evaluate(async () => {
-      const glassPane = document.querySelector('x-a11ycap-glass');
-      if (!glassPane?.shadowRoot) return null;
+      return new Promise((resolve) => {
+        const originalPicker = window.A11yCap.getElementPicker();
+        
+        // Override the current options with our callback
+        originalPicker.currentOptions = {
+          ...originalPicker.currentOptions,
+          onElementsPicked: (elements) => {
+            resolve(elements);
+          }
+        };
 
-      const doneButton = glassPane.shadowRoot.querySelector(
-        '.done'
-      ) as HTMLElement;
-      doneButton?.click();
+        const glassPane = document.querySelector('x-a11ycap-glass');
+        if (!glassPane?.shadowRoot) {
+          resolve(null);
+          return;
+        }
 
-      const picked = await window.__pickerPromise;
-      return picked;
+        const doneButton = glassPane.shadowRoot.querySelector(
+          '.done'
+        ) as HTMLElement;
+        doneButton?.click();
+      });
     });
 
     expect(result).toHaveLength(2);
@@ -236,7 +262,7 @@ test.describe('Element Picker Tool', () => {
     // Start picker
     await page.evaluate(() => {
       const picker = window.A11yCap.getElementPicker();
-      window.__pickerPromise = picker.pick();
+      picker.enable();
     });
 
     await page.waitForTimeout(100);
@@ -253,16 +279,28 @@ test.describe('Element Picker Tool', () => {
 
     // Complete and check result
     const result = await page.evaluate(async () => {
-      const glassPane = document.querySelector('x-a11ycap-glass');
-      if (!glassPane?.shadowRoot) return null;
+      return new Promise((resolve) => {
+        const originalPicker = window.A11yCap.getElementPicker();
+        
+        // Override the current options with our callback
+        originalPicker.currentOptions = {
+          ...originalPicker.currentOptions,
+          onElementsPicked: (elements) => {
+            resolve(elements);
+          }
+        };
 
-      const doneButton = glassPane.shadowRoot.querySelector(
-        '.done'
-      ) as HTMLElement;
-      doneButton?.click();
+        const glassPane = document.querySelector('x-a11ycap-glass');
+        if (!glassPane?.shadowRoot) {
+          resolve(null);
+          return;
+        }
 
-      const picked = await window.__pickerPromise;
-      return picked;
+        const doneButton = glassPane.shadowRoot.querySelector(
+          '.done'
+        ) as HTMLElement;
+        doneButton?.click();
+      });
     });
 
     expect(result).toHaveLength(1);
@@ -276,7 +314,7 @@ test.describe('Element Picker Tool', () => {
     // Start picker
     await page.evaluate(() => {
       const picker = window.A11yCap.getElementPicker();
-      window.__pickerPromise = picker.pick();
+      picker.enable();
     });
 
     await page.waitForTimeout(100);
@@ -294,16 +332,28 @@ test.describe('Element Picker Tool', () => {
 
     // Complete selection
     const result = await page.evaluate(async () => {
-      const glassPane = document.querySelector('x-a11ycap-glass');
-      if (!glassPane?.shadowRoot) return null;
+      return new Promise((resolve) => {
+        const originalPicker = window.A11yCap.getElementPicker();
+        
+        // Override the current options with our callback
+        originalPicker.currentOptions = {
+          ...originalPicker.currentOptions,
+          onElementsPicked: (elements) => {
+            resolve(elements);
+          }
+        };
 
-      const doneButton = glassPane.shadowRoot.querySelector(
-        '.done'
-      ) as HTMLElement;
-      doneButton?.click();
+        const glassPane = document.querySelector('x-a11ycap-glass');
+        if (!glassPane?.shadowRoot) {
+          resolve(null);
+          return;
+        }
 
-      const picked = await window.__pickerPromise;
-      return picked;
+        const doneButton = glassPane.shadowRoot.querySelector(
+          '.done'
+        ) as HTMLElement;
+        doneButton?.click();
+      });
     });
 
     expect(result).toHaveLength(1);
@@ -318,7 +368,7 @@ test.describe('Element Picker Tool', () => {
     // Start picker
     await page.evaluate(() => {
       const picker = window.A11yCap.getElementPicker();
-      window.__pickerPromise = picker.pick();
+      picker.enable();
     });
 
     await page.waitForTimeout(100);
@@ -336,14 +386,22 @@ test.describe('Element Picker Tool', () => {
 
     await page.waitForTimeout(100);
 
-    // Use keyboard shortcut to complete (Cmd/Ctrl + Enter)
-    const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
-    await page.keyboard.press(`${modifier}+Enter`);
-
-    // Check result
+    // Use Escape key to complete (the only keyboard shortcut supported)
     const result = await page.evaluate(async () => {
-      const picked = await window.__pickerPromise;
-      return picked;
+      return new Promise((resolve) => {
+        const originalPicker = window.A11yCap.getElementPicker();
+        
+        // Override the current options with our callback
+        originalPicker.currentOptions = {
+          ...originalPicker.currentOptions,
+          onElementsPicked: (elements) => {
+            resolve(elements);
+          }
+        };
+
+        // Press Escape to complete
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      });
     });
 
     expect(result).toHaveLength(1);
@@ -354,7 +412,7 @@ test.describe('Element Picker Tool', () => {
     // Start picker
     await page.evaluate(() => {
       const picker = window.A11yCap.getElementPicker();
-      window.__pickerPromise = picker.pick();
+      picker.enable();
     });
 
     await page.waitForTimeout(100);
@@ -371,30 +429,15 @@ test.describe('Element Picker Tool', () => {
       await page.waitForTimeout(100);
     }
 
-    // Check for hover highlight
+    // Check for hover highlight (now uses CSS classes on elements)
     const hasHoverHighlight = await page.evaluate(() => {
-      const glassPane = document.querySelector('x-a11ycap-glass');
-      if (!glassPane?.shadowRoot) return false;
-
-      const highlights =
-        glassPane.shadowRoot.querySelectorAll('.highlight.hovered');
-      return highlights.length > 0;
+      const hoveredElements = document.querySelectorAll('.a11ycap-hovered');
+      return hoveredElements.length > 0;
     });
 
     expect(hasHoverHighlight).toBe(true);
 
-    // Check for tooltip
-    const hasTooltip = await page.evaluate(() => {
-      const glassPane = document.querySelector('x-a11ycap-glass');
-      if (!glassPane?.shadowRoot) return false;
-
-      const tooltip = glassPane.shadowRoot.querySelector('.tooltip');
-      return tooltip !== null && tooltip.textContent !== '';
-    });
-
-    expect(hasTooltip).toBe(true);
-
-    // Cancel picker
+    // Complete picker
     await page.keyboard.press('Escape');
   });
 });

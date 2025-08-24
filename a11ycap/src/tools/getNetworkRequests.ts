@@ -32,7 +32,29 @@ const getNetworkRequestsSchema = z.object({
 
 export const getNetworkRequestsDefinition = {
   name: 'get_network_requests',
-  description: 'Retrieve recent network requests using the Web Performance API',
+  description: `Retrieve recent network requests using the Web Performance API. Returns detailed information about HTTP requests made by the page including timing, size, and type data.
+
+Example output:
+\`\`\`
+Network requests (8 entries):
+
+FETCH https://api.example.com/users (245ms) [2KB]
+SCRIPT https://cdn.example.com/js/analytics.js (156ms) [45KB]
+STYLESHEET https://fonts.googleapis.com/css2?family=Inter (89ms) [12KB]
+IMAGE https://images.example.com/logo.png (67ms) [8KB]
+XMLHTTPREQUEST https://api.example.com/data (423ms) [156KB]
+FONT https://fonts.gstatic.com/s/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.woff2 (234ms) [34KB]
+NAVIGATE https://example.com/dashboard (1203ms) [89KB]
+OTHER https://example.com/manifest.json (12ms) [1KB]
+\`\`\`
+
+Each entry shows:
+- HTTP method/type (FETCH, SCRIPT, STYLESHEET, IMAGE, etc.)
+- Full URL of the request
+- Duration in milliseconds (if available)
+- Transfer size in KB (if available)
+
+Useful for debugging API calls, monitoring performance, analyzing resource loading, and understanding network traffic patterns.`,
   inputSchema: getNetworkRequestsSchema.shape, // Will have sessionId added by MCP server
 };
 

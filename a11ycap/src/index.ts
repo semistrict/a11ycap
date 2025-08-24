@@ -1,61 +1,65 @@
 // Browser-compatible entry point
 
 import { generateAriaTree, renderAriaTree } from './ariaSnapshot';
-import { ElementPicker, getElementPicker } from './elementPicker';
+import { ElementPicker, getElementPicker } from './elementPickerSimple';
+import { getMainMenu } from './mainMenu';
 import { extractReactInfo } from './reactUtils';
 
 // Re-export the browser-compatible ariaSnapshot functionality
 export { generateAriaTree, renderAriaTree, extractReactInfo };
-export type { AriaSnapshot, AriaTreeOptions, AriaNode } from './ariaSnapshot';
+export type { AriaNode, AriaSnapshot, AriaTreeOptions } from './ariaSnapshot';
 
 // Re-export element picker functionality
 export { getElementPicker, ElementPicker };
-export type { PickedElement } from './elementPicker';
-
-// Re-export MCP connection functionality
-export {
-  MCPWebSocketClient,
-  initializeMCPConnection,
-} from './mcpConnection.js';
-
-// Re-export message types
-export type {
-  BaseMessage,
-  PageInfoMessage,
-  HeartbeatMessage,
-  CommandResponseMessage,
-  BrowserToServerMessage,
-  BrowserCommand,
-  ServerToBrowserMessage,
-} from './types/messages.js';
-
-// Re-export MCP tool definitions
-export { toolDefinitions, type McpToolDefinition } from './mcpTools.js';
-
-// Export tool handlers for browser use
-export { toolHandlers } from './tools/index.js';
-
-// Re-export eventBuffer functionality
-export {
-  addEvent,
-  getEvents,
-  clearEvents,
-  getBufferStats,
-} from './eventBuffer.js';
-import { addEvent } from './eventBuffer.js';
 
 // Re-export console forwarder functionality
 export {
   installConsoleForwarders,
   restoreConsole,
 } from './consoleForwarder.js';
+export type { PickedElement } from './elementPickerSimple';
+// Re-export eventBuffer functionality
+export {
+  addEvent,
+  clearEvents,
+  getBufferStats,
+  getEvents,
+} from './eventBuffer.js';
+export { getInteractionRecorder } from './interactionRecorder';
+// Re-export main menu and recorder
+export { getMainMenu } from './mainMenu';
+// Re-export MCP connection functionality
+export {
+  initializeMCPConnection,
+  MCPWebSocketClient,
+} from './mcpConnection.js';
+// Re-export MCP tool definitions
+export { type McpToolDefinition, toolDefinitions } from './mcpTools.js';
+// Export tool handlers for browser use
+export { toolHandlers } from './tools/index.js';
+// Re-export message types
+export type {
+  BaseMessage,
+  BrowserCommand,
+  BrowserToServerMessage,
+  CommandResponseMessage,
+  HeartbeatMessage,
+  PageInfoMessage,
+  ServerToBrowserMessage,
+} from './types/messages.js';
+
 import { installConsoleForwarders } from './consoleForwarder.js';
 
 // Re-export interaction forwarder functionality
 export {
+  getRecordingDuration,
   installInteractionForwarders,
+  isRecordingActive,
   restoreInteractionForwarders,
+  startRecording,
+  stopRecording,
 } from './interactionForwarder.js';
+
 import { installInteractionForwarders } from './interactionForwarder.js';
 
 // Global page UUID
@@ -81,6 +85,7 @@ let escPressTimer: number | null = null;
 // Install forwarders automatically in browser environment
 if (typeof window !== 'undefined') {
   installConsoleForwarders();
+  // Install interaction forwarders but don't start recording automatically
   installInteractionForwarders();
 
   // Initialize page UUID
@@ -90,7 +95,7 @@ if (typeof window !== 'undefined') {
   (window as any)._a11yCapEscCount = () => escPressCount;
   (window as any)._a11yCapEscTimer = () => escPressTimer;
 
-  // Triple-ESC key listener to enable element picker
+  // Triple-ESC key listener to show main menu
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
       escPressCount++;
@@ -102,34 +107,10 @@ if (typeof window !== 'undefined') {
 
       // Check for triple press
       if (escPressCount === 3) {
-        // Enable element picker only if not already active
-        const picker = getElementPicker();
-        if (!picker.isPickerActive()) {
-          picker.enable({
-            includeSnapshots: true,
-            onElementsPicked: (elements) => {
-              // Save picked elements to event log with page UUID
-              for (const element of elements) {
-                addEvent({
-                  type: 'element_picked',
-                  timestamp: Date.now(),
-                  url: window.location.href,
-                  pageUUID: currentPageUUID,
-                  element: {
-                    ref: element.ref,
-                    selector: element.selector,
-                    textContent:
-                      element.element?.textContent?.slice(0, 100) || '',
-                    tagName: element.element?.tagName.toLowerCase() || '',
-                    snapshot: element.snapshot || '',
-                  },
-                });
-              }
-              console.log(
-                `Picked ${elements.length} elements for page ${currentPageUUID}`
-              );
-            },
-          });
+        // Show main menu
+        const menu = getMainMenu();
+        if (!menu.isMenuActive()) {
+          menu.show();
         }
         escPressCount = 0;
       } else {

@@ -1,11 +1,12 @@
 import { expect, test } from '@playwright/test';
+import { setupA11yCapTest } from './test-utils';
 
 test.describe('Readability Tool', () => {
   test('should extract readable content from article page', async ({
     page,
   }) => {
-    // Navigate to test server
-    await page.goto('http://localhost:14652/');
+    // Setup A11yCap test environment
+    await setupA11yCapTest(page);
 
     // Create a simple article page
     await page.evaluate(() => {
@@ -28,9 +29,6 @@ test.describe('Readability Tool', () => {
       `;
       document.title = 'Test Article Title - Test Site';
     });
-
-    // Wait for A11yCap to be available
-    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
 
     // Execute the readability tool
     const result = await page.evaluate(async () => {
@@ -64,7 +62,8 @@ test.describe('Readability Tool', () => {
   });
 
   test('should handle pages without substantial content', async ({ page }) => {
-    await page.goto('http://localhost:14652/');
+    // Setup A11yCap test environment
+    await setupA11yCapTest(page);
 
     // Create a page with only navigation (no article content)
     await page.evaluate(() => {
@@ -79,9 +78,6 @@ test.describe('Readability Tool', () => {
       `;
       document.title = 'Simple Page';
     });
-
-    // Wait for A11yCap to be available
-    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
 
     // Execute the readability tool
     const result = await page.evaluate(async () => {
@@ -108,7 +104,8 @@ test.describe('Readability Tool', () => {
   });
 
   test('should respect maxContentLength option', async ({ page }) => {
-    await page.goto('http://localhost:14652/');
+    // Setup A11yCap test environment
+    await setupA11yCapTest(page);
 
     // Create a page with long content
     await page.evaluate(() => {
@@ -125,9 +122,6 @@ test.describe('Readability Tool', () => {
       `;
       document.title = 'Long Article';
     });
-
-    // Wait for A11yCap to be available
-    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
 
     // Execute with a small maxContentLength
     const result = await page.evaluate(async () => {

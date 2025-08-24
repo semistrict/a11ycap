@@ -1,15 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { setupA11yCapTest } from './test-utils';
 
 test.describe('React DevTools Integration', () => {
   test('should find React fiber node for DOM element', async ({ page }) => {
-    // Navigate to our React test page
-    await page.goto('http://localhost:14652/');
-
-    // Wait for the library and React DevTools to load
-    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
-    await page.waitForFunction(() => window.__REACT_DEVTOOLS_GLOBAL_HOOK__, {
-      timeout: 5000,
-    });
+    await setupA11yCapTest(page, { waitForReactDevTools: true });
 
     const result = await page.evaluate(() => {
       // Get the React DevTools hook

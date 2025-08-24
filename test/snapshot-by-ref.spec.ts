@@ -1,12 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { setupA11yCapTest } from './test-utils';
 
 test.describe('Snapshot by Ref', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to our React test page via HTTP server
-    await page.goto('http://localhost:14652/');
-
-    // Wait for the library to load
-    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
+    await setupA11yCapTest(page);
   });
 
   test('should snapshot specific element by ref', async ({ page }) => {

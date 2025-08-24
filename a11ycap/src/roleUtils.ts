@@ -1,5 +1,5 @@
+import type { AriaRole } from '@isomorphic/ariaSnapshot';
 import * as css from '@isomorphic/cssTokenizer';
-
 import {
   closestCrossShadow,
   elementSafeTagName,
@@ -9,8 +9,6 @@ import {
   isVisibleTextNode,
   parentElementOrShadowHost,
 } from './domUtils';
-
-import type { AriaRole } from '@isomorphic/ariaSnapshot';
 
 function hasExplicitAccessibleName(e: Element) {
   return e.hasAttribute('aria-label') || e.hasAttribute('aria-labelledby');
@@ -474,7 +472,7 @@ function getIdRefs(element: Element, ref: string | null): Element[] {
         result.push(firstElement);
     }
     return result;
-  } catch (e) {
+  } catch (_e) {
     return [];
   }
 }

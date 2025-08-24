@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { setupA11yCapTest } from './test-utils';
 
 test.describe('Console logs buffering', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:14652');
-    await page.waitForLoadState('networkidle');
+    await setupA11yCapTest(page);
   });
 
   test('should buffer console messages locally', async ({ page }) => {

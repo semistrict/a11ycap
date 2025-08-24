@@ -1,34 +1,24 @@
 import { expect, test } from '@playwright/test';
+import { loadA11yCapScript } from './test-utils';
 
 test.describe('Debug Picked Elements Tool', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('http://localhost:14652');
-    await page.addScriptTag({ path: 'a11ycap/dist/browser.js' });
-    await page.waitForFunction(() => window.A11yCap);
+    await loadA11yCapScript(page);
   });
 
-  test('should manually add and retrieve picked element event', async ({
+  test('should manually add picked CSS class and retrieve picked element', async ({
     page,
   }) => {
-    // Manually add a picked element event and test if the tool can retrieve it
+    // Manually add picked class to an element and test if the tool can retrieve it
     const result = await page.evaluate(async () => {
-      // Get current page UUID
-      const pageUUID = (window as any)._a11yCapPageUUID;
-
-      // Manually add an element_picked event
-      window.A11yCap.addEvent({
-        type: 'element_picked',
-        timestamp: Date.now(),
-        url: window.location.href,
-        pageUUID: pageUUID,
-        element: {
-          ref: 'e5',
-          selector: 'button#test-button',
-          textContent: 'Click me (0)',
-          tagName: 'button',
-          snapshot: 'test snapshot',
-        },
-      });
+      // Find the test button and add the picked class
+      const button = document.getElementById('test-button');
+      if (!button) {
+        throw new Error('Test button not found');
+      }
+      
+      button.classList.add('a11ycap-picked');
 
       // Try to retrieve it with the tool
       const toolHandlers = window.A11yCap.toolHandlers;
@@ -41,18 +31,17 @@ test.describe('Debug Picked Elements Tool', () => {
       });
 
       return {
-        pageUUID,
         currentUrl: window.location.href,
         toolResult,
-        allEvents: window.A11yCap.getEvents().length,
+        buttonHasPickedClass: button.classList.contains('a11ycap-picked'),
       };
     });
 
     console.log('Debug result:', result);
 
-    expect(result.pageUUID).toBeDefined();
-    expect(result.toolResult.totalPicked).toBe(1);
-    expect(result.toolResult.elements.length).toBe(1);
-    expect(result.toolResult.pageUUID).toBe(result.pageUUID);
+    expect(result.buttonHasPickedClass).toBe(true);
+    expect(Array.isArray(result.toolResult)).toBe(true);
+    expect(result.toolResult.length).toBe(1);
+    expect(result.toolResult[0].tagName).toBe('button');
   });
 });
