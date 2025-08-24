@@ -72,7 +72,9 @@ async function executeGetPickedElements(
   const currentPageUUID = generatePageUUID();
 
   // Get all elements with the picked class
-  const pickedElements = Array.from(document.querySelectorAll('.a11ycap-picked'));
+  const pickedElements = Array.from(
+    document.querySelectorAll('.a11ycap-picked')
+  );
 
   // Apply limit
   const limit = message.payload.limit || 50;

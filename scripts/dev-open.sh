@@ -10,6 +10,9 @@ cd testpagecra
 PORT=14652 BROWSER=none pnpm start &
 SERVER_PID=$!
 
+# Set up trap to clean up background server on script exit
+trap 'if [ -n "$SERVER_PID" ] && kill -0 "$SERVER_PID" 2>/dev/null; then kill "$SERVER_PID" && wait "$SERVER_PID"; fi' EXIT INT TERM
+
 # Wait for server to be ready
 echo "Waiting for server to start..."
 while ! curl -s http://localhost:14652 > /dev/null; do

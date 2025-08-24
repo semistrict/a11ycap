@@ -1,10 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { setupA11yCapTest } from './test-utils.js';
 
 test.describe('User Interaction Recording', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:14652');
-    // Wait for the page to be ready
-    await page.waitForSelector('#root');
+    await setupA11yCapTest(page);
   });
 
   test('should record click interactions', async ({ page }) => {
@@ -80,7 +79,7 @@ test.describe('User Interaction Recording', () => {
     await page.reload();
 
     // Wait for A11yCap to be available again
-    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
+    await setupA11yCapTest(page);
 
     const interactions = await page.evaluate(() => {
       return window.A11yCap.toolHandlers.get_user_interactions.execute({

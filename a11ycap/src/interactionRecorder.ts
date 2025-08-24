@@ -361,7 +361,7 @@ export class InteractionRecorder {
       const nonConsoleCount = Object.entries(stats.eventTypes)
         .filter(([type]) => type !== 'console')
         .reduce((sum, [, count]) => sum + count, 0);
-      
+
       bufferCount.textContent = `${nonConsoleCount} events`;
     }
 

@@ -101,26 +101,26 @@ function extractMetaKeys(event: KeyboardEvent | MouseEvent) {
 function isInternalUIElement(element: Element): boolean {
   // Check if the element itself or any ancestor has our UI class
   let current: Element | null = element;
-  
+
   while (current) {
     // Check if this element has our UI class
     if (current.classList.contains('a11ycap-ui')) {
       return true;
     }
-    
+
     // Move up to parent element
     current = current.parentElement;
   }
-  
+
   // Check if the element is inside a shadow root with our UI class
   const root = element.getRootNode();
   if (root instanceof ShadowRoot) {
     const host = root.host;
-    if (host && host.classList.contains('a11ycap-ui')) {
+    if (host?.classList.contains('a11ycap-ui')) {
       return true;
     }
   }
-  
+
   return false;
 }
 
@@ -145,7 +145,7 @@ export function installInteractionForwarders(): void {
       try {
         if (!isRecording) return;
         if (!(event.target instanceof Element)) return;
-        
+
         // Skip interactions with our own UI elements
         if (isInternalUIElement(event.target)) return;
 
@@ -185,7 +185,7 @@ export function installInteractionForwarders(): void {
         ) {
           return;
         }
-        
+
         // Skip interactions with our own UI elements
         if (isInternalUIElement(event.target)) return;
 
@@ -227,7 +227,7 @@ export function installInteractionForwarders(): void {
       try {
         if (!isRecording) return;
         if (!(event.target instanceof HTMLElement)) return;
-        
+
         // Skip interactions with our own UI elements
         if (isInternalUIElement(event.target)) return;
 
@@ -276,7 +276,7 @@ export function installInteractionForwarders(): void {
       try {
         if (!isRecording) return;
         if (!(event.target instanceof Element)) return;
-        
+
         // Skip interactions with our own UI elements
         if (isInternalUIElement(event.target)) return;
 
@@ -306,7 +306,7 @@ export function installInteractionForwarders(): void {
       try {
         if (!isRecording) return;
         if (!(event.target instanceof Element)) return;
-        
+
         // Skip interactions with our own UI elements
         if (isInternalUIElement(event.target)) return;
 
@@ -332,7 +332,7 @@ export function installInteractionForwarders(): void {
       try {
         if (!isRecording) return;
         if (!(event.target instanceof Element)) return;
-        
+
         // Skip interactions with our own UI elements
         if (isInternalUIElement(event.target)) return;
 

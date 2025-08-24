@@ -1,12 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { setupA11yCapTest } from './test-utils.js';
 
 test.describe('Element Picker Tool', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to test app
-    await page.goto('http://localhost:14652/');
-
-    // Wait for A11yCap to be available
-    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
+    await setupA11yCapTest(page);
   });
 
   test('should show element picker overlay', async ({ page }) => {

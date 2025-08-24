@@ -235,7 +235,7 @@ export class ElementPicker {
         if (this.hoveredElement) {
           this.hoveredElement.classList.remove('a11ycap-hovered');
         }
-        
+
         // Add hover class to new element (but not if it's already picked)
         this.hoveredElement = element;
         if (!this.hoveredElement.classList.contains('a11ycap-picked')) {
@@ -265,12 +265,18 @@ export class ElementPicker {
           // Unpick: remove picked class and add hover class back
           this.hoveredElement.classList.remove('a11ycap-picked');
           this.hoveredElement.classList.add('a11ycap-hovered');
-          console.log('[A11yCap] Element unpicked:', this.getElementDescription(this.hoveredElement));
+          console.log(
+            '[A11yCap] Element unpicked:',
+            this.getElementDescription(this.hoveredElement)
+          );
         } else {
           // Pick: add picked class and remove hover class
           this.hoveredElement.classList.add('a11ycap-picked');
           this.hoveredElement.classList.remove('a11ycap-hovered');
-          console.log('[A11yCap] Element picked:', this.getElementDescription(this.hoveredElement));
+          console.log(
+            '[A11yCap] Element picked:',
+            this.getElementDescription(this.hoveredElement)
+          );
         }
         this.updateSelectedCount();
       }
@@ -315,7 +321,6 @@ export class ElementPicker {
     // All highlighting is now handled by CSS classes
     // This method is kept for any future highlight logic if needed
   }
-
 
   private getElementDescription(element: Element): string {
     const tag = element.tagName.toLowerCase();
@@ -470,24 +475,26 @@ export class ElementPicker {
   private clearPicked() {
     // Clear all picked elements but stay in picker mode
     const selectedElements = document.querySelectorAll('.a11ycap-picked');
-    selectedElements.forEach((element) => {
+    for (const element of selectedElements) {
       element.classList.remove('a11ycap-picked');
-      console.log('[A11yCap] Element cleared:', this.getElementDescription(element));
-    });
+      console.log(
+        '[A11yCap] Element cleared:',
+        this.getElementDescription(element)
+      );
+    }
     this.updateSelectedCount();
   }
-
 
   private cleanupUI() {
     this.isActive = false;
     this.glassPaneElement.style.display = 'none';
     this.glassPaneElement.style.pointerEvents = 'none';
-    
+
     // Remove hover class from current hovered element
     if (this.hoveredElement) {
       this.hoveredElement.classList.remove('a11ycap-hovered');
     }
-    
+
     this.hoveredElement = null;
 
     // Remove keyboard handler
@@ -495,7 +502,6 @@ export class ElementPicker {
       document.removeEventListener('keydown', this.keyHandler);
     }
   }
-
 
   public enable(options: ElementPickerOptions = {}): void {
     this.currentOptions = options;
@@ -518,7 +524,6 @@ export class ElementPicker {
     this.updateHighlights();
     this.updateSelectedCount();
   }
-
 }
 
 // Global instance

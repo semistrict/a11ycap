@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { setupA11yCapTest } from './test-utils.js';
 
 test.describe('MCP Tools Implementation', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:14652/');
-    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
+    await setupA11yCapTest(page);
   });
 
   test('should handle take_snapshot functionality', async ({ page }) => {

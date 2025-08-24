@@ -1,9 +1,12 @@
 import { expect, test } from '@playwright/test';
+import { setupA11yCapTest } from './test-utils.js';
 
 test.describe('Click Ref Functionality', () => {
+  test.beforeEach(async ({ page }) => {
+    await setupA11yCapTest(page);
+  });
+
   test('should click element by ref from snapshot', async ({ page }) => {
-    await page.goto('http://localhost:14652/');
-    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
 
     // Take a snapshot to generate refs
     const snapshot = await page.evaluate(() => {
@@ -49,8 +52,6 @@ test.describe('Click Ref Functionality', () => {
   });
 
   test('should find element by ref', async ({ page }) => {
-    await page.goto('http://localhost:14652/');
-    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
 
     // Take a snapshot to generate refs
     await page.evaluate(() => {
@@ -91,8 +92,6 @@ test.describe('Click Ref Functionality', () => {
   });
 
   test('should handle non-existent refs gracefully', async ({ page }) => {
-    await page.goto('http://localhost:14652/');
-    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
 
     // Try to click a non-existent ref
     const clickResult = await page.evaluate(() => {

@@ -218,6 +218,17 @@ export class ElementPicker {
         color: #10b981;
         font-weight: 500;
       }
+      
+      .recording-duration {
+        font-size: 11px;
+        color: #6b7280;
+        margin: 4px 0;
+      }
+      
+      .recording-duration.active {
+        color: #10b981;
+        font-weight: 500;
+      }
     `;
     this.glassPaneShadow.appendChild(styleElement);
 
@@ -614,6 +625,7 @@ export class ElementPicker {
       stopRecording();
       recordButton.textContent = 'Start Recording';
       recordButton.classList.remove('recording');
+      durationElement.classList.remove('active');
       durationElement.style.display = 'none';
       if (this.recordingInterval) {
         clearInterval(this.recordingInterval);
@@ -650,7 +662,7 @@ export class ElementPicker {
           durationElement.textContent = `Recording: ${minutes}:${remainingSeconds
             .toString()
             .padStart(2, '0')}`;
-          durationElement.className = 'recording-stats active';
+          durationElement.classList.add('active');
         }
         // Update buffer stats to show new events
         this.updateBufferStats();
@@ -745,12 +757,13 @@ export class ElementPicker {
             durationElement.textContent = `Recording: ${minutes}:${remainingSeconds
               .toString()
               .padStart(2, '0')}`;
-            durationElement.className = 'recording-stats active';
+            durationElement.classList.add('active');
           }
         }, 100);
       } else {
         recordButton.textContent = 'Start Recording';
         recordButton.classList.remove('recording');
+        durationElement.classList.remove('active');
         durationElement.style.display = 'none';
       }
     }

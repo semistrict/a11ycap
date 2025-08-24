@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { setupA11yCapTest } from './test-utils.js';
 
 test.describe('New Interaction Recording UI', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:14652');
-    await page.waitForLoadState('networkidle');
+    await setupA11yCapTest(page);
   });
 
   test('should show main menu on triple-ESC', async ({ page }) => {
@@ -99,7 +99,17 @@ test.describe('New Interaction Recording UI', () => {
     await page.click('button:has-text("Click me")');
     await page.fill('input[type="text"]', 'Test input');
 
-    // Get recorded events
+    // Wait for events to be recorded with polling
+    await page.waitForFunction(() => {
+      const events = window.A11yCap.toolHandlers.get_user_interactions.execute({
+        id: 'test',
+        type: 'get_user_interactions',
+        payload: { limit: 100 },
+      });
+      return events.includes('Click on button') && events.includes('Test input');
+    }, { timeout: 5000 });
+
+    // Get recorded events for final assertion
     const events = await page.evaluate(() => {
       return window.A11yCap.toolHandlers.get_user_interactions.execute({
         id: 'test',

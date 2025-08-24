@@ -1,8 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { setupA11yCapTest } from './test-utils.js';
 
 test.describe('Selector Snapshot Functionality', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:14652');
+    await setupA11yCapTest(page);
   });
 
   test('should capture snapshot using CSS selector for buttons', async ({

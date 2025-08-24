@@ -1,12 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { setupA11yCapTest } from './test-utils.js';
 
 test.describe('snapshotForAI', () => {
   test('should generate basic snapshot for simple button', async ({ page }) => {
-    // Navigate to our React test page via HTTP server
-    await page.goto('http://localhost:14652/');
-
-    // Wait for the library to load
-    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
+    await setupA11yCapTest(page);
 
     const snapshot = await page.evaluate(() => {
       return window.A11yCap.snapshotForAI(document.body);
@@ -24,9 +21,7 @@ test.describe('snapshotForAI', () => {
   test('should generate complex snapshot for form with multiple elements', async ({
     page,
   }) => {
-    // Navigate to HTTP server first to load the library
-    await page.goto('http://localhost:14652');
-    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
+    await setupA11yCapTest(page);
 
     // Now inject complex HTML structure
     await page.evaluate(() => {
@@ -84,9 +79,7 @@ test.describe('snapshotForAI', () => {
   });
 
   test('should handle iframes in snapshot', async ({ page }) => {
-    // Navigate to HTTP server first to load the library
-    await page.goto('http://localhost:14652');
-    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
+    await setupA11yCapTest(page);
 
     // Create content with iframe
     await page.evaluate(() => {
@@ -114,9 +107,7 @@ test.describe('snapshotForAI', () => {
   });
 
   test('should handle nested elements with active states', async ({ page }) => {
-    // Navigate to HTTP server first to load the library
-    await page.goto('http://localhost:14652');
-    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
+    await setupA11yCapTest(page);
 
     // Create content with focusable elements
     await page.evaluate(() => {
@@ -151,11 +142,7 @@ test.describe('snapshotForAI', () => {
 
 test.describe('snapshot (non-AI modes)', () => {
   test('should generate expect mode snapshot', async ({ page }) => {
-    // Navigate to our React test page via HTTP server
-    await page.goto('http://localhost:14652/');
-
-    // Wait for the library to load
-    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
+    await setupA11yCapTest(page);
 
     const snapshot = await page.evaluate(() => {
       return window.A11yCap.snapshot(document.body, { mode: 'expect' });
@@ -182,8 +169,7 @@ test.describe('snapshot (non-AI modes)', () => {
   });
 
   test('should generate codegen mode snapshot', async ({ page }) => {
-    await page.goto('http://localhost:14652');
-    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
+    await setupA11yCapTest(page);
 
     const snapshot = await page.evaluate(() => {
       return window.A11yCap.snapshot(document.body, { mode: 'codegen' });
@@ -199,8 +185,7 @@ test.describe('snapshot (non-AI modes)', () => {
   });
 
   test('should generate autoexpect mode snapshot', async ({ page }) => {
-    await page.goto('http://localhost:14652');
-    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
+    await setupA11yCapTest(page);
 
     const snapshot = await page.evaluate(() => {
       return window.A11yCap.snapshot(document.body, { mode: 'autoexpect' });
@@ -218,8 +203,7 @@ test.describe('snapshot (non-AI modes)', () => {
   test('should default to expect mode when no mode specified', async ({
     page,
   }) => {
-    await page.goto('http://localhost:14652');
-    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
+    await setupA11yCapTest(page);
 
     const snapshotDefault = await page.evaluate(() => {
       return window.A11yCap.snapshot(document.body);
@@ -236,8 +220,7 @@ test.describe('snapshot (non-AI modes)', () => {
   });
 
   test('should handle form elements in expect mode', async ({ page }) => {
-    await page.goto('http://localhost:14652');
-    await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
+    await setupA11yCapTest(page);
 
     // Create a more complex form for testing
     await page.evaluate(() => {
