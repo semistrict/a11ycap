@@ -5,6 +5,7 @@ This document provides comprehensive guidance for writing and running tests in t
 ## Table of Contents
 - [Test Architecture](#test-architecture)
 - [Essential Commands](#essential-commands)
+- [Test Helpers](#test-helpers)
 - [Writing Tests](#writing-tests)
 - [Best Practices](#best-practices)
 - [Common Patterns](#common-patterns)
@@ -15,10 +16,11 @@ This document provides comprehensive guidance for writing and running tests in t
 
 ### Test Stack
 - **Framework**: Playwright Test (@playwright/test) for integration tests
+- **Unit Tests**: Vitest for a11ycap-mcp package unit tests
 - **Browser**: Chromium only
 - **Test Server**: testpagecra (Create React App) on port 14652
 - **Test Location**: `/test` directory at workspace root (Playwright tests)
-- **Unit Tests**: a11ycap-mcp package has additional unit tests
+- **Unit Test Location**: `a11ycap-mcp/test/` directory (Vitest tests)
 - **Timeout**: 5 seconds for actions and navigation
 - **Parallelization**: Fully parallel (single worker in CI)
 
@@ -38,7 +40,7 @@ The test server (testpagecra) is a Create React App that:
 # Run all tests (builds packages, runs Playwright tests, then a11ycap-mcp unit tests)
 pnpm test
 
-# Run specific test files (automatically builds a11ycap first)
+# Run only Playwright integration tests (automatically builds a11ycap first)
 pnpm test:specific test/click-ref.spec.ts
 
 # Run tests matching a pattern
@@ -50,23 +52,98 @@ pnpm test:specific test/click-ref.spec.ts --debug
 # Headed mode - DO NOT use unless explicitly requested
 pnpm test:headed  # Run all tests with visible browser
 pnpm test:specific test/click-ref.spec.ts --headed  # Specific test with visible browser
+
+# Run only a11ycap-mcp unit tests (Vitest)
+pnpm --filter a11ycap-mcp test
+
+# Run a11ycap-mcp unit tests in watch mode
+pnpm --filter a11ycap-mcp test --watch
 ```
 
-### Other Commands
+Note: All builds and test server setup are handled automatically by the test scripts - no manual setup needed.
 
-```bash
-# Build all packages (only if you need to build without testing)
-pnpm build
+## Test Helpers
 
-# Clean all build outputs
-pnpm clean
+The repository provides test helper utilities in `/test/test-utils.ts` to simplify test setup and common operations.
+
+### setupA11yCapTest()
+
+Main helper function that initializes the A11yCap test environment:
+
+```typescript
+import { setupA11yCapTest } from './test-utils';
+
+test.beforeEach(async ({ page }) => {
+  await setupA11yCapTest(page, {
+    waitForReactDevTools: true, // Optional: wait for React DevTools (default: false)
+    timeout: 5000 // Optional: custom timeout in milliseconds (default: 5000)
+  });
+});
 ```
 
-Note: The test server starts automatically when running tests - no manual setup needed.
+This helper:
+- Navigates to the test page (http://localhost:14652)
+- Waits for network idle state
+- Waits for A11yCap library to be available
+- Optionally waits for React DevTools to be ready
+
+### loadA11yCapScript()
+
+For tests that need manual script loading:
+
+```typescript
+import { loadA11yCapScript } from './test-utils';
+
+await loadA11yCapScript(page, 'a11ycap/dist/browser.js', 5000);
+```
+
+This helper loads the A11yCap library via script tag and waits for it to be available.
+
+### Usage Example
+
+```typescript
+import { expect, test } from '@playwright/test';
+import { setupA11yCapTest } from './test-utils';
+
+test.describe('My Feature', () => {
+  test.beforeEach(async ({ page }) => {
+    // Use helper instead of manual setup
+    await setupA11yCapTest(page, { waitForReactDevTools: true });
+  });
+
+  test('should work correctly', async ({ page }) => {
+    // A11yCap is now ready to use
+    const snapshot = await page.evaluate(() => {
+      return window.A11yCap.snapshotForAI(document.body);
+    });
+    expect(snapshot).toContain('React Test Page');
+  });
+});
+```
 
 ## Writing Tests
 
 ### Test File Structure
+
+```typescript
+import { expect, test } from '@playwright/test';
+import { setupA11yCapTest } from './test-utils';
+
+test.describe('Feature Name', () => {
+  test.beforeEach(async ({ page }) => {
+    // Use the helper for consistent setup
+    await setupA11yCapTest(page, { waitForReactDevTools: true });
+  });
+
+  test('should do something specific', async ({ page }) => {
+    // Test implementation
+  });
+});
+```
+
+### Legacy Test File Structure (not recommended)
+
+If you need manual setup for specific cases:
 
 ```typescript
 import { expect, test } from '@playwright/test';
@@ -75,6 +152,7 @@ test.describe('Feature Name', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to test page
     await page.goto('http://localhost:14652/');
+    await page.waitForLoadState('networkidle');
     
     // Wait for library to load
     await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
@@ -157,10 +235,10 @@ const result = await page.evaluate(async () => {
 });
 ```
 
-#### 4. Removing CRA Dev Overlay
+#### 4. Removing CRA Dev Overlay (if needed)
 
 ```typescript
-// Remove CRA dev overlay that can interfere with clicks
+// Usually not needed with setupA11yCapTest helper, but available if required
 await page.evaluate(() => {
   const overlay = document.getElementById('webpack-dev-server-client-overlay');
   if (overlay) overlay.remove();
@@ -199,8 +277,8 @@ const result = await page.evaluate(() => {
 
 ## Best Practices
 
-### 1. Always Use pnpm Scripts for Testing
-**Important**: Never run `playwright` directly. Always use the provided pnpm scripts which handle building automatically.
+### 1. Always Use pnpm Scripts and Test Helpers
+**Important**: Never run `playwright` directly. Always use the provided pnpm scripts. Use test helpers for consistent setup.
 ```bash
 # Wrong: Running playwright directly
 playwright test test/specific.spec.ts
@@ -212,16 +290,30 @@ pnpm test:specific test/specific.spec.ts
 pnpm test
 ```
 
+**Test Helper Usage**:
+```typescript
+// Recommended: Use test helpers
+import { setupA11yCapTest } from './test-utils';
+await setupA11yCapTest(page);
+
+// Not recommended: Manual setup
+await page.goto('http://localhost:14652/');
+await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
+```
+
 ### 2. Use Proper Waits
 ```typescript
-// Wait for library to be available
-await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
+// Library availability is handled by setupA11yCapTest helper
+await setupA11yCapTest(page);
 
 // Wait for specific conditions
 await page.waitForSelector('#test-form', { state: 'visible' });
 
-// Wait for network idle
+// Wait for network idle (also handled by setupA11yCapTest)
 await page.waitForLoadState('networkidle');
+
+// Manual waits when needed
+await page.waitForFunction(() => window.A11yCap, { timeout: 5000 });
 ```
 
 ### 3. Console Logging for Debugging
@@ -244,7 +336,10 @@ if (!buttonMatch) {
 ### 5. Test Isolation
 ```typescript
 test.beforeEach(async ({ page }) => {
-  // Clear any existing state
+  // setupA11yCapTest handles navigation and basic setup
+  await setupA11yCapTest(page);
+  
+  // Clear any existing state if needed
   await page.evaluate(() => {
     window.A11yCap.clearEvents?.();
     performance.clearResourceTimings?.();
@@ -262,7 +357,7 @@ expect(Array.isArray(result.violations)).toBe(true);
 
 ### 7. Handle Timing Issues
 ```typescript
-// Use proper timeouts for async operations
+// setupA11yCapTest handles most timing issues, but sometimes needed:
 await page.waitForTimeout(100); // For iframe loading
 await page.waitForTimeout(2000); // For network requests
 ```
@@ -371,6 +466,43 @@ console.log('Result:', JSON.stringify(result, null, 2));
 npx playwright show-trace test-results/*/trace.zip
 ```
 
+## Unit Tests (a11ycap-mcp)
+
+The `a11ycap-mcp` package includes Vitest unit tests for MCP server functionality:
+
+### Running Unit Tests
+```bash
+# Run a11ycap-mcp unit tests only
+pnpm --filter a11ycap-mcp test
+
+# Run unit tests in watch mode
+pnpm --filter a11ycap-mcp test --watch
+
+# Run unit tests with UI
+pnpm --filter a11ycap-mcp test --ui
+```
+
+### Unit Test Files
+- **Location**: `a11ycap-mcp/test/`
+- **Pattern**: `*.test.ts`
+- **Current Tests**:
+  - `debug-startup.test.ts` - Debug information and startup behavior
+  - `multi-instance-coordination.test.ts` - Multi-instance coordination logic
+
+### Unit Test Examples
+```typescript
+// Example Vitest unit test
+import { describe, it, expect } from 'vitest';
+import { someFunction } from '../src/module';
+
+describe('Module functionality', () => {
+  it('should work correctly', () => {
+    const result = someFunction();
+    expect(result).toBeDefined();
+  });
+});
+```
+
 ## CI/CD Considerations
 
 ### Configuration for CI
@@ -387,14 +519,18 @@ export default defineConfig({
 ```
 
 ### Test Command for CI
-The `pnpm test` command automatically handles CI configuration and includes build steps, max-failures limit, and runs a11ycap-mcp tests.
+The `pnpm test` command automatically handles everything:
+- All necessary builds
+- CI configuration
+- Test execution with proper failure handling
 
 ## Troubleshooting
 
 ### Common Issues
 
 1. **Tests fail with "window.A11yCap is undefined"**
-   - Solution: Use `pnpm test` or `pnpm test:specific` which build automatically
+   - Solution: Use `setupA11yCapTest()` helper for consistent initialization
+   - Solution: Test scripts handle builds automatically
 
 2. **Clicks not working on elements**
    - Solution: Remove CRA dev overlay
@@ -407,16 +543,25 @@ The `pnpm test` command automatically handles CI configuration and includes buil
 4. **Timeouts in CI**
    - Solution: Increase timeout in playwright.config.ts
    - Solution: Use proper wait conditions
+   - Solution: `setupA11yCapTest()` helper includes proper wait conditions
 
 5. **React DevTools not available**
-   - Solution: Wait for `window.__REACT_DEVTOOLS_GLOBAL_HOOK__`
+   - Solution: Use `setupA11yCapTest(page, { waitForReactDevTools: true })`
    - Solution: Check that React app is properly loaded
 
+6. **Test setup inconsistencies**
+   - Solution: Use `setupA11yCapTest()` helper instead of manual setup
+   - Solution: Import helper: `import { setupA11yCapTest } from './test-utils';`
+
+7. **Unit tests failing in a11ycap-mcp**
+   - Solution: Run tests in isolation: `pnpm --filter a11ycap-mcp test`
+   - Note: Builds are handled automatically by test scripts
+
 ### Test Execution Order (handled automatically by pnpm scripts)
-1. Build a11ycap library
-2. Start test server (automatic via webServer config)
-3. Run Playwright tests
-4. Test server stops after tests complete
+When you run `pnpm test`, everything is handled automatically:
+- Builds are managed by pnpm scripts
+- Test server starts/stops automatically
+- Tests run in the correct sequence
 
 ## Advanced Testing
 
@@ -470,9 +615,9 @@ await expect(page.evaluate(async () => {
 ## Summary
 
 Key points to remember:
-1. **Always use pnpm scripts** - They handle building automatically
-2. Use proper wait conditions for async operations
-3. Remove CRA dev overlay when testing clicks
+1. **Always use pnpm scripts and test helpers** - Everything is handled automatically
+2. Use `setupA11yCapTest()` helper for consistent test initialization
+3. Import test helpers: `import { setupA11yCapTest } from './test-utils';`
 4. Log intermediate results for debugging
 5. Use the MCP tool handlers for testing tool functionality
 6. Test both success and error cases

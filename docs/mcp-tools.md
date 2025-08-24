@@ -34,6 +34,43 @@ Click an element using its accessibility snapshot reference
 
 Perform comprehensive accessibility analysis using axe-core. For best results, run without element targeting to analyze the entire document. Element-specific analysis available for debugging individual components.
 
+Returns detailed accessibility analysis including:
+
+**Analysis Summary:**
+- Total violations count by severity (critical, serious, moderate, minor)
+- Incomplete checks that require manual verification
+- Passing rules and inapplicable rules
+- Analysis scope (page vs elements) and execution time
+
+**Violation Details:**
+- Rule ID, description, and help text for each violation
+- Impact level (critical, serious, moderate, minor)
+- WCAG guideline references and compliance level
+- Target selectors and affected DOM nodes
+- Suggested fixes and remediation guidance
+
+**Best Practices Analysis:**
+- Categorized recommendations by accessibility domain (forms, images, keyboard, etc.)
+- WCAG 2.1 Level A/AA/AAA compliance analysis
+- User group impact analysis (screen readers, keyboard users, low vision)
+- Prioritized action items and next steps
+
+**Configuration Options:**
+- Preset configurations for WCAG-AA, WCAG-AAA, Section 508, or best practices
+- Severity filtering to focus on critical issues first
+- Rule exclusion for custom testing scenarios
+- Element information inclusion for detailed debugging
+
+**When to Use:**
+- Initial accessibility audit of entire pages or applications
+- Validating fixes after addressing accessibility issues
+- Component testing during development workflow
+- Compliance verification against WCAG or Section 508 standards
+- Pre-release accessibility quality assurance
+
+**Output Analysis:**
+The tool provides actionable insights organized by priority and user impact, making it easy to identify which issues to fix first for maximum accessibility improvement. Critical and serious violations should always be addressed first as they significantly impact users with disabilities.
+
 ---
 
 ### get_network_requests
